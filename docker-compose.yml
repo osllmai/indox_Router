@@ -1,0 +1,134 @@
+version: "3.8"
+
+services:
+  # IndoxRouter application (API and Dashboard)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: indoxrouter-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000" # API port
+      - "7860:7860" # Dashboard port
+    volumes:
+      - ./indoxRouter/config.json:/app/indoxRouter/config.json
+      - ./logs:/app/logs
+    environment:
+      # Database configuration
+      - DATABASE_URL=postgresql://indoxuser:indoxpassword@postgres:5432/indoxrouter
+      - REDIS_URL=redis://redis:6379/0
+
+      # JWT configuration
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey}
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRATION=86400
+
+      # Server configuration
+      - INDOXROUTER_HOST=0.0.0.0
+      - INDOXROUTER_PORT=8000
+      - DASHBOARD_HOST=0.0.0.0
+      - DASHBOARD_PORT=7860
+      - DASHBOARD_SHARE=false
+
+      # Cache configuration
+      - INDOX_CACHE_TYPE=redis
+      - INDOX_CACHE_URL=redis://redis:6379/0
+
+      # Provider API keys (replace with your actual keys)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - COHERE_API_KEY=${COHERE_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - META_API_KEY=${META_API_KEY}
+      - AI21_API_KEY=${AI21_API_KEY}
+      - LLAMA_API_KEY=${LLAMA_API_KEY}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DATABRICKS_API_KEY=${DATABRICKS_API_KEY}
+
+      # Admin configuration
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - indoxrouter-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: >
+      bash -c "
+        echo 'Waiting for PostgreSQL to start...' &&
+        sleep 5 &&
+        python -m indoxRouter.init_db &&
+        python run.py
+      "
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: indoxrouter-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=indoxuser
+      - POSTGRES_PASSWORD=indoxpassword
+      - POSTGRES_DB=indoxrouter
+    networks:
+      - indoxrouter-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indoxuser -d indoxrouter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: indoxrouter-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - indoxrouter-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: indoxrouter-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - indoxrouter-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
+  redis-data:
+  pgadmin-data:
+
+networks:
+  indoxrouter-network:
+    driver: bridge

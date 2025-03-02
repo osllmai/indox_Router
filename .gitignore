@@ -19,11 +19,13 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
 env/
 ENV/
+.env
 
 # IDE
 .idea/
@@ -32,19 +34,37 @@ ENV/
 *.swo
 .DS_Store
 
-# Environment Variables
-.env
-.env.local
-
 # Logs
-*.log
 logs/
+*.log
 
 # Database
 *.db
+*.sqlite
 *.sqlite3
 
-# Project specific
-data/
-outputs/
-test_results/
+# Alembic
+migrations/versions/__pycache__/
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Docker
+.docker/
+
+# Custom
+config.json
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx

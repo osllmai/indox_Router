@@ -1,0 +1,47 @@
+# Core dependencies
+fastapi>=0.95.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# Security
+python-jose>=3.3.0
+passlib>=1.7.4
+bcrypt>=4.0.1
+
+# Database (uncomment based on your choice)
+SQLAlchemy>=2.0.0  # SQL ORM
+psycopg2-binary>=2.9.5  # PostgreSQL
+alembic>=1.12.0  # Database migrations
+pymysql>=1.1.0  # MySQL (optional)
+# pymongo>=4.3.3  # MongoDB (optional)
+# motor>=3.1.1  # Async MongoDB (optional)
+
+# Utilities
+python-dotenv>=1.0.0
+httpx>=0.24.0
+requests>=2.28.2
+redis>=4.5.1  # Redis for caching
+uuid>=1.30  # UUID generation
+pyjwt>=2.6.0  # JWT for authentication
+gradio>=4.0.0  # Web UI for testing
+
+# LLM Providers
+openai>=1.0.0  # OpenAI
+anthropic>=0.5.0  # Claude
+mistralai>=0.0.7  # Mistral
+cohere>=4.0.0  # Cohere
+google-generativeai>=0.3.0  # Google
+# ai21>=1.0.0  # AI21 Labs
+
+# Testing
+pytest>=7.3.1
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0  # Coverage reporting
+
+# Production
+gunicorn>=20.1.0  # WSGI server
+# uvloop and httptools are not compatible with Windows
+# Install them only on Unix/Linux/macOS systems
+# uvloop>=0.17.0  # Fast event loop (Unix/Linux/macOS only)
+# httptools>=0.5.0  # Fast HTTP (Unix/Linux/macOS only) 
