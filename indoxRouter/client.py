@@ -1,286 +1,360 @@
-from typing import Dict, Optional, Any, List
+"""
+Client module for indoxRouter.
+This module contains the main Client class that users will interact with.
+"""
+
 import os
-import sys
-import json
-import requests
+from typing import Dict, List, Any, Optional, Union, Generator
 
-# Add the parent directory to the path to make imports work correctly
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-# Use absolute imports
-from indoxRouter.utils.auth import AuthManager
-from indoxRouter.providers.base_provider import BaseProvider
+# Remove database import
+# from .database import Database, get_database
+from .exceptions import (
+    AuthenticationError,
+    ProviderError,
+    ModelNotFoundError,
+    ProviderNotFoundError,
+    InvalidParametersError,
+)
+from .models import (
+    ChatMessage,
+    ChatResponse,
+    CompletionResponse,
+    EmbeddingResponse,
+    ImageResponse,
+    ModelInfo,
+)
+from .config import get_config
+from .client_resourses import (
+    Chat,
+    Completions,
+    Embeddings,
+    Images,
+    Models,
+)
 
 
 class Client:
     """
-    Client for making API requests to the IndoxRouter API.
+    Main client class for indoxRouter.
+
+    This class provides a unified interface to interact with various LLM providers.
     """
 
-    def __init__(self, api_key: str, base_url: str = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+    ):
         """
         Initialize the client.
 
         Args:
-            api_key: API key for authentication
-            base_url: Base URL for the API (default: http://localhost:8000)
+            api_key: The API key for indoxRouter. If not provided, uses the INDOX_ROUTER_API_KEY environment variable.
+
+        Raises:
+            AuthenticationError: If the API key is invalid.
         """
+        # Get API key from environment if not provided
+        if not api_key:
+            api_key = os.environ.get("INDOX_ROUTER_API_KEY")
+
+        if not api_key:
+            raise AuthenticationError(
+                "The api_key must be set either by passing api_key to the client or by setting the "
+                "INDOX_ROUTER_API_KEY environment variable"
+            )
+
+        # Initialize configuration
+        self.config = get_config()
+
+        # Development mode - no database
+        # Placeholder for user authentication
+        # self.db = None
+        # self.user = {
+        #     "id": 1,
+        #     "name": "Development User",
+        #     "email": "dev@example.com",
+        # }
+
         self.api_key = api_key
-        self.base_url = base_url or "http://localhost:8000"
-        self.auth_manager = AuthManager()
 
-        # Verify the API key
-        self.user_data = self.auth_manager.verify_api_key(api_key)
-        if not self.user_data:
-            raise ValueError("Invalid API key")
+        # Initialize resource classes
+        self._chat = Chat(self)
+        self._completions = Completions(self)
+        self._embeddings = Embeddings(self)
+        self._images = Images(self)
+        self._models = Models(self)
 
-    def generate(
+        # For backward compatibility
+        self.chat = self._chat
+        self.completions = self._completions
+        self.embeddings = self._embeddings
+        self.images = self._images
+        self.models = self._models
+
+    def providers(self) -> List[Dict[str, Any]]:
+        """
+        Get a list of available providers.
+
+        Returns:
+            A list of provider dictionaries with information.
+        """
+        return self._models.list_providers()
+
+    # For backward compatibility
+    def list_providers(self) -> List[Dict[str, Any]]:
+        """
+        Get a list of available providers.
+
+        Returns:
+            A list of provider dictionaries with information.
+        """
+        return self.providers()
+
+    def models(self, provider: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get a list of available models, optionally filtered by provider.
+
+        Args:
+            provider: The name of the provider to filter by. If None, lists models from all providers.
+
+        Returns:
+            A dictionary mapping provider names to lists of model dictionaries.
+
+        Raises:
+            ProviderNotFoundError: If the specified provider is not found.
+        """
+        return self._models.list(provider)
+
+    # For backward compatibility
+    def list_models(
+        self, provider: Optional[str] = None
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get a list of available models, optionally filtered by provider.
+
+        Args:
+            provider: The name of the provider to filter by. If None, lists models from all providers.
+
+        Returns:
+            A dictionary mapping provider names to lists of model dictionaries.
+
+        Raises:
+            ProviderNotFoundError: If the specified provider is not found.
+        """
+        return self.models(provider)
+
+    def model_info(self, provider: str, model: str) -> ModelInfo:
+        """
+        Get information about a specific model from a provider.
+
+        Args:
+            provider: The name of the provider.
+            model: The name of the model.
+
+        Returns:
+            A ModelInfo object containing information about the model.
+
+        Raises:
+            ProviderNotFoundError: If the provider is not found.
+            ModelNotFoundError: If the model is not found.
+        """
+        return self._models.get(provider, model)
+
+    # For backward compatibility
+    def get_model_info(self, provider: str, model: str) -> ModelInfo:
+        """
+        Get information about a specific model from a provider.
+
+        Args:
+            model: The name of the model.
+
+        Returns:
+            A ModelInfo object containing information about the model.
+
+        Raises:
+            ProviderNotFoundError: If the provider is not found.
+            ModelNotFoundError: If the model is not found.
+        """
+        return self.model_info(provider, model)
+
+    def completion(
         self,
-        provider: str,
-        model: str,
         prompt: str,
+        model: str,
         temperature: float = 0.7,
         max_tokens: int = 1000,
+        top_p: float = 1.0,
+        frequency_penalty: float = 0.0,
+        presence_penalty: float = 0.0,
+        provider_api_key: Optional[str] = None,
+        stream: bool = False,
+        return_generator: bool = False,
         **kwargs,
-    ) -> str:
+    ) -> Union[CompletionResponse, Generator[str, None, None]]:
         """
-        Generate a response from a model.
+        Generate text from a prompt.
 
         Args:
-            provider: Provider name
-            model: Model name
-            prompt: Prompt
-            temperature: Temperature
-            max_tokens: Maximum tokens
-            **kwargs: Additional parameters
+            prompt: The prompt to generate text from.
+            model: The model to use.
+            temperature: The temperature to use for generation.
+            max_tokens: The maximum number of tokens to generate.
+            top_p: The top_p value to use for generation.
+            frequency_penalty: The frequency penalty to use for generation.
+            presence_penalty: The presence penalty to use for generation.
+            provider_api_key: Optional API key for the provider. If not provided, uses the configured key.
+            stream: Whether to stream the response. Default is False.
+            return_generator: Whether to return a generator that yields chunks of the response. Only applicable when stream=True.
+            **kwargs: Additional parameters to pass to the provider.
 
         Returns:
-            Model response
+            A CompletionResponse object containing the response from the provider.
+            If stream=True and return_generator=True, returns a generator that yields chunks of the response.
+
+        Raises:
+            ProviderNotFoundError: If the provider is not found.
+            ModelNotFoundError: If the model is not found.
+            InvalidParametersError: If the parameters are invalid.
+            RequestError: If the request to the provider fails.
         """
-        url = f"{self.base_url}/v1/completions"
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        data = {
-            "provider": provider,
-            "model": model,
-            "prompt": prompt,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
+        return self._completions(
+            prompt=prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
+            provider_api_key=provider_api_key,
+            stream=stream,
+            return_generator=return_generator,
             **kwargs,
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-
-        if response.status_code != 200:
-            error_message = (
-                response.json().get("error", {}).get("message", "Unknown error")
-            )
-            raise Exception(f"Error: {error_message}")
-
-        return response.json().get("choices", [{}])[0].get("text", "")
-
-    def list_models(self, provider: Optional[str] = None) -> List[Dict[str, Any]]:
-        """
-        List available models.
-
-        Args:
-            provider: Provider name (optional)
-
-        Returns:
-            List of models
-        """
-        url = f"{self.base_url}/v1/models"
-
-        if provider:
-            url += f"?provider={provider}"
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        response = requests.get(url, headers=headers)
-
-        if response.status_code != 200:
-            error_message = (
-                response.json().get("error", {}).get("message", "Unknown error")
-            )
-            raise Exception(f"Error: {error_message}")
-
-        return response.json().get("data", [])
-
-    def list_providers(self) -> List[str]:
-        """
-        List available providers.
-
-        Returns:
-            List of providers
-        """
-        url = f"{self.base_url}/v1/providers"
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        response = requests.get(url, headers=headers)
-
-        if response.status_code != 200:
-            error_message = (
-                response.json().get("error", {}).get("message", "Unknown error")
-            )
-            raise Exception(f"Error: {error_message}")
-
-        return response.json().get("data", [])
-
-    def _parse_model_name(self, model_name: str) -> tuple:
-        """
-        Parse model name into provider and model parts
-
-        Args:
-            model_name: Full model name (e.g., 'openai/gpt-4')
-
-        Returns:
-            Tuple of (provider_name, model_part)
-        """
-        if "/" not in model_name:
-            raise ValueError(
-                f"Invalid model name format: {model_name}. Expected format: 'provider/model'"
-            )
-
-        provider_name, model_part = model_name.split("/", 1)
-        return provider_name, model_part
-
-    def _load_provider_class(self, provider_name: str):
-        """
-        Dynamically load provider class
-
-        Args:
-            provider_name: Name of the provider
-
-        Returns:
-            Provider class
-        """
-        try:
-            # Import the provider module dynamically
-            module_path = f".providers.{provider_name}"
-            provider_module = __import__(
-                module_path, fromlist=["Provider"], globals=globals()
-            )
-            return provider_module.Provider
-        except (ImportError, AttributeError) as e:
-            raise ValueError(f"Provider not supported: {provider_name}") from e
-
-    def _get_provider(self, model_name: str) -> BaseProvider:
-        """
-        Get provider instance with cached credentials
-
-        Args:
-            model_name: Full model name (e.g., 'openai/gpt-4')
-
-        Returns:
-            Provider instance
-        """
-        if model_name in self.provider_cache:
-            return self.provider_cache[model_name]
-
-        provider_name, model_part = self._parse_model_name(model_name)
-        provider_class = self._load_provider_class(provider_name)
-
-        # Get provider API key from secure storage
-        provider_api_key = self._get_provider_credentials(provider_name)
-
-        instance = provider_class(api_key=provider_api_key, model_name=model_part)
-        self.provider_cache[model_name] = instance
-        return instance
-
-    def _get_provider_credentials(self, provider_name: str) -> str:
-        """
-        Retrieve provider API key from secure storage
-
-        Args:
-            provider_name: Name of the provider
-
-        Returns:
-            Provider API key
-        """
-        # Implement your secure credential storage (e.g., AWS Secrets Manager)
-        # Example using environment variables:
-        env_var = f"{provider_name.upper()}_API_KEY"
-        if env_var not in os.environ:
-            raise ValueError(
-                f"Missing API key for provider: {provider_name}. Set {env_var} environment variable."
-            )
-
-        return os.environ[env_var]
-
-    def generate(self, model_name: str, prompt: str, **kwargs) -> Dict[str, Any]:
-        """
-        Generate completion with credit handling
-
-        Args:
-            model_name: Provider/model name (e.g., 'openai/gpt-4')
-            prompt: User input prompt
-            **kwargs: Generation parameters
-
-        Returns:
-            Dictionary with response and credit information
-        """
-        provider = self._get_provider(model_name)
-
-        # Estimate max possible cost
-        max_tokens = kwargs.get("max_tokens", 2048)
-        estimated_cost = provider.estimate_cost(prompt, max_tokens)
-
-        # Check balance
-        if self.user_data["balance"] < estimated_cost:
-            raise ValueError(
-                f"Insufficient credits. Required: {estimated_cost:.6f}, Available: {self.user_data['balance']:.6f}"
-            )
-
-        # Make API call
-        response = provider.generate(prompt, **kwargs)
-
-        # Deduct actual cost
-        success = self.auth_manager.deduct_credits(
-            self.user_data["id"], response["cost"]
         )
 
-        if not success:
-            raise RuntimeError("Credit deduction failed")
-
-        # Get updated user data
-        self.user_data = self.auth_manager.get_user_by_id(self.user_data["id"])
-
-        return {
-            "text": response["text"],
-            "cost": response["cost"],
-            "remaining_credits": self.user_data["balance"],
-            "model": model_name,
-        }
-
-    def get_balance(self) -> float:
+    def chat(
+        self,
+        messages: List[Union[Dict[str, str], ChatMessage]],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+        top_p: float = 1.0,
+        frequency_penalty: float = 0.0,
+        presence_penalty: float = 0.0,
+        provider_api_key: Optional[str] = None,
+        stream: bool = False,
+        return_generator: bool = False,
+        **kwargs,
+    ) -> Union[ChatResponse, Generator[str, None, None]]:
         """
-        Get current user balance
+        Generate a chat response from a list of messages.
+
+        Args:
+            messages: A list of messages to send to the provider.
+            model: The model to use.
+            temperature: The temperature to use for generation.
+            max_tokens: The maximum number of tokens to generate.
+            top_p: The top_p value to use for generation.
+            frequency_penalty: The frequency penalty to use for generation.
+            presence_penalty: The presence penalty to use for generation.
+            provider_api_key: Optional API key for the provider. If not provided, uses the configured key.
+            stream: Whether to stream the response. Default is False.
+            return_generator: Whether to return a generator that yields chunks of the response. Only applicable when stream=True.
+            **kwargs: Additional parameters to pass to the provider.
 
         Returns:
-            Current credit balance
-        """
-        # Refresh user data to get the latest balance
-        self.user_data = self.auth_manager.get_user_by_id(self.user_data["id"])
-        return self.user_data["balance"]
+            A ChatResponse object containing the response from the provider.
+            If stream=True and return_generator=True, returns a generator that yields chunks of the response.
 
-    def get_user_info(self) -> Dict[str, Any]:
+        Raises:
+            ProviderNotFoundError: If the provider is not found.
+            ModelNotFoundError: If the model is not found.
+            InvalidParametersError: If the parameters are invalid.
+            RequestError: If the request to the provider fails.
         """
-        Get current user information
+        return self._chat(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
+            provider_api_key=provider_api_key,
+            stream=stream,
+            return_generator=return_generator,
+            **kwargs,
+        )
+
+    def embeddings(
+        self,
+        text: Union[str, List[str]],
+        model: str,
+        provider_api_key: Optional[str] = None,
+        **kwargs,
+    ) -> EmbeddingResponse:
+        """
+        Generate embeddings for text.
+
+        Args:
+            text: The text to embed. Can be a single string or a list of strings.
+            model: The model to use.
+            provider_api_key: Optional API key for the provider. If not provided, uses the configured key.
+            **kwargs: Additional parameters to pass to the provider.
 
         Returns:
-            User information dictionary
+            An EmbeddingResponse object containing the embeddings from the provider.
+
+        Raises:
+            ProviderNotFoundError: If the provider is not found.
+            ModelNotFoundError: If the model is not found.
+            InvalidParametersError: If the parameters are invalid.
+            RequestError: If the request to the provider fails.
         """
-        # Refresh user data
-        self.user_data = self.auth_manager.get_user_by_id(self.user_data["id"])
-        return self.user_data
+        return self._embeddings(
+            text=text,
+            model=model,
+            provider_api_key=provider_api_key,
+            **kwargs,
+        )
+
+    def image(
+        self,
+        prompt: str,
+        model: str,
+        size: Optional[str] = None,
+        n: int = 1,
+        provider_api_key: Optional[str] = None,
+        **kwargs,
+    ) -> ImageResponse:
+        """
+        Generate an image from a prompt.
+
+        Args:
+            prompt: The prompt to generate an image from.
+            model: The model to use.
+            size: The size of the image to generate.
+            n: The number of images to generate.
+            provider_api_key: Optional API key for the provider. If not provided, uses the configured key.
+            **kwargs: Additional parameters to pass to the provider.
+
+        Returns:
+            An ImageResponse object containing the generated images.
+
+        Raises:
+            ProviderNotFoundError: If the provider is not found.
+            ModelNotFoundError: If the model is not found.
+            InvalidParametersError: If the parameters are invalid.
+            RequestError: If the request to the provider fails.
+        """
+        return self._images(
+            prompt=prompt,
+            model=model,
+            size=size,
+            n=n,
+            provider_api_key=provider_api_key,
+            **kwargs,
+        )
+
+
+# For backward compatibility
+IndoxRouter = Client

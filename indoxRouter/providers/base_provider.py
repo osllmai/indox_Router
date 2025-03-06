@@ -1,69 +1,101 @@
+"""
+Base provider module for indoxRouter.
+This module contains the base provider class that all providers will inherit from.
+"""
+
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 
 
 class BaseProvider(ABC):
-    """
-    Base class for all LLM providers
-
-    All provider implementations should inherit from this class
-    and implement the required methods.
-    """
+    """Base provider class for all LLM providers."""
 
     def __init__(self, api_key: str, model_name: str):
         """
-        Initialize the provider
+        Initialize the provider.
 
         Args:
-            api_key: Provider API key
-            model_name: Model name to use
+            api_key: The API key for the provider.
+            model_name: The name of the model to use.
         """
         self.api_key = api_key
         self.model_name = model_name
 
     @abstractmethod
-    def generate(self, prompt: str, **kwargs) -> Dict[str, Any]:
+    def chat(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
         """
-        Generate a completion for the given prompt
+        Send a chat request to the provider.
 
         Args:
-            prompt: The prompt to generate a completion for
-            **kwargs: Additional parameters for the generation
+            messages: A list of message dictionaries with 'role' and 'content' keys.
+            **kwargs: Additional parameters to pass to the provider.
 
         Returns:
-            Dictionary containing the response text, cost, and other metadata
+            A dictionary containing the response from the provider.
         """
         pass
 
     @abstractmethod
-    def estimate_cost(self, prompt: str, max_tokens: int) -> float:
+    def complete(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """
-        Estimate the cost of generating a completion
+        Send a completion request to the provider.
 
         Args:
-            prompt: The prompt to generate a completion for
-            max_tokens: Maximum number of tokens to generate
+            prompt: The prompt to complete.
+            **kwargs: Additional parameters to pass to the provider.
 
         Returns:
-            Estimated cost in credits
+            A dictionary containing the response from the provider.
         """
         pass
 
-    def validate_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+    @abstractmethod
+    def embed(self, text: Union[str, List[str]], **kwargs) -> Dict[str, Any]:
         """
-        Validate and standardize the response from the provider
+        Send an embedding request to the provider.
 
         Args:
-            response: Raw response from the provider
+            text: The text to embed. Can be a single string or a list of strings.
+            **kwargs: Additional parameters to pass to the provider.
 
         Returns:
-            Standardized response dictionary
+            A dictionary containing the embeddings from the provider.
         """
-        # Ensure the response has the required fields
-        if "text" not in response:
-            raise ValueError("Provider response missing 'text' field")
+        pass
 
-        if "cost" not in response:
-            raise ValueError("Provider response missing 'cost' field")
+    @abstractmethod
+    def generate_image(self, prompt: str, **kwargs) -> Dict[str, Any]:
+        """
+        Generate an image from a prompt.
 
-        return response
+        Args:
+            prompt: The prompt to generate an image from.
+            **kwargs: Additional parameters to pass to the provider.
+
+        Returns:
+            A dictionary containing the image URL or data.
+        """
+        pass
+
+    @abstractmethod
+    def get_token_count(self, text: str) -> int:
+        """
+        Get the number of tokens in a text.
+
+        Args:
+            text: The text to count tokens for.
+
+        Returns:
+            The number of tokens in the text.
+        """
+        pass
+
+    @abstractmethod
+    def get_model_info(self) -> Dict[str, Any]:
+        """
+        Get information about the model.
+
+        Returns:
+            A dictionary containing information about the model.
+        """
+        pass
