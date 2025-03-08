@@ -9,9 +9,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="indoxRouter",
-    version="0.1.0",
+    version="0.1.1",
     author="indoxRouter Team",
-    author_email="info@indoxrouter.com",
+    author_email="ashkan.eskandari.dev@gmail.com",
     description="A unified interface for various LLM providers",
     long_description=long_description,
     long_description_content_type="text/markdown",

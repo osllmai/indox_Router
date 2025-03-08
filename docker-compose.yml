@@ -1,0 +1,43 @@
+version: "3"
+
+services:
+  indoxrouter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: indoxrouter
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - INDOXROUTER_API_KEY=your_api_key_here
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/indoxrouter
+      # Add other environment variables as needed
+    networks:
+      - indoxrouter-network
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    container_name: indoxrouter-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=indoxrouter
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - indoxrouter-network
+
+networks:
+  indoxrouter-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

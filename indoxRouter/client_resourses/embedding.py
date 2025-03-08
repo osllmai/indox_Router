@@ -9,6 +9,12 @@ from datetime import datetime
 from .base import BaseResource
 from ..models import EmbeddingResponse, Usage
 from ..providers import get_provider
+from ..constants import (
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_EMBEDDING_DIMENSIONS,
+    ERROR_INVALID_PARAMETERS,
+    ERROR_PROVIDER_NOT_FOUND
+)
 from ..exceptions import ProviderNotFoundError, InvalidParametersError
 
 
@@ -26,73 +32,52 @@ class Embeddings(BaseResource):
         try:
             provider, model_name = model.split("/", 1)
         except ValueError:
-            raise InvalidParametersError(
-                "Model must be in format 'provider/model-name'"
-            )
+            raise InvalidParametersError(f"{ERROR_INVALID_PARAMETERS}: Model must be in format 'provider/model-name'")
 
-        # Get provider implementation with proper model name
-        provider_api_key = provider_api_key or os.getenv(f"{provider.upper()}_API_KEY")
-        provider_impl = get_provider(provider, provider_api_key, model_name)
+        # Validate text parameter
+        if not isinstance(text, (str, list)):
+            raise InvalidParametersError(f"{ERROR_INVALID_PARAMETERS}: text must be a string or list of strings")
+        
+        if isinstance(text, list) and not all(isinstance(t, str) for t in text):
+            raise InvalidParametersError(f"{ERROR_INVALID_PARAMETERS}: all items in text list must be strings")
 
-        response = provider_impl.embed(text=text, **kwargs)
+        # Get the provider
+        try:
+            provider_instance = self._get_provider(provider, model_name, provider_api_key)
+        except Exception as e:
+            raise ProviderNotFoundError(f"{ERROR_PROVIDER_NOT_FOUND}: {str(e)}")
 
-        if isinstance(response, dict):
-            # Create Usage object from response
-            usage_data = response.get("usage", {})
+        # Make the request
+        start_time = datetime.now()
+        try:
+            response = provider_instance.embed(text=text, **kwargs)
+        except Exception as e:
+            self._handle_provider_error(e)
 
-            if isinstance(usage_data, dict):
-                # Parse timestamp if it's a string
-                timestamp = usage_data.get("timestamp")
-                if isinstance(timestamp, str):
-                    try:
-                        timestamp = datetime.fromisoformat(timestamp)
-                    except ValueError:
-                        timestamp = datetime.now()
-                else:
-                    timestamp = datetime.now()
+        # Calculate duration
+        duration = (datetime.now() - start_time).total_seconds()
 
-                # Extract usage information with fallbacks for different formats
-                tokens_prompt = usage_data.get("tokens_prompt", 0)
-                tokens_completion = usage_data.get("tokens_completion", 0)
-                tokens_total = usage_data.get("tokens_total", 0)
-                cost = usage_data.get("cost", 0.0)
+        # Create usage information
+        usage = Usage(
+            tokens_prompt=response.get("tokens_prompt", 0),
+            tokens_completion=0,  # Embeddings don't have completion tokens
+            tokens_total=response.get("tokens_total", 0),
+            cost=response.get("cost", 0.0),
+            latency=duration,
+            timestamp=datetime.now(),
+        )
 
-                usage = Usage(
-                    tokens_prompt=tokens_prompt,
-                    tokens_completion=tokens_completion,
-                    tokens_total=tokens_total,
-                    cost=cost,
-                    latency=usage_data.get("latency", 0.0),
-                    timestamp=timestamp,
-                )
-            else:
-                # Create default Usage object
-                usage = Usage()
+        # Get dimensions from the response or use default
+        dimensions = response.get("dimensions", DEFAULT_EMBEDDING_DIMENSIONS)
 
-            # Calculate dimensions if possible
-            dimensions = 0
-            if (
-                response.get("data")
-                and isinstance(response["data"], list)
-                and len(response["data"]) > 0
-            ):
-                if (
-                    isinstance(response["data"][0], dict)
-                    and "embedding" in response["data"][0]
-                ):
-                    dimensions = len(response["data"][0]["embedding"])
-                elif isinstance(response["data"][0], list):
-                    dimensions = len(response["data"][0])
-
-            return EmbeddingResponse(
-                data=response.get("data"),
-                model=model_name,
-                provider=provider,
-                success=response.get("success", True),
-                message=response.get("message", "Successfully generated embeddings"),
-                usage=usage,
-                dimensions=dimensions,
-                raw_response=response.get("raw_response"),
-            )
-
-        return response
+        # Create and return the response
+        return EmbeddingResponse(
+            data=response.get("embeddings", []),
+            model=model_name,
+            provider=provider,
+            success=True,
+            message="Successfully generated embeddings",
+            usage=usage,
+            dimensions=dimensions,
+            raw_response=response,
+        )

@@ -9,7 +9,15 @@ from datetime import datetime
 from .base import BaseResource
 from ..models import ImageResponse, Usage
 from ..providers import get_provider
-from ..constants import DEFAULT_IMAGE_SIZE, DEFAULT_IMAGE_COUNT
+from ..constants import (
+    DEFAULT_IMAGE_SIZE, 
+    DEFAULT_IMAGE_COUNT,
+    DEFAULT_IMAGE_QUALITY,
+    DEFAULT_IMAGE_STYLE,
+    ERROR_INVALID_PARAMETERS,
+    ERROR_PROVIDER_NOT_FOUND,
+    ERROR_INVALID_IMAGE_SIZE
+)
 from ..exceptions import ProviderNotFoundError, InvalidParametersError
 
 
@@ -20,8 +28,10 @@ class Images(BaseResource):
         self,
         prompt: str,
         model: str,
-        size: Optional[str] = None,
-        n: int = 1,
+        size: str = DEFAULT_IMAGE_SIZE,
+        n: int = DEFAULT_IMAGE_COUNT,
+        quality: str = DEFAULT_IMAGE_QUALITY,
+        style: str = DEFAULT_IMAGE_STYLE,
         provider_api_key: Optional[str] = None,
         **kwargs,
     ) -> ImageResponse:
@@ -30,10 +40,12 @@ class Images(BaseResource):
 
         Args:
             prompt: The prompt to generate an image from.
-            model: The model to use.
+            model: The model to use, in the format 'provider/model-name'.
             size: The size of the image to generate.
             n: The number of images to generate.
-            provider_api_key: Optional API key for the provider. If not provided, uses the configured key.
+            quality: The quality of the image to generate.
+            style: The style of the image to generate.
+            provider_api_key: The API key to use for the provider.
             **kwargs: Additional parameters to pass to the provider.
 
         Returns:
@@ -43,58 +55,62 @@ class Images(BaseResource):
             ProviderNotFoundError: If the provider is not found.
             ModelNotFoundError: If the model is not found.
             InvalidParametersError: If the parameters are invalid.
-            RequestError: If the request to the provider fails.
         """
-        # Get the provider and model
-        provider, model_name = model.split("/")
+        # Validate parameters
+        if not isinstance(prompt, str):
+            raise InvalidParametersError(f"{ERROR_INVALID_PARAMETERS}: prompt must be a string")
 
-        # Get the provider API key
-        provider_api_key = os.getenv(f"{provider.upper()}_API_KEY")
-        # Get the provider implementation
-        provider_impl = get_provider(provider, provider_api_key, model_name)
+        # Split provider and model name correctly
+        try:
+            provider, model_name = model.split("/", 1)
+        except ValueError:
+            raise InvalidParametersError(f"{ERROR_INVALID_PARAMETERS}: Model must be in format 'provider/model-name'")
 
-        # Send the request to the provider
-        response = provider_impl.generate_image(prompt=prompt, size=size, n=n, **kwargs)
+        # Validate image size
+        valid_sizes = ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"]
+        if size not in valid_sizes:
+            raise InvalidParametersError(f"{ERROR_INVALID_IMAGE_SIZE} Valid sizes: {', '.join(valid_sizes)}")
 
-        # If the response is a dictionary, convert it to an ImageResponse object
-        if isinstance(response, dict):
-            # Create Usage object from response
-            usage_data = response.get("usage", {})
+        # Get the provider
+        try:
+            provider_instance = self._get_provider(provider, model_name, provider_api_key)
+        except Exception as e:
+            raise ProviderNotFoundError(f"{ERROR_PROVIDER_NOT_FOUND}: {str(e)}")
 
-            # Parse timestamp if it's a string
-            timestamp = response.get("timestamp")
-            if isinstance(timestamp, str):
-                try:
-                    timestamp = datetime.fromisoformat(timestamp)
-                except ValueError:
-                    timestamp = datetime.now()
-            else:
-                timestamp = datetime.now()
-
-            # Extract usage information with fallbacks for different formats
-            tokens_prompt = usage_data.get("tokens_prompt", 0)
-            tokens_completion = usage_data.get("tokens_completion", 0)
-            tokens_total = usage_data.get("tokens_total", 0)
-
-            usage = Usage(
-                tokens_prompt=tokens_prompt,
-                tokens_completion=tokens_completion,  # Images don't have completion tokens
-                tokens_total=tokens_total,
-                cost=response.get("cost", 0.0),
-                latency=0.0,  # We don't have latency in the dictionary
-                timestamp=timestamp,
+        # Make the request
+        start_time = datetime.now()
+        try:
+            response = provider_instance.generate_image(
+                prompt=prompt,
+                size=size,
+                n=n,
+                quality=quality,
+                style=style,
+                **kwargs
             )
+        except Exception as e:
+            self._handle_provider_error(e)
 
-            return ImageResponse(
-                images=response.get("data"),
-                model=response.get("model", model_name),
-                provider=provider,
-                usage=usage,
-                sizes=response.get(
-                    "sizes", [size] * len(response.get("images", [])) if size else []
-                ),
-                formats=response.get("formats", []),
-                raw_response=response.get("raw_response", None),
-            )
+        # Calculate duration
+        duration = (datetime.now() - start_time).total_seconds()
 
-        return response
+        # Create usage information
+        usage = Usage(
+            tokens_prompt=response.get("tokens_prompt", 0),
+            tokens_completion=response.get("tokens_completion", 0),
+            tokens_total=response.get("tokens_total", 0),
+            cost=response.get("cost", 0.0),
+            latency=duration,
+            timestamp=datetime.now(),
+        )
+
+        # Create and return the response
+        return ImageResponse(
+            data=response.get("images", []),
+            model=model_name,
+            provider=provider,
+            success=True,
+            message="Successfully generated image",
+            usage=usage,
+            raw_response=response,
+        )

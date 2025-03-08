@@ -46,6 +46,12 @@ class RequestError(IndoxRouterError):
     pass
 
 
+class NetworkError(RequestError):
+    """Raised when a network-related error occurs during API communication."""
+
+    pass
+
+
 class RateLimitError(RequestError):
     """Raised when a rate limit is exceeded."""
 

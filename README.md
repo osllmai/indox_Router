@@ -1,17 +1,33 @@
 # indoxRouter
 
-A unified interface for various LLM providers including OpenAI, Anthropic, Mistral, and more.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/indoxrouter/indoxrouter/main/docs/assets/logo.png" alt="indoxRouter Logo" width="200"/>
+</p>
 
-## Features
+<p align="center">
+  <strong>A unified interface for various LLM providers</strong>
+</p>
 
-- **Unified API**: Consistent interface for multiple LLM providers
-- **Model Management**: Easy access to model information and capabilities
-- **Text Generation**: Generate text completions from prompts
-- **Chat Generation**: Support for chat-based interactions
-- **Embedding Generation**: Generate embeddings for text
-- **Image Generation**: Create images from text prompts
-- **Detailed Metrics**: Track token usage, latency, and costs
-- **Error Handling**: Consistent error handling across providers
+<p align="center">
+  <a href="https://pypi.org/project/indoxRouter/"><img src="https://img.shields.io/pypi/v/indoxRouter.svg" alt="PyPI version"></a>
+  <a href="https://github.com/indoxrouter/indoxrouter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/indoxrouter/indoxrouter" alt="License"></a>
+  <a href="https://github.com/indoxrouter/indoxrouter/stargazers"><img src="https://img.shields.io/github/stars/indoxrouter/indoxrouter" alt="GitHub stars"></a>
+</p>
+
+## Overview
+
+indoxRouter is a powerful Python library that provides a unified interface to interact with various Large Language Model (LLM) providers. With a single API key, you can access models from OpenAI, Anthropic, Mistral, Google, and more, without having to manage multiple provider-specific API keys and implementations.
+
+### Key Features
+
+- **Single API for Multiple Providers**: Access models from OpenAI, Anthropic, Mistral, Google, and more with a single API key
+- **Standardized Response Format**: Consistent response format across all providers
+- **Streaming Support**: Stream responses for real-time applications
+- **Cost Tracking**: Track token usage and costs across providers
+- **Rate Limiting**: Built-in rate limiting to prevent exceeding provider quotas
+- **Error Handling**: Comprehensive error handling with detailed error messages
+- **Authentication**: Secure authentication with JWT tokens
+- **Type Hints**: Full type hints for better IDE support
 
 ## Installation
 
@@ -19,347 +35,175 @@ A unified interface for various LLM providers including OpenAI, Anthropic, Mistr
 pip install indoxRouter
 ```
 
+For development:
+
+```bash
+pip install indoxRouter[dev]
+```
+
 ## Quick Start
 
 ```python
-from indoxRouter import Client, ChatMessage
+from indoxRouter import Client
+from indoxRouter.models import ChatMessage
 
-# Initialize the client with just your API key
-client = Client(api_key="your_indox_router_api_key")
+# Initialize the client with your API key
+client = Client(api_key="your-api-key")
 
-# Simple chat example
-messages = [
-    ChatMessage(role="system", content="You are a helpful assistant."),
-    ChatMessage(role="user", content="What is machine learning?")
-]
-
-response = client.generate_chat(
-    messages=messages,
-    provider="openai",
-    model="gpt-3.5-turbo",
+# Chat completion with OpenAI
+response = client.chat(
+    messages=[
+        {"role": "user", "content": "What are three fun activities to do in New York?"}
+    ],
+    model="openai/gpt-4o-mini",
     temperature=0.7,
-    max_tokens=150
+    max_tokens=500,
 )
 
-print("Response:", response.content)
-print("Tokens:", response.usage.total_tokens)
-print("Cost:", response.usage.cost)
-print("Latency (s):", response.metrics.latency)
+print(response.data)
 ```
 
-## Provider API Keys
+## Available Providers
 
-You can configure provider API keys in several ways:
+indoxRouter supports the following providers:
 
-### 1. Environment Variables
+- OpenAI
+- Anthropic (Claude)
+- Mistral
+- Google
+- Cohere
+
+## Core Features
+
+### Chat Completion
 
 ```python
-import os
-
-# Set environment variables
-os.environ["OPENAI_API_KEY"] = "your_openai_api_key"
-os.environ["ANTHROPIC_API_KEY"] = "your_anthropic_api_key"
-os.environ["MISTRAL_API_KEY"] = "your_mistral_api_key"
-
-# Initialize client
-client = Client(api_key="your_indox_router_api_key")
-```
-
-### 2. Configuration File
-
-Create a configuration file at `~/.indoxRouter/config.json`:
-
-```json
-{
-  "provider_keys": {
-    "openai": "your_openai_api_key",
-    "anthropic": "your_anthropic_api_key",
-    "mistral": "your_mistral_api_key"
-  }
-}
-```
-
-Then initialize the client:
-
-```python
-client = Client(api_key="your_indox_router_api_key")
-```
-
-### 3. Direct API Key Usage
-
-```python
-response = client.generate_chat(
-    messages=[ChatMessage(role="user", content="Hello!")],
-    provider="openai",
-    model="gpt-3.5-turbo",
-    provider_api_key="your_openai_api_key"
+response = client.chat(
+    messages=[
+        {"role": "user", "content": "What are three fun activities to do in New York?"}
+    ],
+    model="openai/gpt-4o-mini",
+    temperature=0.7,
+    max_tokens=500,
 )
 ```
 
-## Working with Providers and Models
-
-### List Available Providers
+### Text Completion
 
 ```python
+response = client.completion(
+    prompt="Write a short story about a robot learning to paint.",
+    model="anthropic/claude-3-haiku",
+    temperature=0.7,
+    max_tokens=500,
+)
+```
+
+### Embeddings
+
+```python
+response = client.embeddings(
+    text="This is a sample text to embed.",
+    model="openai/text-embedding-3-small",
+)
+```
+
+### Image Generation
+
+```python
+response = client.image(
+    prompt="A futuristic city with flying cars and neon lights",
+    model="openai/dall-e-3",
+    size="1024x1024",
+)
+```
+
+### Streaming
+
+```python
+generator = client.chat(
+    messages=[
+        {"role": "user", "content": "Write a short story about a robot learning to paint."}
+    ],
+    model="openai/gpt-4o-mini",
+    temperature=0.7,
+    max_tokens=500,
+    stream=True,
+    return_generator=True,
+)
+
+for chunk in generator:
+    if isinstance(chunk, dict) and chunk.get("is_usage_info"):
+        # This is the final usage info
+        usage_info = chunk
+    else:
+        # This is a content chunk
+        print(chunk, end="", flush=True)
+```
+
+## Provider and Model Information
+
+```python
+# List all available providers
 providers = client.providers()
-print("Available providers:", providers)
+
+# List all available models
+models = client.models()
+
+# List models for a specific provider
+openai_models = client.models(provider="openai")
+
+# Get information about a specific model
+model_info = client.model_info(provider="openai", model="gpt-4o-mini")
 ```
 
-### List Models for a Provider
+## Configuration
+
+indoxRouter can be configured using environment variables or a configuration file:
 
 ```python
-openai_models = client.models("openai")
-print("OpenAI models:", openai_models["openai"])
-```
+# Set API key via environment variable
+import os
+os.environ["INDOX_ROUTER_API_KEY"] = "your-api-key"
 
-### Get Model Information
-
-```python
-model_info = client.model_info("openai", "gpt-3.5-turbo")
-print(f"Model: {model_info.name}")
-print(f"Type: {model_info.type}")
-print(f"Context Window: {model_info.context_window}")
-print(f"Input Price: ${model_info.input_price_per_1k_tokens}/1K tokens")
-print(f"Output Price: ${model_info.output_price_per_1k_tokens}/1K tokens")
-```
-
-## Text Generation
-
-```python
-prompt = "Write a haiku about programming:"
-
-response = client.generate_text(
-    prompt=prompt,
-    provider="openai",
-    model="gpt-3.5-turbo-instruct",
-    temperature=0.7,
-    max_tokens=50
-)
-
-print("Response:", response.content)
-print("Tokens:", response.usage.total_tokens)
-print("Cost:", response.usage.cost)
-print("Latency (s):", response.metrics.latency)
-```
-
-## Chat Generation
-
-### Simple Chat
-
-```python
-messages = [
-    ChatMessage(role="system", content="You are a helpful assistant."),
-    ChatMessage(role="user", content="What is machine learning?")
-]
-
-response = client.generate_chat(
-    messages=messages,
-    provider="openai",
-    model="gpt-3.5-turbo",
-    temperature=0.7,
-    max_tokens=150
-)
-
-print("Response:", response.content)
-print("Metrics:", {
-    "tokens_prompt": response.metrics.tokens_prompt,
-    "tokens_completion": response.metrics.tokens_completion,
-    "tokens_total": response.usage.total_tokens,
-    "cost": response.usage.cost,
-    "latency": response.metrics.latency
-})
-```
-
-### Multi-turn Conversation
-
-```python
-conversation = [
-    ChatMessage(role="system", content="You are a math tutor."),
-    ChatMessage(role="user", content="Can you explain what a derivative is?"),
-    ChatMessage(role="assistant", content="A derivative measures the rate of change of a function at a specific point. It tells you how fast a function is increasing or decreasing."),
-    ChatMessage(role="user", content="Can you give me an example?")
-]
-
-response = client.generate_chat(
-    messages=conversation,
-    provider="openai",
-    model="gpt-4",
-    temperature=0.5
-)
-
-print("Response:", response.content)
-print("Raw provider response:", response.raw_response)  # Access the original provider response
-```
-
-## Embedding Generation
-
-### Single Text Embedding
-
-```python
-text = "This is a sample text for embedding."
-
-response = client.generate_embeddings(
-    text=text,
-    provider="openai",
-    model="text-embedding-ada-002"
-)
-
-print(f"Embedding dimensions: {len(response.embeddings[0])}")
-print(f"First 5 values: {response.embeddings[0][:5]}")
-print(f"Tokens:", response.usage.total_tokens)
-```
-
-### Batch Embeddings
-
-```python
-texts = [
-    "The quick brown fox",
-    "jumps over the lazy dog",
-    "A common pangram in English"
-]
-
-response = client.generate_embeddings(
-    text=texts,
-    provider="openai",
-    model="text-embedding-ada-002"
-)
-
-print(f"Number of embeddings: {len(response.embeddings)}")
-print(f"Dimensions per embedding: {len(response.embeddings[0])}")
-print(f"Latency (s): {response.metrics.latency}")
-```
-
-## Image Generation
-
-```python
-prompt = "A serene lake surrounded by mountains at sunset"
-
-response = client.generate_image(
-    prompt=prompt,
-    provider="openai",
-    model="dall-e-2",
-    size="512x512",
-    n=1
-)
-
-print(f"Generated image URL: {response.images[0]}")
-print(f"Image size: {response.sizes[0]}")
-print(f"Cost:", response.usage.cost)
+# Or provide it directly to the client
+client = Client(api_key="your-api-key")
 ```
 
 ## Error Handling
 
+indoxRouter provides comprehensive error handling:
+
 ```python
-from indoxRouter.exceptions import (
-    ProviderNotFoundError,
-    ModelNotFoundError,
-    InvalidParametersError
-)
+from indoxRouter import Client
+from indoxRouter.exceptions import AuthenticationError, RateLimitError, ProviderError
 
 try:
-    response = client.generate_chat(
-        messages=[ChatMessage(role="user", content="Hello!")],
-        provider="nonexistent_provider",
-        model="nonexistent_model"
+    client = Client(api_key="invalid-api-key")
+except AuthenticationError as e:
+    print(f"Authentication error: {e}")
+
+try:
+    response = client.chat(
+        messages=[{"role": "user", "content": "Hello"}],
+        model="nonexistent-model",
     )
-except ProviderNotFoundError as e:
+except ProviderError as e:
     print(f"Provider error: {e}")
-except ModelNotFoundError as e:
-    print(f"Model error: {e}")
-except InvalidParametersError as e:
-    print(f"Parameter error: {e}")
-except Exception as e:
-    print(f"Unexpected error: {e}")
 ```
 
-## Advanced Usage
+## Documentation
 
-### Smart Model Selection
+For detailed documentation, visit [https://docs.indoxrouter.com](https://docs.indoxrouter.com).
 
-```python
-def get_best_model(client, provider: str, max_cost_per_1k: float = 0.01):
-    """Find the best model within a cost constraint."""
-    models = client.models(provider)
-    best_model = None
-    best_score = float('inf')
+## Examples
 
-    for model_data in models.get(provider, []):
-        model_info = client.model_info(provider, model_data['modelName'])
-        if model_info.input_price_per_1k_tokens <= max_cost_per_1k:
-            score = model_info.input_price_per_1k_tokens
-            if score < best_score:
-                best_score = score
-                best_model = model_info
+Check out the [examples](https://github.com/indoxrouter/indoxrouter/tree/main/examples) directory for more examples.
 
-    return best_model
+## Contributing
 
-# Use the function
-best_model = get_best_model(client, "openai")
-if best_model:
-    print(f"Best model: {best_model.name}")
-    print(f"Price per 1K tokens: ${best_model.input_price_per_1k_tokens}")
-```
-
-### Batch Processing with Rate Limiting
-
-```python
-import time
-from typing import List
-
-def process_batch_with_rate_limit(
-    client,
-    texts: List[str],
-    provider: str,
-    model: str,
-    batch_size: int = 10,
-    delay_seconds: float = 1.0
-):
-    """Process a large batch of texts with rate limiting."""
-    results = []
-    total_tokens = 0
-    total_cost = 0
-    total_latency = 0
-
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i:i + batch_size]
-
-        try:
-            response = client.generate_embeddings(
-                text=batch,
-                provider=provider,
-                model=model
-            )
-            results.extend(response.embeddings)
-
-            # Track metrics
-            total_tokens += response.usage.total_tokens
-            total_cost += response.usage.cost
-            total_latency += response.metrics.latency
-
-            # Rate limiting delay
-            if i + batch_size < len(texts):
-                time.sleep(delay_seconds)
-
-        except Exception as e:
-            print(f"Error processing batch {i//batch_size}: {e}")
-
-    print(f"Processed {len(results)} embeddings")
-    print(f"Total tokens: {total_tokens}")
-    print(f"Total cost: ${total_cost:.6f}")
-    print(f"Average latency: {total_latency/len(results):.2f} s")
-
-    return results
-
-# Example usage
-texts = ["Text " + str(i) for i in range(100)]
-embeddings = process_batch_with_rate_limit(
-    client,
-    texts,
-    provider="openai",
-    model="text-embedding-ada-002"
-)
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
