@@ -1,208 +1,112 @@
-# indoxRouter
+# IndoxRouter
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/indoxrouter/indoxrouter/main/docs/assets/logo.png" alt="indoxRouter Logo" width="200"/>
-</p>
+A unified interface for various AI providers, including OpenAI, Anthropic, Cohere, Google, and Mistral.
 
-<p align="center">
-  <strong>A unified interface for various LLM providers</strong>
-</p>
+## Project Structure
 
-<p align="center">
-  <a href="https://pypi.org/project/indoxRouter/"><img src="https://img.shields.io/pypi/v/indoxRouter.svg" alt="PyPI version"></a>
-  <a href="https://github.com/indoxrouter/indoxrouter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/indoxrouter/indoxrouter" alt="License"></a>
-  <a href="https://github.com/indoxrouter/indoxrouter/stargazers"><img src="https://img.shields.io/github/stars/indoxrouter/indoxrouter" alt="GitHub stars"></a>
-</p>
+This repository contains two main components:
 
-## Overview
+1. **indoxrouter**: A Python client library for interacting with the IndoxRouter server.
+2. **indoxrouter_server**: A FastAPI server that provides a unified API for various AI providers.
 
-indoxRouter is a powerful Python library that provides a unified interface to interact with various Large Language Model (LLM) providers. With a single API key, you can access models from OpenAI, Anthropic, Mistral, Google, and more, without having to manage multiple provider-specific API keys and implementations.
+## IndoxRouter Client
 
-### Key Features
+The IndoxRouter client is a Python library that provides a simple interface for interacting with the IndoxRouter server. It handles authentication, request formatting, and response parsing.
 
-- **Single API for Multiple Providers**: Access models from OpenAI, Anthropic, Mistral, Google, and more with a single API key
-- **Standardized Response Format**: Consistent response format across all providers
-- **Streaming Support**: Stream responses for real-time applications
-- **Cost Tracking**: Track token usage and costs across providers
-- **Rate Limiting**: Built-in rate limiting to prevent exceeding provider quotas
-- **Error Handling**: Comprehensive error handling with detailed error messages
-- **Authentication**: Secure authentication with JWT tokens
-- **Type Hints**: Full type hints for better IDE support
-
-## Installation
+### Installation
 
 ```bash
-pip install indoxRouter
+pip install indoxrouter
 ```
 
-For development:
+### Usage
+
+```python
+from indoxrouter import Client
+
+# Initialize client with API key
+client = Client(api_key="your_api_key", base_url="http://your-server-url:8000")
+
+# Generate a chat completion
+response = client.chat(
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Tell me a joke."}
+    ],
+    provider="openai",
+    model="gpt-3.5-turbo"
+)
+
+print(response["choices"][0]["message"]["content"])
+```
+
+For more examples, see the [examples](indoxrouter/examples) directory.
+
+## IndoxRouter Server
+
+The IndoxRouter server is a FastAPI application that provides a unified API for various AI providers. It handles authentication, rate limiting, and provider-specific implementations.
+
+### Installation
 
 ```bash
-pip install indoxRouter[dev]
+pip install indoxrouter-server
 ```
 
-## Quick Start
+### Running the Server
 
-```python
-from indoxRouter import Client
-from indoxRouter.models import ChatMessage
+```bash
+# Create a .env file with your API keys
+echo "OPENAI_API_KEY=your-openai-api-key" > .env
 
-# Initialize the client with your API key
-client = Client(api_key="your-api-key")
-
-# Chat completion with OpenAI
-response = client.chat(
-    messages=[
-        {"role": "user", "content": "What are three fun activities to do in New York?"}
-    ],
-    model="openai/gpt-4o-mini",
-    temperature=0.7,
-    max_tokens=500,
-)
-
-print(response.data)
+# Run the server
+indoxrouter-server
 ```
 
-## Available Providers
+### Docker Deployment
 
-indoxRouter supports the following providers:
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/indoxRouter.git
+cd indoxRouter/indoxrouter_server
 
-- OpenAI
-- Anthropic (Claude)
-- Mistral
-- Google
-- Cohere
+# Create a .env file with your API keys
+echo "OPENAI_API_KEY=your-openai-api-key" > .env
 
-## Core Features
-
-### Chat Completion
-
-```python
-response = client.chat(
-    messages=[
-        {"role": "user", "content": "What are three fun activities to do in New York?"}
-    ],
-    model="openai/gpt-4o-mini",
-    temperature=0.7,
-    max_tokens=500,
-)
+# Build and run with Docker Compose
+docker-compose up -d
 ```
 
-### Text Completion
+For more information, see the [indoxrouter_server README](indoxrouter_server/README.md).
 
-```python
-response = client.completion(
-    prompt="Write a short story about a robot learning to paint.",
-    model="anthropic/claude-3-haiku",
-    temperature=0.7,
-    max_tokens=500,
-)
+## Development
+
+### Setting Up the Development Environment
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/indoxRouter.git
+cd indoxRouter
+
+# Install the client in development mode
+cd indoxrouter
+pip install -e ".[dev]"
+
+# Install the server in development mode
+cd ../indoxrouter_server
+pip install -e ".[dev]"
 ```
 
-### Embeddings
+### Running Tests
 
-```python
-response = client.embeddings(
-    text="This is a sample text to embed.",
-    model="openai/text-embedding-3-small",
-)
+```bash
+# Run client tests
+cd indoxrouter
+pytest
+
+# Run server tests
+cd ../indoxrouter_server
+pytest
 ```
-
-### Image Generation
-
-```python
-response = client.image(
-    prompt="A futuristic city with flying cars and neon lights",
-    model="openai/dall-e-3",
-    size="1024x1024",
-)
-```
-
-### Streaming
-
-```python
-generator = client.chat(
-    messages=[
-        {"role": "user", "content": "Write a short story about a robot learning to paint."}
-    ],
-    model="openai/gpt-4o-mini",
-    temperature=0.7,
-    max_tokens=500,
-    stream=True,
-    return_generator=True,
-)
-
-for chunk in generator:
-    if isinstance(chunk, dict) and chunk.get("is_usage_info"):
-        # This is the final usage info
-        usage_info = chunk
-    else:
-        # This is a content chunk
-        print(chunk, end="", flush=True)
-```
-
-## Provider and Model Information
-
-```python
-# List all available providers
-providers = client.providers()
-
-# List all available models
-models = client.models()
-
-# List models for a specific provider
-openai_models = client.models(provider="openai")
-
-# Get information about a specific model
-model_info = client.model_info(provider="openai", model="gpt-4o-mini")
-```
-
-## Configuration
-
-indoxRouter can be configured using environment variables or a configuration file:
-
-```python
-# Set API key via environment variable
-import os
-os.environ["INDOX_ROUTER_API_KEY"] = "your-api-key"
-
-# Or provide it directly to the client
-client = Client(api_key="your-api-key")
-```
-
-## Error Handling
-
-indoxRouter provides comprehensive error handling:
-
-```python
-from indoxRouter import Client
-from indoxRouter.exceptions import AuthenticationError, RateLimitError, ProviderError
-
-try:
-    client = Client(api_key="invalid-api-key")
-except AuthenticationError as e:
-    print(f"Authentication error: {e}")
-
-try:
-    response = client.chat(
-        messages=[{"role": "user", "content": "Hello"}],
-        model="nonexistent-model",
-    )
-except ProviderError as e:
-    print(f"Provider error: {e}")
-```
-
-## Documentation
-
-For detailed documentation, visit [https://docs.indoxrouter.com](https://docs.indoxrouter.com).
-
-## Examples
-
-Check out the [examples](https://github.com/indoxrouter/indoxrouter/tree/main/examples) directory for more examples.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
