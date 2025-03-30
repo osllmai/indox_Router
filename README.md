@@ -25,7 +25,7 @@ pip install indoxrouter
 from indoxrouter import Client
 
 # Initialize client with API key
-client = Client(api_key="your_api_key", base_url="http://your-server-url:8000")
+client = Client(api_key="your_api_key")
 
 # Generate a chat completion
 response = client.chat(
@@ -55,8 +55,9 @@ pip install indoxrouter-server
 ### Running the Server
 
 ```bash
-# Create a .env file with your API keys
-echo "OPENAI_API_KEY=your-openai-api-key" > .env
+# Copy the example environment file and configure it with your settings
+cp .env.example .env
+nano .env  # Edit the file with your API keys and settings
 
 # Run the server
 indoxrouter-server
@@ -69,8 +70,9 @@ indoxrouter-server
 git clone https://github.com/yourusername/indoxRouter.git
 cd indoxRouter/indoxrouter_server
 
-# Create a .env file with your API keys
-echo "OPENAI_API_KEY=your-openai-api-key" > .env
+# Copy the example environment file and configure it with your settings
+cp .env.example .env
+nano .env  # Edit the file with your API keys and settings
 
 # Build and run with Docker Compose
 docker-compose up -d
@@ -94,6 +96,10 @@ pip install -e ".[dev]"
 # Install the server in development mode
 cd ../indoxrouter_server
 pip install -e ".[dev]"
+
+# Copy the example environment file and configure it with your settings
+cp .env.example .env
+nano .env  # Edit the file with your API keys and settings
 ```
 
 ### Running Tests

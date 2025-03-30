@@ -25,6 +25,10 @@ class MistralProvider(BaseProvider):
             api_key: The API key for Mistral.
             model_name: The name of the model to use.
         """
+        # Clean up model name if needed (remove any provider prefix)
+        if "/" in model_name:
+            _, model_name = model_name.split("/", 1)
+
         super().__init__(api_key, model_name)
         self.client = MistralClient(api_key=api_key)
         self.async_client = MistralAsyncClient(api_key=api_key)

@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from app.core.config import settings
 from app.models.schemas import ChatRequest, ChatResponse
 from app.api.dependencies import get_current_user, get_provider_api_key
-from app.providers.factory import get_provider
+from app.resources import Chat
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -39,6 +39,7 @@ async def create_chat_completion(
     # Get provider and model
     provider_id = request.provider or settings.DEFAULT_PROVIDER
     model_id = request.model or settings.DEFAULT_CHAT_MODEL
+    model = f"{provider_id}/{model_id}"
 
     # Get API key for the provider
     api_key = get_provider_api_key(provider_id)
@@ -49,58 +50,72 @@ async def create_chat_completion(
         )
 
     try:
-        # Initialize the provider
-        provider = get_provider(provider_id, api_key, model_id)
+        # Create a Chat resource instance
+        chat_resource = Chat()
 
-        # Process messages
-        messages = [
-            {"role": msg.role, "content": msg.content} for msg in request.messages
-        ]
-
-        # Create parameters
-        params = {
-            "temperature": request.temperature,
-        }
-
-        if request.max_tokens:
-            params["max_tokens"] = request.max_tokens
-
-        # Add any additional parameters
-        if request.additional_params:
-            params.update(request.additional_params)
-
-        # Handle streaming if requested
+        # Handle streaming responses
         if request.stream:
-
+            # Create a streaming response
             async def generate_stream():
-                async for chunk in provider.chat_stream(messages, **params):
+                # Call the Chat resource with streaming enabled
+                generator = chat_resource(
+                    messages=request.messages,
+                    model=model,
+                    temperature=request.temperature,
+                    max_tokens=request.max_tokens,
+                    provider_api_key=api_key,
+                    stream=True,
+                    return_generator=True,
+                    user_id=current_user.get("id"),
+                    api_key_id=current_user.get("api_key_id"),
+                    **request.additional_params,
+                )
+
+                # Yield each chunk from the generator
+                for chunk in generator:
                     yield f"data: {chunk}\n\n"
+
+                # End the stream
                 yield "data: [DONE]\n\n"
 
+            # Return a streaming response
             return StreamingResponse(
                 generate_stream(),
                 media_type="text/event-stream",
             )
 
-        # Get the chat completion
-        result = provider.chat(messages, **params)
+        # Handle non-streaming responses
+        response = chat_resource(
+            messages=request.messages,
+            model=model,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            top_p=request.top_p,
+            frequency_penalty=request.frequency_penalty,
+            presence_penalty=request.presence_penalty,
+            provider_api_key=api_key,
+            user_id=current_user.get("id"),
+            api_key_id=current_user.get("api_key_id"),
+            **request.additional_params,
+        )
 
-        # Calculate duration
-        duration_ms = (time.time() - start_time) * 1000
+        # Calculate request duration
+        duration = (time.time() - start_time) * 1000  # Convert to milliseconds
 
-        # Format the response
-        response = {
+        # Return the response
+        return {
             "request_id": request_id,
-            "created_at": datetime.utcnow().isoformat(),
-            "duration_ms": duration_ms,
-            "provider": provider_id,
-            "model": model_id,
-            "choices": result["choices"],
-            "usage": result.get("usage"),
+            "created_at": datetime.now().isoformat(),
+            "duration_ms": duration,
+            "provider": response.provider,
+            "model": response.model,
+            "success": response.success,
+            "message": response.message,
+            "data": response.data,
+            "finish_reason": response.finish_reason,
+            "usage": response.usage,
+            "raw_response": response.raw_response,
         }
-
-        return response
-
     except Exception as e:
         # Handle errors
         raise HTTPException(

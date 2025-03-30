@@ -4,6 +4,18 @@ Pydantic models for request and response schemas.
 
 from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field
+from datetime import datetime
+
+
+class Usage(BaseModel):
+    """Usage information model."""
+
+    tokens_prompt: int = 0
+    tokens_completion: int = 0
+    tokens_total: int = 0
+    cost: float = 0.0
+    latency: float = 0.0
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class ChatMessage(BaseModel):
@@ -21,6 +33,9 @@ class ChatRequest(BaseModel):
     model: Optional[str] = None
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = None
+    top_p: Optional[float] = 1.0
+    frequency_penalty: Optional[float] = 0.0
+    presence_penalty: Optional[float] = 0.0
     stream: Optional[bool] = False
     additional_params: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
@@ -33,6 +48,9 @@ class CompletionRequest(BaseModel):
     model: Optional[str] = None
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = None
+    top_p: Optional[float] = 1.0
+    frequency_penalty: Optional[float] = 0.0
+    presence_penalty: Optional[float] = 0.0
     stream: Optional[bool] = False
     additional_params: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
@@ -111,37 +129,36 @@ class SuccessResponse(BaseModel):
     request_id: str
     created_at: str
     duration_ms: float
-    usage: Optional[Dict[str, Any]] = None
+    provider: str
+    model: str
+    success: bool = True
+    message: str = ""
+    usage: Optional[Usage] = None
+    raw_response: Optional[Dict[str, Any]] = None
 
 
 class ChatResponse(SuccessResponse):
     """Chat completion response model."""
 
-    provider: str
-    model: str
-    choices: List[Dict[str, Any]]
+    data: str = ""
+    finish_reason: Optional[str] = None
 
 
 class CompletionResponse(SuccessResponse):
     """Text completion response model."""
 
-    provider: str
-    model: str
-    choices: List[Dict[str, Any]]
+    data: str = ""
+    finish_reason: Optional[str] = None
 
 
 class EmbeddingResponse(SuccessResponse):
     """Embedding response model."""
 
-    provider: str
-    model: str
-    embeddings: List[List[float]]
-    dimensions: int
+    data: List[List[float]] = Field(default_factory=list)
+    dimensions: int = 0
 
 
 class ImageResponse(SuccessResponse):
     """Image generation response model."""
 
-    provider: str
-    model: str
-    images: List[Dict[str, Any]]
+    data: List[Dict[str, Any]] = Field(default_factory=list)

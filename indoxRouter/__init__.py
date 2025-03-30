@@ -15,9 +15,9 @@ Example:
     response = client.chat([
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Tell me a joke."}
-    ])
+    ], model="openai/gpt-4o-mini")
 
-    print(response["choices"][0]["message"]["content"])
+    print(response["data"])
     ```
 """
 
@@ -31,6 +31,7 @@ from .exceptions import (
     ModelNotFoundError,
     ProviderNotFoundError,
     InvalidParametersError,
+    InsufficientCreditsError,
 )
 
 __version__ = "0.2.0"
@@ -44,4 +45,5 @@ __all__ = [
     "ModelNotFoundError",
     "ProviderNotFoundError",
     "InvalidParametersError",
+    "InsufficientCreditsError",
 ]

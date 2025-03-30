@@ -3,20 +3,27 @@ API dependencies for the IndoxRouter server.
 """
 
 from typing import Dict, Any, Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
 from app.core.config import settings
+from app.db.database import get_user_by_api_key
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/token", auto_error=False
+)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+async def get_current_user(
+    request: Request, token: Optional[str] = Depends(oauth2_scheme)
+) -> Dict[str, Any]:
     """
-    Get the current user from the token.
+    Get the current user from the token or API key.
+    Validates API keys against the external website database.
 
     Args:
+        request: The request object
         token: The JWT token.
 
     Returns:
@@ -31,6 +38,28 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # First, try to authenticate with API key from Authorization header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        api_key = auth_header.replace("Bearer ", "")
+
+        # Check if API key exists in external website database
+        user = get_user_by_api_key(api_key)
+        if user:
+            return {
+                "id": user["id"],
+                "username": user["username"],
+                "email": user["email"],
+                "is_active": user["is_active"],
+                "credits": user.get("credits", 0),
+                "account_tier": user.get("account_tier", "free"),
+                "api_key_id": user.get("api_key_id"),
+            }
+
+    # If API key authentication fails, try JWT token
+    if not token:
+        raise credentials_exception
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         username: str = payload.get("sub")
@@ -42,7 +71,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     # In a real application, you would fetch the user from a database
     # For now, we'll just return a mock user
     user = {
+        "id": 1,
         "username": username,
+        "email": f"{username}@example.com",
         "is_active": True,
     }
 

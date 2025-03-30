@@ -12,12 +12,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.config import settings
 from app.models.schemas import EmbeddingRequest, EmbeddingResponse
 from app.api.dependencies import get_current_user, get_provider_api_key
-from app.providers.factory import get_provider
+from app.resources import Embeddings
 
 router = APIRouter(prefix="/embeddings", tags=["Embeddings"])
 
 
-@router.post("/", response_model=EmbeddingResponse)
+@router.post("", response_model=EmbeddingResponse)
 async def create_embedding(
     request: EmbeddingRequest, current_user: Dict[str, Any] = Depends(get_current_user)
 ):
@@ -38,6 +38,7 @@ async def create_embedding(
     # Get provider and model
     provider_id = request.provider or settings.DEFAULT_PROVIDER
     model_id = request.model or settings.DEFAULT_EMBEDDING_MODEL
+    model = f"{provider_id}/{model_id}"
 
     # Get API key for the provider
     api_key = get_provider_api_key(provider_id)
@@ -48,36 +49,35 @@ async def create_embedding(
         )
 
     try:
-        # Initialize the provider
-        provider = get_provider(provider_id, api_key, model_id)
+        # Create an Embeddings resource instance
+        embeddings_resource = Embeddings()
 
-        # Create parameters
-        params = {}
+        # Get embeddings
+        response = embeddings_resource(
+            text=request.text,
+            model=model,
+            provider_api_key=api_key,
+            user_id=current_user.get("id"),
+            **request.additional_params,
+        )
 
-        # Add any additional parameters
-        if request.additional_params:
-            params.update(request.additional_params)
+        # Calculate request duration
+        duration = (time.time() - start_time) * 1000  # Convert to milliseconds
 
-        # Get the embeddings
-        result = provider.embed(request.text, **params)
-
-        # Calculate duration
-        duration_ms = (time.time() - start_time) * 1000
-
-        # Format the response
-        response = {
+        # Return the response
+        return {
             "request_id": request_id,
-            "created_at": datetime.utcnow().isoformat(),
-            "duration_ms": duration_ms,
-            "provider": provider_id,
-            "model": model_id,
-            "embeddings": result["embeddings"],
-            "dimensions": result["dimensions"],
-            "usage": result.get("usage"),
+            "created_at": datetime.now().isoformat(),
+            "duration_ms": duration,
+            "provider": response.provider,
+            "model": response.model,
+            "success": response.success,
+            "message": response.message,
+            "data": response.data,
+            "dimensions": response.dimensions,
+            "usage": response.usage,
+            "raw_response": response.raw_response,
         }
-
-        return response
-
     except Exception as e:
         # Handle errors
         raise HTTPException(
