@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.config import settings
 from app.models.schemas import ImageRequest, ImageResponse
 from app.api.dependencies import get_current_user, get_provider_api_key
-from app.providers.factory import get_provider
+from app.resources import Images
 
 router = APIRouter(prefix="/images", tags=["Images"])
 
@@ -37,7 +37,8 @@ async def create_image(
 
     # Get provider and model
     provider_id = request.provider or settings.DEFAULT_PROVIDER
-    model_id = request.model or "dall-e-3"  # Default to DALL-E 3 if not specified
+    model_id = request.model or settings.DEFAULT_IMAGE_MODEL
+    model = f"{provider_id}/{model_id}"
 
     # Get API key for the provider
     api_key = get_provider_api_key(provider_id)
@@ -48,38 +49,36 @@ async def create_image(
         )
 
     try:
-        # Initialize the provider
-        provider = get_provider(provider_id, api_key, model_id)
+        # Create an Images resource instance
+        images_resource = Images()
 
-        # Create parameters
-        params = {
-            "size": request.size,
-            "n": request.n,
-        }
+        # Generate images
+        response = images_resource(
+            prompt=request.prompt,
+            model=model,
+            size=request.size,
+            n=request.n,
+            provider_api_key=api_key,
+            user_id=current_user.get("id"),
+            **request.additional_params,
+        )
 
-        # Add any additional parameters
-        if request.additional_params:
-            params.update(request.additional_params)
+        # Calculate request duration
+        duration = (time.time() - start_time) * 1000  # Convert to milliseconds
 
-        # Generate the images
-        result = provider.generate_image(request.prompt, **params)
-
-        # Calculate duration
-        duration_ms = (time.time() - start_time) * 1000
-
-        # Format the response
-        response = {
+        # Return the response
+        return {
             "request_id": request_id,
-            "created_at": datetime.utcnow().isoformat(),
-            "duration_ms": duration_ms,
-            "provider": provider_id,
-            "model": model_id,
-            "images": result["images"],
-            "usage": result.get("usage"),
+            "created_at": datetime.now().isoformat(),
+            "duration_ms": duration,
+            "provider": response.provider,
+            "model": response.model,
+            "success": response.success,
+            "message": response.message,
+            "data": response.data,
+            "usage": response.usage,
+            "raw_response": response.raw_response,
         }
-
-        return response
-
     except Exception as e:
         # Handle errors
         raise HTTPException(

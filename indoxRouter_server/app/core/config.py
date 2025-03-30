@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     # API settings
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "IndoxRouter Server"
-    DEBUG: bool = Field(default=False, env="DEBUG")
 
     # Server settings
     HOST: str = Field(default="0.0.0.0", env="HOST")
@@ -33,6 +32,8 @@ class Settings(BaseSettings):
 
     # Database settings
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
+    DB_MIN_CONNECTIONS: int = Field(default=1, env="DB_MIN_CONNECTIONS")
+    DB_MAX_CONNECTIONS: int = Field(default=10, env="DB_MAX_CONNECTIONS")
 
     # Provider API keys
     OPENAI_API_KEY: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
@@ -56,12 +57,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = Field(default=100, env="RATE_LIMIT_REQUESTS")
     RATE_LIMIT_PERIOD_SECONDS: int = Field(default=60, env="RATE_LIMIT_PERIOD_SECONDS")
 
-    # Test API key for local development
-    TEST_API_KEY: Optional[str] = Field(
-        default="test-api-key-for-local-development", env="TEST_API_KEY"
-    )
-
-    model_config = {"env_file": ".env", "case_sensitive": True}
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "extra": "ignore",
+    }
 
 
 settings = Settings()

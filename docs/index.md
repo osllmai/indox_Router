@@ -1,38 +1,42 @@
-# indoxRouter Documentation
+# IndoxRouter Documentation
 
-Welcome to the indoxRouter documentation. indoxRouter is a unified interface for various LLM providers, allowing you to access multiple AI models with a single API key.
+Welcome to the IndoxRouter documentation. IndoxRouter is a unified API server for various AI providers, including OpenAI, Anthropic, Cohere, Google, and Mistral.
 
 ## Getting Started
 
 - [Installation](guides/installation.md)
-- [Quick Start](guides/quickstart.md)
 - [Configuration](guides/configuration.md)
-
-## Core Features
-
-- [Chat Completion](guides/chat.md)
-- [Text Completion](guides/completion.md)
-- [Embeddings](guides/embeddings.md)
-- [Image Generation](guides/images.md)
-- [Streaming](guides/streaming.md)
+- [Quick Start](guides/quick-start.md)
 
 ## API Reference
 
+- [API Endpoints](api/endpoints.md)
+- [Resources](api/resources.md)
 - [Client](api/client.md)
-- [Models](api/models.md)
 - [Exceptions](api/exceptions.md)
-- [Configuration](api/config.md)
-- [Providers](api/providers.md)
+
+## Guides
+
+- [Credit System](guides/credit-system.md)
+- [Model Information](guides/model-info.md)
+- [Authentication](guides/authentication.md)
+- [Rate Limiting](guides/rate-limiting.md)
+- [Streaming](guides/streaming.md)
+- [Docker Deployment](guides/docker-deployment.md)
 
 ## Examples
 
-- [Basic Usage](examples/basic.md)
-- [Streaming Examples](examples/streaming.md)
-- [Web Applications](examples/web.md)
-- [Error Handling](examples/errors.md)
+- [Chat Completions](examples/chat-completions.md)
+- [Text Completions](examples/text-completions.md)
+- [Embeddings](examples/embeddings.md)
+- [Image Generation](examples/image-generation.md)
 
-## Additional Resources
+## Development
 
-- [FAQ](guides/faq.md)
-- [Troubleshooting](guides/troubleshooting.md)
+- [Adding a New Provider](guides/adding-a-new-provider.md)
+- [Adding a New Model](guides/adding-a-new-model.md)
 - [Contributing](guides/contributing.md)
+
+## Support
+
+If you need help with IndoxRouter, please contact support@indoxrouter.com or visit our [GitHub repository](https://github.com/yourusername/indoxRouter_server).

@@ -5,6 +5,10 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
+# Install bcrypt with a compatible version first
+# TODO: Remove this when deploying to production if not needed
+RUN pip install --no-cache-dir bcrypt==3.2.0
+
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 

@@ -9,6 +9,8 @@ A unified API server for various AI providers, including OpenAI, Anthropic, Cohe
 - **Rate Limiting**: Control API usage with rate limiting
 - **Streaming**: Support for streaming responses
 - **Docker Support**: Easy deployment with Docker
+- **Credit System**: Track and manage user credits for API usage
+- **Model Information**: Comprehensive information about available models
 
 ## Capabilities
 
@@ -39,15 +41,31 @@ cd indoxRouter_server
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file with your API keys:
+3. Set up your environment file:
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit the file with your settings
+nano .env
+```
+
+The `.env` file should contain your API keys and other configuration settings:
 
 ```
+# Security settings
 SECRET_KEY=your-secret-key-here
+
+# Provider API keys
 OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 COHERE_API_KEY=your-cohere-api-key
 GOOGLE_API_KEY=your-google-api-key
 MISTRAL_API_KEY=your-mistral-api-key
+
+# Database settings (if using external authentication)
+DATABASE_URL=postgresql://dbuser:password@localhost:5432/dbname
 ```
 
 ### Running the Server
@@ -72,6 +90,13 @@ Once the server is running, you can access the API documentation at:
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+
+Comprehensive API documentation is also available in the `docs/api/` directory:
+
+- [API Endpoints](docs/api/endpoints.md): Documentation for all API endpoints
+- [Resources](docs/api/resources.md): Documentation for the resources module
+- [Credit System](docs/guides/credit-system.md): Documentation for the credit system
+- [Model Information](docs/guides/model-info.md): Documentation for the model information system
 
 ## Authentication
 
@@ -126,6 +151,35 @@ curl -X POST "http://localhost:8000/api/v1/chat/completions" \
 
 - `POST /api/v1/images/generations`: Generate images from a prompt
 
+## Architecture
+
+### Resources Module
+
+The Resources module is a core component of IndoxRouter that handles the interaction with various AI providers. It provides a unified interface for making requests to different AI providers and models.
+
+The Resources module consists of several resource classes, each responsible for a specific type of AI functionality:
+
+- **Chat**: Handles chat completions (conversational AI)
+- **Completions**: Handles text completions
+- **Embeddings**: Handles text embeddings
+- **Images**: Handles image generation
+
+All resource classes inherit from the `BaseResource` class, which provides common functionality such as provider initialization, error handling, and user credit management.
+
+### Credit System
+
+IndoxRouter includes a credit system that tracks and manages user credits for API usage. Credits are calculated based on the model used, the number of tokens processed, and the operation type.
+
+Credits are calculated in real-time using the pricing information from the provider's model configuration. The calculation is done in the following steps:
+
+1. The resource class processes the request and gets the token usage from the provider's response.
+2. The `calculate_cost` function calculates the cost based on the token usage and the pricing information in the provider's JSON configuration file.
+3. The `_update_user_credit` method updates the user's credit in the database.
+
+### Model Information System
+
+IndoxRouter includes a model information system that provides information about AI models from various providers. The system loads model information from JSON files in the `providers/json` directory. Each provider has its own JSON file containing information about its models, including capabilities, pricing, and other metadata.
+
 ## Development
 
 ### Running Tests
@@ -141,7 +195,11 @@ To add a new provider, you need to:
 1. Create a new provider class in `app/providers/` that implements the `BaseProvider` interface
 2. Add the provider to the factory in `app/providers/factory.py`
 3. Add the provider's API key to the settings in `app/core/config.py`
-4. Add the provider's JSON configuration file to `app/providers/`
+4. Add the provider's JSON configuration file to `app/providers/json/`
+
+### Adding a New Model
+
+To add a new model, you need to add it to the appropriate provider's JSON file in `app/providers/json/`.
 
 ## License
 

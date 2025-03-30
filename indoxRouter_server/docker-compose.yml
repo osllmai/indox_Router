@@ -32,3 +32,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+    # Add this line to allow Docker to connect to your host machine's PostgreSQL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

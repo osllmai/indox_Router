@@ -54,3 +54,9 @@ class InvalidParametersError(IndoxRouterError):
     """Raised when invalid parameters are provided."""
 
     pass
+
+
+class InsufficientCreditsError(IndoxRouterError):
+    """Raised when the user doesn't have enough credits."""
+
+    pass
