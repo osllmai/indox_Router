@@ -3,7 +3,7 @@ IndoxRouter Server
 
 This is the main entry point for the IndoxRouter server application.
 The server provides a FastAPI-based API for accessing various AI providers and models.
-It connects to an external website database to validate API keys.
+It uses a hybrid database approach with PostgreSQL for user data and MongoDB for conversations.
 """
 
 # Try to load encrypted environment variables if available
@@ -61,21 +61,33 @@ app.include_router(image.router, prefix="/api/v1", tags=["Image"])
 @app.on_event("startup")
 async def startup():
     """Initialize services on startup."""
-    # Initialize connection to the external website database
-    if settings.DATABASE_URL:
+    # Check if we're in local mode (databases integrated with application)
+    if settings.LOCAL_MODE:
+        print("Starting in local mode with integrated databases")
+        if init_db():
+            print("Successfully initialized local database connections")
+        else:
+            print("Error: Failed to initialize local database connections")
+            import sys
+
+            sys.exit(1)
+    # Regular mode - connecting to external website database
+    elif settings.DATABASE_URL:
         if init_db():
             print(
-                f"Successfully connected to external website database at {settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else settings.DATABASE_URL}"
+                f"Successfully connected to database at {settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else settings.DATABASE_URL}"
             )
+            if settings.MONGODB_URI:
+                print(
+                    f"MongoDB connection established at {settings.MONGODB_URI.split('@')[1] if '@' in settings.MONGODB_URI else settings.MONGODB_URI}"
+                )
         else:
-            print("Error: Failed to connect to external website database.")
+            print("Error: Failed to connect to databases")
             import sys
 
             sys.exit(1)
     else:
-        print(
-            "Error: DATABASE_URL not set. Connection to external website database is required."
-        )
+        print("Error: DATABASE_URL not set. Database connection is required.")
         import sys
 
         sys.exit(1)

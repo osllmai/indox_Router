@@ -30,10 +30,14 @@ class Settings(BaseSettings):
     # CORS settings
     CORS_ORIGINS: List[str] = Field(default=["*"], env="CORS_ORIGINS")
 
-    # Database settings
+    # PostgreSQL Database settings
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
     DB_MIN_CONNECTIONS: int = Field(default=1, env="DB_MIN_CONNECTIONS")
     DB_MAX_CONNECTIONS: int = Field(default=10, env="DB_MAX_CONNECTIONS")
+
+    # MongoDB settings
+    MONGODB_URI: Optional[str] = Field(default=None, env="MONGODB_URI")
+    MONGODB_DATABASE: str = Field(default="indoxrouter", env="MONGODB_DATABASE")
 
     # Provider API keys
     OPENAI_API_KEY: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
@@ -56,6 +60,13 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = Field(default=True, env="RATE_LIMIT_ENABLED")
     RATE_LIMIT_REQUESTS: int = Field(default=100, env="RATE_LIMIT_REQUESTS")
     RATE_LIMIT_PERIOD_SECONDS: int = Field(default=60, env="RATE_LIMIT_PERIOD_SECONDS")
+
+    # Caching
+    ENABLE_RESPONSE_CACHE: bool = Field(default=True, env="ENABLE_RESPONSE_CACHE")
+    CACHE_TTL_DAYS: int = Field(default=7, env="CACHE_TTL_DAYS")
+
+    # Local mode (for running without external database)
+    LOCAL_MODE: bool = Field(default=False, env="INDOXROUTER_LOCAL_MODE")
 
     model_config = {
         "env_file": ".env",
