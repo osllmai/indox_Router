@@ -367,7 +367,7 @@ class Client:
                 filtered_kwargs[key] = value
 
         data = {
-            "input": text if isinstance(text, list) else [text],
+            "text": text if isinstance(text, list) else [text],
             "model": formatted_model,
             "additional_params": filtered_kwargs,
         }
@@ -639,3 +639,6 @@ class Client:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit context manager."""
         self.close()
+
+
+indoxrouter = Client

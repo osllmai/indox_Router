@@ -157,7 +157,13 @@ class Images(BaseResource):
         # Update user credit if user_id is provided
         if user_id:
             self._update_user_credit(
-                user_id=user_id, cost=cost, endpoint="image", tokens_total=tokens_total
+                user_id=user_id, 
+                cost=cost, 
+                endpoint="image", 
+                tokens_input=tokens_prompt,
+                tokens_output=tokens_completion,
+                model=model_name,
+                provider=provider
             )
 
         # Create and return the response

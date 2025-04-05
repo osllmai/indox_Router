@@ -117,7 +117,10 @@ class Embeddings(BaseResource):
                 user_id=user_id,
                 cost=cost,
                 endpoint="embedding",
-                tokens_total=tokens_total,
+                tokens_input=tokens_total,
+                tokens_output=0,
+                model=model_name,
+                provider=provider,
             )
 
         # Get dimensions from the response or use default

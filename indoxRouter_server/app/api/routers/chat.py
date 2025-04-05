@@ -117,7 +117,16 @@ async def create_chat_completion(
             "raw_response": response.raw_response,
         }
     except Exception as e:
-        # Handle errors
+        # Handle specific errors
+        from app.exceptions import InsufficientCreditsError
+        
+        if isinstance(e, InsufficientCreditsError):
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Insufficient credits for this request",
+            )
+        
+        # Handle other errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),

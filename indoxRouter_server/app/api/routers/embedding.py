@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.models.schemas import EmbeddingRequest, EmbeddingResponse
 from app.api.dependencies import get_current_user, get_provider_api_key
 from app.resources import Embeddings
+from app.exceptions import InsufficientCreditsError
 
 router = APIRouter(prefix="/embeddings", tags=["Embeddings"])
 
@@ -79,7 +80,14 @@ async def create_embedding(
             "raw_response": response.raw_response,
         }
     except Exception as e:
-        # Handle errors
+        # Handle specific errors
+        if isinstance(e, InsufficientCreditsError):
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Insufficient credits for this request",
+            )
+        
+        # Handle other errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),

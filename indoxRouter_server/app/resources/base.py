@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from ..providers import get_provider
-from ..db.database import get_connection, update_user_credit
+from ..db.database import get_pg_connection as get_connection, update_user_credit
 from ..exceptions import ProviderNotFoundError, InvalidParametersError
 
 logger = logging.getLogger(__name__)
@@ -82,10 +82,18 @@ class BaseResource:
 
         Returns:
             True if successful, False otherwise.
+
+        Raises:
+            InsufficientCreditsError: If the user doesn't have enough credits.
+            
+        Note:
+            All resource classes should use tokens_input and tokens_output parameters
+            directly, not tokens_total. The total is calculated internally by update_user_credit.
         """
         try:
             # Update the user's credit
             from app.db.database import update_user_credit
+            from app.exceptions import InsufficientCreditsError
 
             success = update_user_credit(
                 user_id=user_id,
@@ -99,7 +107,13 @@ class BaseResource:
 
             if not success:
                 logger.warning(f"Failed to update credit for user {user_id}")
+                # Raise insufficient credits error if user doesn't have enough credits
+                raise InsufficientCreditsError("Insufficient credits for this request")
+            
             return success
+        except InsufficientCreditsError:
+            # Re-raise the error to be caught by the caller
+            raise
         except Exception as e:
             logger.error(f"Error updating user credit: {e}")
             return False

@@ -170,12 +170,16 @@ class Chat(BaseResource):
             # Update user credit if user_id is provided
             if user_id:
                 # Log the request in the database
-                from app.db.database import log_api_request
+                from app.db.database import log_api_request, log_model_usage
 
+                # Generate a unique request ID for tracking
+                request_id = str(uuid.uuid4())
+                
+                # Log to PostgreSQL
                 log_api_request(
                     user_id=user_id,
                     api_key_id=api_key_id,
-                    request_id=str(uuid.uuid4()),
+                    request_id=request_id,
                     endpoint="chat",
                     model=model_name,
                     provider=provider,
@@ -185,6 +189,18 @@ class Chat(BaseResource):
                     duration_ms=int(duration * 1000),
                     status_code=200,
                     response_summary=data[:100] if data else None,
+                )
+                
+                # Log to MongoDB for usage analytics
+                log_model_usage(
+                    user_id=user_id,
+                    provider=provider,
+                    model=model_name,
+                    tokens_prompt=tokens_prompt,
+                    tokens_completion=tokens_completion,
+                    cost=cost,
+                    latency=duration,
+                    request_id=request_id
                 )
 
                 # Update user credit
