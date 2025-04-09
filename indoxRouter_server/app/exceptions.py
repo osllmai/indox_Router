@@ -37,3 +37,9 @@ class InsufficientCreditsError(BaseError):
     """Raised when a user doesn't have enough credits."""
 
     pass
+
+
+class RateLimitError(BaseError):
+    """Raised when a user exceeds their rate limit."""
+
+    pass

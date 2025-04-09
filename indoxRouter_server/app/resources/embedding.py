@@ -19,6 +19,7 @@ from ..constants import (
 )
 from ..exceptions import ProviderNotFoundError, InvalidParametersError
 import uuid
+from app.db.database import log_api_request, log_model_usage
 
 
 class Embeddings(BaseResource):
@@ -113,6 +114,38 @@ class Embeddings(BaseResource):
 
         # Update user credit if user_id is provided
         if user_id:
+            # Generate a unique request ID for tracking
+            request_id = str(uuid.uuid4())
+            
+            # Log to PostgreSQL
+            log_api_request(
+                user_id=user_id,
+                api_key_id=None,
+                request_id=request_id,
+                endpoint="embedding",
+                model=model_name,
+                provider=provider,
+                tokens_input=tokens_total,
+                tokens_output=0,
+                cost=cost,
+                duration_ms=int(duration * 1000),
+                status_code=200,
+                response_summary=f"Embedding dimensions: {response.get('dimensions', DEFAULT_EMBEDDING_DIMENSIONS)}"
+            )
+            
+            # Log to MongoDB for usage analytics
+            log_model_usage(
+                user_id=user_id,
+                provider=provider,
+                model=model_name,
+                tokens_prompt=tokens_total,
+                tokens_completion=0,
+                cost=cost,
+                latency=duration,
+                request_id=request_id
+            )
+            
+            # Update user credit
             self._update_user_credit(
                 user_id=user_id,
                 cost=cost,

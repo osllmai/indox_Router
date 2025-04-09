@@ -256,10 +256,91 @@ def get_user_by_api_key(api_key: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def verify_api_key(api_key: str) -> Optional[Dict[str, Any]]:
+    """
+    Verify an API key and return the associated user if valid.
+
+    Args:
+        api_key: The API key to verify.
+
+    Returns:
+        The user information if the API key is valid, None otherwise.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT u.id, u.username, u.email, u.is_active, u.credits, 
+                           u.account_tier, k.id as api_key_id, k.name as key_name,
+                           k.created_at as key_created_at
+                    FROM users u
+                    JOIN api_keys k ON u.id = k.user_id
+                    WHERE k.api_key = %s AND k.is_active = TRUE 
+                          AND (k.expires_at IS NULL OR k.expires_at > NOW())
+                    """,
+                    (api_key,),
+                )
+                user = cur.fetchone()
+
+                if user:
+                    # Update last_used_at for the API key
+                    cur.execute(
+                        """
+                        UPDATE api_keys
+                        SET last_used_at = NOW()
+                        WHERE api_key = %s
+                        """,
+                        (api_key,),
+                    )
+                    conn.commit()
+                    return dict(user)
+                return None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error verifying API key: {e}")
+        return None
+
+
 def validate_api_key(api_key: str) -> bool:
     """Validate an API key against PostgreSQL."""
     user = get_user_by_api_key(api_key)
     return user is not None and user.get("is_active", False)
+
+
+def update_api_key_last_used(api_key_id: int) -> bool:
+    """
+    Update the last_used_at timestamp for an API key.
+
+    Args:
+        api_key_id: The API key ID.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE api_keys
+                    SET last_used_at = NOW()
+                    WHERE id = %s
+                    RETURNING id
+                    """,
+                    (api_key_id,),
+                )
+                result = cur.fetchone()
+                conn.commit()
+                return result is not None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error updating API key last used timestamp: {e}")
+        return False
 
 
 # Keep the rest of your original PostgreSQL functions...
@@ -655,10 +736,12 @@ def update_user_credit(
                 # Convert float to Decimal to avoid type errors
                 cost_decimal = Decimal(str(cost))
                 new_credit = current_credit - cost_decimal
-                
+
                 # Check if the user has enough credits
                 if new_credit < 0:
-                    logger.warning(f"User {user_id} doesn't have enough credits. Current: {current_credit}, Required: {cost_decimal}")
+                    logger.warning(
+                        f"User {user_id} doesn't have enough credits. Current: {current_credit}, Required: {cost_decimal}"
+                    )
                     conn.rollback()
                     return False
 
@@ -707,7 +790,9 @@ def update_user_credit(
                 )
 
                 conn.commit()
-                logger.info(f"Updated credits for user {user_id}. Previous: {current_credit}, New: {new_credit}")
+                logger.info(
+                    f"Updated credits for user {user_id}. Previous: {current_credit}, New: {new_credit}"
+                )
                 return True
         finally:
             release_pg_connection(conn)
@@ -732,7 +817,7 @@ def log_api_request(
 ) -> bool:
     """
     Log an API request to the database.
-    
+
     Args:
         user_id: User ID
         api_key_id: API key ID
@@ -746,7 +831,7 @@ def log_api_request(
         duration_ms: Duration in milliseconds
         status_code: HTTP status code
         response_summary: Summary of the response (truncated)
-        
+
     Returns:
         True if successful, False otherwise
     """
@@ -754,7 +839,7 @@ def log_api_request(
         conn = get_pg_connection()
         try:
             tokens_total = tokens_input + tokens_output
-            
+
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -767,9 +852,19 @@ def log_api_request(
                     )
                     """,
                     (
-                        user_id, api_key_id, request_id, endpoint, model, provider,
-                        tokens_input, tokens_output, tokens_total, cost, duration_ms,
-                        status_code, response_summary
+                        user_id,
+                        api_key_id,
+                        request_id,
+                        endpoint,
+                        model,
+                        provider,
+                        tokens_input,
+                        tokens_output,
+                        tokens_total,
+                        cost,
+                        duration_ms,
+                        status_code,
+                        response_summary,
                     ),
                 )
                 conn.commit()

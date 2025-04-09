@@ -33,6 +33,8 @@ from app.api.routers import auth, chat, completion, embedding, image, model
 from app.core.config import settings
 from app.db.database import init_db
 from app.resources import Chat, Completions, Embeddings, Images
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.security import SecurityMiddleware
 
 app = FastAPI(
     title="IndoxRouter Server",
@@ -49,18 +51,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add security middleware
+app.add_middleware(SecurityMiddleware)
+
+# Add rate limit middleware
+app.add_middleware(RateLimitMiddleware)
+
 # Include routers
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
 app.include_router(model.router, prefix="/api/v1", tags=["Models"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
-app.include_router(completion.router, prefix="/api/v1", tags=["Completion"])
-app.include_router(embedding.router, prefix="/api/v1", tags=["Embedding"])
-app.include_router(image.router, prefix="/api/v1", tags=["Image"])
+app.include_router(completion.router, prefix="/api/v1", tags=["Completions"])
+app.include_router(embedding.router, prefix="/api/v1", tags=["Embeddings"])
+app.include_router(image.router, prefix="/api/v1", tags=["Images"])
 
 
 @app.on_event("startup")
 async def startup():
     """Initialize services on startup."""
+    # Apply bcrypt patch for compatibility with passlib
+    from app.patches.bcrypt_patch import patch_bcrypt
+
+    if patch_bcrypt():
+        print("Successfully applied bcrypt compatibility patch")
+
     # Check if we're in local mode (databases integrated with application)
     if settings.LOCAL_MODE:
         print("Starting in local mode with integrated databases")

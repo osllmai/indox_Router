@@ -2,103 +2,143 @@
 API dependencies for the IndoxRouter server.
 """
 
+import json
 from typing import Dict, Any, Optional
-from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Header, Request
+from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from jose import JWTError, jwt
+from datetime import datetime, timedelta
 
 from app.core.config import settings
-from app.db.database import get_user_by_api_key
+from app.utils.rate_limiter import check_rate_limit, get_rate_limit_headers
+from app.db.database import get_user_by_id, verify_api_key
+from app.exceptions import RateLimitError
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/token", auto_error=False
-)
+# API key header
+api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
 
 
 async def get_current_user(
-    request: Request, token: Optional[str] = Depends(oauth2_scheme)
+    request: Request,
+    authorization: Optional[str] = Header(None)
 ) -> Dict[str, Any]:
     """
-    Get the current user from the token or API key.
-    Validates API keys against the external website database.
-
+    Get the current user from the API key in the Authorization header.
+    
     Args:
-        request: The request object
-        token: The JWT token.
-
+        request: The FastAPI request object.
+        authorization: The Authorization header value.
+        
     Returns:
-        The user data.
-
+        The user information if authenticated.
+        
     Raises:
-        HTTPException: If the token is invalid or the user is not found.
+        HTTPException: If authentication fails.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Remove "Bearer " prefix if present
+    api_key = authorization.replace("Bearer ", "")
+    
+    # Verify the API key and get the user
+    user_info = verify_api_key(api_key)
+    if not user_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if user is active
+    if not user_info.get("is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is disabled",
+        )
+        
+    # Check rate limits
+    # Determine the endpoint and estimate token usage
+    path = request.url.path
+    endpoint = path.split("/")[-1]
+    
+    # Get estimated token count from request
+    estimated_tokens = 0
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            
+            # Estimate tokens based on endpoint
+            if endpoint == "chat":
+                messages = body.get("messages", [])
+                estimated_tokens = sum(len(msg.get("content", "")) // 4 for msg in messages)
+            elif endpoint == "completions":
+                prompt = body.get("prompt", "")
+                estimated_tokens = len(prompt) // 4
+            elif endpoint == "embeddings":
+                text = body.get("text", [])
+                if isinstance(text, list):
+                    estimated_tokens = sum(len(t) // 4 for t in text)
+                else:
+                    estimated_tokens = len(text) // 4
+                    
+            # Apply minimum token count for any request
+            estimated_tokens = max(10, estimated_tokens)
+            
+        except Exception:
+            # If we can't parse the body, use a default estimate
+            estimated_tokens = 50
+            
+    # Get user tier
+    user_tier = user_info.get("account_tier", "free")
+    
+    # Check rate limit
+    allowed, rate_info = check_rate_limit(
+        user_id=user_info["id"],
+        user_tier=user_tier,
+        tokens=estimated_tokens
     )
-
-    # First, try to authenticate with API key from Authorization header
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        api_key = auth_header.replace("Bearer ", "")
-
-        # Check if API key exists in external website database
-        user = get_user_by_api_key(api_key)
-        if user:
-            return {
-                "id": user["id"],
-                "username": user["username"],
-                "email": user["email"],
-                "is_active": user["is_active"],
-                "credits": user.get("credits", 0),
-                "account_tier": user.get("account_tier", "free"),
-                "api_key_id": user.get("api_key_id"),
-            }
-
-    # If API key authentication fails, try JWT token
-    if not token:
-        raise credentials_exception
-
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    # In a real application, you would fetch the user from a database
-    # For now, we'll just return a mock user
-    user = {
-        "id": 1,
-        "username": username,
-        "email": f"{username}@example.com",
-        "is_active": True,
-    }
-
-    if user is None:
-        raise credentials_exception
-
-    return user
+    
+    # Add rate limit headers to the response
+    headers = get_rate_limit_headers(user_info["id"], user_tier)
+    request.state.rate_limit_headers = headers
+    
+    if not allowed:
+        raise RateLimitError(
+            f"Rate limit exceeded: {rate_info.get('reason', 'unknown reason')}. "
+            f"Try again in {rate_info.get('reset_after', 0)} seconds."
+        )
+    
+    return user_info
 
 
 def get_provider_api_key(provider: str) -> Optional[str]:
     """
     Get the API key for a provider.
-
+    
     Args:
-        provider: The provider name.
-
+        provider: The provider ID.
+        
     Returns:
-        The API key for the provider, or None if not found.
+        The API key for the provider, or None if not configured.
     """
-    provider_keys = {
-        "openai": settings.OPENAI_API_KEY,
-        "anthropic": settings.ANTHROPIC_API_KEY,
-        "cohere": settings.COHERE_API_KEY,
-        "google": settings.GOOGLE_API_KEY,
-        "mistral": settings.MISTRAL_API_KEY,
-    }
-
-    return provider_keys.get(provider)
+    # Check if provider is supported
+    provider = provider.lower()
+    
+    # Get the API key based on the provider
+    if provider == "openai":
+        return settings.OPENAI_API_KEY
+    elif provider == "anthropic":
+        return settings.ANTHROPIC_API_KEY
+    elif provider == "cohere":
+        return settings.COHERE_API_KEY
+    elif provider == "google":
+        return settings.GOOGLE_API_KEY
+    elif provider == "mistral":
+        return settings.MISTRAL_API_KEY
+    else:
+        return None

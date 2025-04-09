@@ -641,4 +641,4 @@ class Client:
         self.close()
 
 
-indoxrouter = Client
+IndoxRouter = Client

@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="indoxrouter",
-    version="0.2.0",
+    version="0.1.3",
     author="indoxRouter Team",
     author_email="ashkan.eskandari.dev@gmail.com",
     description="A unified client for various AI providers",

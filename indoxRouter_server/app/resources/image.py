@@ -156,6 +156,41 @@ class Images(BaseResource):
 
         # Update user credit if user_id is provided
         if user_id:
+            # Import logging functions
+            from app.db.database import log_api_request, log_model_usage
+            
+            # Generate a unique request ID for tracking
+            request_id = str(uuid.uuid4())
+            
+            # Log to PostgreSQL
+            log_api_request(
+                user_id=user_id,
+                api_key_id=None,
+                request_id=request_id,
+                endpoint="image",
+                model=model_name,
+                provider=provider,
+                tokens_input=tokens_prompt,
+                tokens_output=tokens_completion,
+                cost=cost,
+                duration_ms=int(duration * 1000),
+                status_code=200,
+                response_summary=f"Generated {n} images with prompt: {prompt[:50]}..."
+            )
+            
+            # Log to MongoDB for usage analytics
+            log_model_usage(
+                user_id=user_id,
+                provider=provider,
+                model=model_name,
+                tokens_prompt=tokens_prompt,
+                tokens_completion=tokens_completion,
+                cost=cost,
+                latency=duration,
+                request_id=request_id
+            )
+            
+            # Update user credit
             self._update_user_credit(
                 user_id=user_id, 
                 cost=cost, 

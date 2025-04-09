@@ -19,3 +19,4 @@ psycopg2-binary>=2.9.9
 pymongo[srv]>=4.6.1
 dnspython>=2.4.0
 cryptography>=40.0.0 
+redis==5.2.0

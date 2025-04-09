@@ -14,6 +14,7 @@ from app.models.schemas import EmbeddingRequest, EmbeddingResponse
 from app.api.dependencies import get_current_user, get_provider_api_key
 from app.resources import Embeddings
 from app.exceptions import InsufficientCreditsError
+from app.utils.cache import get_cached_response, cache_response
 
 router = APIRouter(prefix="/embeddings", tags=["Embeddings"])
 
@@ -41,6 +42,26 @@ async def create_embedding(
     model_id = request.model or settings.DEFAULT_EMBEDDING_MODEL
     model = f"{provider_id}/{model_id}"
 
+    # Check if response is cached
+    cached_response = None
+    if settings.ENABLE_RESPONSE_CACHE:
+        cached_response = get_cached_response(
+            endpoint="embeddings",
+            provider=provider_id,
+            model=model_id,
+            input_data=request.text,
+            params=request.additional_params
+        )
+        
+        if cached_response:
+            # Add request_id and timing information
+            cached_response["request_id"] = request_id
+            cached_response["created_at"] = datetime.now().isoformat()
+            cached_response["duration_ms"] = 0  # Effectively instant
+            
+            # Return cached response
+            return cached_response
+
     # Get API key for the provider
     api_key = get_provider_api_key(provider_id)
     if not api_key:
@@ -65,8 +86,8 @@ async def create_embedding(
         # Calculate request duration
         duration = (time.time() - start_time) * 1000  # Convert to milliseconds
 
-        # Return the response
-        return {
+        # Prepare the response
+        result = {
             "request_id": request_id,
             "created_at": datetime.now().isoformat(),
             "duration_ms": duration,
@@ -79,6 +100,19 @@ async def create_embedding(
             "usage": response.usage,
             "raw_response": response.raw_response,
         }
+        
+        # Cache the response if applicable
+        if settings.ENABLE_RESPONSE_CACHE and response.success:
+            cache_response(
+                endpoint="embeddings",
+                provider=provider_id,
+                model=model_id,
+                input_data=request.text,
+                response=result,
+                params=request.additional_params
+            )
+
+        return result
     except Exception as e:
         # Handle specific errors
         if isinstance(e, InsufficientCreditsError):
