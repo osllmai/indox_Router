@@ -5,9 +5,6 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install bcrypt with a compatible version first
-RUN pip install --no-cache-dir bcrypt==3.2.0
-
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -26,5 +23,5 @@ ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV DEBUG=false
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Run the application with the patch applied first
+CMD ["python", "-c", "from app.patches.bcrypt_patch import patch_bcrypt; patch_bcrypt(); import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000)"] 

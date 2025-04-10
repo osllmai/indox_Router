@@ -19,6 +19,15 @@ Example:
 
     print(response["data"])
     ```
+
+For custom server URLs:
+    ```python
+    # Connect to a specific server
+    client = Client(
+        api_key="your_api_key",
+        base_url="http://your-custom-server:8000"
+    )
+    ```
 """
 
 from .client import Client
@@ -34,7 +43,7 @@ from .exceptions import (
     InsufficientCreditsError,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     "Client",
     "IndoxRouterError",

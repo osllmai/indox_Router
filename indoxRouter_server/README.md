@@ -44,29 +44,17 @@ pip install -r requirements.txt
 3. Set up your environment file:
 
 ```bash
-# Copy the example environment file
-cp .env.example .env
+# For development with Docker
+cp development.env .env
 
-# Edit the file with your settings
-nano .env
+# OR for production deployment
+cp production.env .env
 ```
 
-The `.env` file should contain your API keys and other configuration settings:
+The server uses two environment configuration files:
 
-```
-# Security settings
-SECRET_KEY=your-secret-key-here
-
-# Provider API keys
-OPENAI_API_KEY=your-openai-api-key
-ANTHROPIC_API_KEY=your-anthropic-api-key
-COHERE_API_KEY=your-cohere-api-key
-GOOGLE_API_KEY=your-google-api-key
-MISTRAL_API_KEY=your-mistral-api-key
-
-# Database settings (if using external authentication)
-DATABASE_URL=postgresql://dbuser:password@localhost:5432/dbname
-```
+- `production.env`: Production deployment settings
+- `development.env`: Development settings for use with Docker containers
 
 ### Running the Server
 

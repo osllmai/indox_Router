@@ -1,5 +1,6 @@
 """
 Model router for the IndoxRouter server.
+This module provides endpoints for accessing model information.
 """
 
 import json
@@ -33,24 +34,47 @@ def load_provider_data():
         for filename in os.listdir(provider_dir):
             if filename.endswith(".json"):
                 provider_id = filename.split(".")[0]
-                with open(os.path.join(provider_dir, filename), "r") as f:
-                    provider_data = json.load(f)
-                    providers[provider_id] = provider_data
-
-                # Save models to MongoDB if possible
                 try:
-                    for model_data in provider_data["models"]:
-                        save_model_info(
-                            provider=provider_id,
-                            name=model_data["name"],
-                            capabilities=model_data["capabilities"],
-                            description=model_data.get("description"),
-                            max_tokens=model_data.get("max_tokens"),
-                            pricing=model_data.get("pricing"),
-                            metadata=model_data.get("metadata", {}),
-                        )
+                    with open(os.path.join(provider_dir, filename), "r") as f:
+                        provider_data = json.load(f)
+                        providers[provider_id] = provider_data
+
+                    # Save models to MongoDB if possible
+                    if "models" in provider_data and isinstance(
+                        provider_data["models"], list
+                    ):
+                        for model_data in provider_data["models"]:
+                            try:
+                                # Verify model_data is a dictionary
+                                if not isinstance(model_data, dict):
+                                    print(
+                                        f"Warning: Model data is not a dictionary: {model_data}"
+                                    )
+                                    continue
+
+                                # Extract model properties with proper error handling
+                                model_name = model_data.get("name")
+                                if not model_name:
+                                    print(f"Warning: Model missing name: {model_data}")
+                                    continue
+
+                                capabilities = model_data.get("capabilities", [])
+                                if not isinstance(capabilities, list):
+                                    capabilities = []
+
+                                save_model_info(
+                                    provider=provider_id,
+                                    name=model_name,
+                                    capabilities=capabilities,
+                                    description=model_data.get("description"),
+                                    max_tokens=model_data.get("max_tokens"),
+                                    pricing=model_data.get("pricing"),
+                                    metadata=model_data.get("metadata", {}),
+                                )
+                            except Exception as e:
+                                print(f"Warning: Could not save model to MongoDB: {e}")
                 except Exception as e:
-                    print(f"Warning: Could not save model to MongoDB: {e}")
+                    print(f"Error loading provider data from {filename}: {e}")
 
     return providers
 

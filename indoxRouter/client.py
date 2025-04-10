@@ -84,6 +84,7 @@ class Client:
     def __init__(
         self,
         api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         timeout: int = DEFAULT_TIMEOUT,
     ):
         """
@@ -92,6 +93,7 @@ class Client:
         Args:
             api_key: API key for authentication. If not provided, the client will look for the
                 INDOX_ROUTER_API_KEY environment variable.
+            base_url: Custom base URL for the API. If not provided, the default base URL will be used.
             timeout: Request timeout in seconds.
         """
         self.api_key = api_key or os.environ.get("INDOX_ROUTER_API_KEY")
@@ -100,7 +102,7 @@ class Client:
                 "API key must be provided either as an argument or as the INDOX_ROUTER_API_KEY environment variable."
             )
 
-        self.base_url = DEFAULT_BASE_URL
+        self.base_url = base_url or DEFAULT_BASE_URL
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
@@ -639,6 +641,16 @@ class Client:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit context manager."""
         self.close()
+
+    def set_base_url(self, base_url: str) -> None:
+        """
+        Set a new base URL for the API.
+
+        Args:
+            base_url: New base URL for the API.
+        """
+        self.base_url = base_url
+        logger.debug(f"Base URL set to {base_url}")
 
 
 IndoxRouter = Client

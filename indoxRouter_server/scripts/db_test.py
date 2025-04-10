@@ -10,7 +10,7 @@ import logging
 from dotenv import load_dotenv
 
 # Add the parent directory to the path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Configure logging
 logging.basicConfig(
@@ -21,13 +21,20 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-from app.db.database import (
-    init_db,
-    get_pg_connection,
-    release_pg_connection,
-    get_mongo_db,
-)
-from app.core.config import settings
+try:
+    from app.db.database import (
+        init_db,
+        get_pg_connection,
+        release_pg_connection,
+        get_mongo_db,
+    )
+    from app.core.config import settings
+except ImportError as e:
+    logger.error(f"Failed to import required modules: {e}")
+    logger.error(
+        "Make sure you're running this script from the indoxrouter_server directory"
+    )
+    sys.exit(1)
 
 
 def test_postgres_connection():
@@ -152,6 +159,9 @@ def test_mongodb_data_creation(user_id):
         conv = db.conversations.find_one({"_id": result.inserted_id})
         if conv:
             logger.info("✅ Successfully retrieved test conversation")
+            # Clean up - remove the test conversation
+            db.conversations.delete_one({"_id": result.inserted_id})
+            logger.info("✅ Cleaned up test conversation")
             return True
         else:
             logger.error("❌ Failed to retrieve test conversation")
@@ -190,10 +200,11 @@ def main():
     # Overall result
     if pg_success and mongo_success:
         logger.info("✅ All database tests passed!")
+        return 0
     else:
         logger.error("❌ Some database tests failed")
-        sys.exit(1)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

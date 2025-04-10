@@ -88,8 +88,8 @@ def validate_api_key_format(api_key: str) -> bool:
     Returns:
         True if valid format, False otherwise.
     """
-    # Check format: 32-character alphanumeric string with prefix
-    pattern = r"^inr-[a-zA-Z0-9]{32}$"
+    # Accept both formats: inr- prefix and indox_r_ prefix
+    pattern = r"^(inr-[a-zA-Z0-9]{32}|indox_r_[a-zA-Z0-9_-]+)$"
     return bool(re.match(pattern, api_key))
 
 

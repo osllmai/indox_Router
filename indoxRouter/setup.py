@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="indoxrouter",
-    version="0.1.3",
+    version="0.2.1",
     author="indoxRouter Team",
     author_email="ashkan.eskandari.dev@gmail.com",
     description="A unified client for various AI providers",
@@ -26,6 +26,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.8",
     install_requires=[

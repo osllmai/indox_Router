@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     # Local mode (for running without external database)
     LOCAL_MODE: bool = Field(default=False, env="INDOXROUTER_LOCAL_MODE")
 
+    # Production mode - when true, uses production settings
+    PRODUCTION_MODE: bool = Field(default=False, env="INDOXROUTER_PRODUCTION_MODE")
+
     model_config = {
         "env_file": ".env",
         "case_sensitive": True,

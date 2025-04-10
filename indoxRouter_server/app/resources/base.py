@@ -85,7 +85,7 @@ class BaseResource:
 
         Raises:
             InsufficientCreditsError: If the user doesn't have enough credits.
-            
+
         Note:
             All resource classes should use tokens_input and tokens_output parameters
             directly, not tokens_total. The total is calculated internally by update_user_credit.
@@ -109,7 +109,7 @@ class BaseResource:
                 logger.warning(f"Failed to update credit for user {user_id}")
                 # Raise insufficient credits error if user doesn't have enough credits
                 raise InsufficientCreditsError("Insufficient credits for this request")
-            
+
             return success
         except InsufficientCreditsError:
             # Re-raise the error to be caught by the caller

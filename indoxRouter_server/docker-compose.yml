@@ -18,23 +18,38 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
       - DEFAULT_PROVIDER=${DEFAULT_PROVIDER:-openai}
-      - DEFAULT_CHAT_MODEL=${DEFAULT_CHAT_MODEL:-gpt-3.5-turbo}
-      - DEFAULT_COMPLETION_MODEL=${DEFAULT_COMPLETION_MODEL:-gpt-3.5-turbo-instruct}
-      - DEFAULT_EMBEDDING_MODEL=${DEFAULT_EMBEDDING_MODEL:-text-embedding-ada-002}
-      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - DEFAULT_CHAT_MODEL=${DEFAULT_CHAT_MODEL:-gpt-4o-mini}
+      - DEFAULT_COMPLETION_MODEL=${DEFAULT_COMPLETION_MODEL:-gpt-4o-mini}
+      - DEFAULT_EMBEDDING_MODEL=${DEFAULT_EMBEDDING_MODEL:-text-embedding-3-small}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_PERIOD_SECONDS=${RATE_LIMIT_PERIOD_SECONDS:-60}
+      # Database connections for Docker container environment (container-to-container)
+      - POSTGRES_HOST=indoxrouter-postgres
+      - POSTGRES_PORT=5432
       - DATABASE_URL=postgresql://postgres:postgrespassword@indoxrouter-postgres:5432/indoxrouter
+      - MONGO_HOST=indoxrouter-mongodb
+      - MONGO_PORT=27017
       - MONGODB_URI=mongodb://indoxrouter-mongodb:27017/indoxrouter
       - MONGODB_DATABASE=indoxrouter
-      - INDOXROUTER_LOCAL_MODE=true
+      - REDIS_HOST=indoxrouter-redis
+      - REDIS_PORT=6379
+      # Additional config
+      - INDOXROUTER_LOCAL_MODE=${INDOXROUTER_LOCAL_MODE:-true}
+      - INDOXROUTER_PRODUCTION_MODE=${INDOXROUTER_PRODUCTION_MODE:-false}
       - ENABLE_RESPONSE_CACHE=${ENABLE_RESPONSE_CACHE:-true}
       - CACHE_TTL_DAYS=${CACHE_TTL_DAYS:-7}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
     volumes:
       - ./.env:/app/.env
+      - ./app:/app/app
+      - ./logs:/app/logs
     depends_on:
-      - indoxrouter-postgres
-      - indoxrouter-mongodb
+      indoxrouter-postgres:
+        condition: service_healthy
+      indoxrouter-mongodb:
+        condition: service_healthy
+      indoxrouter-redis:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -44,7 +59,7 @@ services:
       start_period: 5s
     networks:
       - indoxrouter-network
-    # Add this line to allow Docker to connect to your host machine's PostgreSQL
+    # Allow Docker to connect to host machine
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -58,12 +73,13 @@ services:
     volumes:
       - indoxrouter_postgres_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432" # Changed port to avoid conflict with local PostgreSQL
+      - "5433:5432" # Maps container port 5432 to host port 5433
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - indoxrouter-network
 
@@ -73,11 +89,30 @@ services:
     volumes:
       - indoxrouter_mongodb_data:/data/db
     ports:
-      - "27018:27017" # Changed port to avoid conflict with local MongoDB
+      - "27018:27017" # Maps container port 27017 to host port 27018
     command: mongod --quiet --logpath /dev/null
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet || exit 1
       interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - indoxrouter-network
+
+  indoxrouter-redis:
+    image: redis:7
+    container_name: indoxrouter-redis
+    command: redis-server --requirepass redispassword
+    ports:
+      - "6380:6379" # Maps container port 6379 to host port 6380
+    volumes:
+      - indoxrouter_redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispassword", "ping"]
+      interval: 5s
       timeout: 5s
       retries: 5
     networks:
@@ -86,6 +121,7 @@ services:
 volumes:
   indoxrouter_postgres_data:
   indoxrouter_mongodb_data:
+  indoxrouter_redis_data:
 
 networks:
   indoxrouter-network:

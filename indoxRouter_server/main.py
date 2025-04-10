@@ -75,6 +75,26 @@ async def startup():
     if patch_bcrypt():
         print("Successfully applied bcrypt compatibility patch")
 
+    # Check if we're in production mode
+    if settings.PRODUCTION_MODE:
+        print("Starting in PRODUCTION mode")
+        # Production database settings
+        if not settings.DATABASE_URL:
+            production_db_url = "postgresql://postgres:postgrespassword@indoxrouter-postgres:5432/indoxrouter"
+            print(f"Using production database: {production_db_url}")
+            settings.DATABASE_URL = production_db_url
+
+        if not settings.MONGODB_URI:
+            production_mongo_uri = "mongodb://indoxrouter-mongodb:27017/indoxrouter"
+            print(f"Using production MongoDB: {production_mongo_uri}")
+            settings.MONGODB_URI = production_mongo_uri
+
+        # Ensure Local Mode is enabled to use integrated databases
+        settings.LOCAL_MODE = True
+        print("Enabling integrated database mode for production")
+    else:
+        print("Starting in DEVELOPMENT/TEST mode")
+
     # Check if we're in local mode (databases integrated with application)
     if settings.LOCAL_MODE:
         print("Starting in local mode with integrated databases")
