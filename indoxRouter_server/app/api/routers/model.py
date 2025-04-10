@@ -5,6 +5,7 @@ This module provides endpoints for accessing model information.
 
 import json
 import os
+import traceback
 from typing import Dict, List, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -36,45 +37,123 @@ def load_provider_data():
                 provider_id = filename.split(".")[0]
                 try:
                     with open(os.path.join(provider_dir, filename), "r") as f:
-                        provider_data = json.load(f)
+                        data = json.load(f)
+
+                        # Handle different JSON formats
+                        if isinstance(data, list):
+                            # If the data is a list, convert it to the expected format
+                            print(f"Converting list format for {provider_id}")
+
+                            # Create capabilities based on model types
+                            provider_capabilities = set()
+                            for model in data:
+                                model_type = model.get("type", "")
+
+                                # Set capability based on model type
+                                if "Text" in model_type and "Vision" not in model_type:
+                                    model["capabilities"] = ["chat", "completion"]
+                                    provider_capabilities.update(["chat", "completion"])
+                                elif "Embedding" in model_type:
+                                    model["capabilities"] = ["embedding"]
+                                    provider_capabilities.update(["embedding"])
+                                elif "Vision" in model_type:
+                                    model["capabilities"] = [
+                                        "chat",
+                                        "completion",
+                                        "vision",
+                                    ]
+                                    provider_capabilities.update(
+                                        ["chat", "completion", "vision"]
+                                    )
+                                else:
+                                    model["capabilities"] = ["chat", "completion"]
+                                    provider_capabilities.update(["chat", "completion"])
+
+                                # Add max_tokens from contextWindows
+                                if "contextWindows" in model:
+                                    context_str = model.get("contextWindows", "")
+                                    if "k Tokens" in context_str:
+                                        # Extract the number (e.g., "128k Tokens" -> 128000)
+                                        try:
+                                            size = float(context_str.split("k")[0])
+                                            model["max_tokens"] = int(size * 1000)
+                                        except (ValueError, TypeError):
+                                            model["max_tokens"] = 32000  # Default
+                                    elif "Tokens" in context_str:
+                                        # Handle case without 'k' but with Tokens
+                                        try:
+                                            size = float(context_str.split(" ")[0])
+                                            model["max_tokens"] = int(size)
+                                        except (ValueError, TypeError):
+                                            model["max_tokens"] = 32000  # Default
+
+                                # Set model ID
+                                model["id"] = model.get("modelName")
+
+                            # Convert to the expected format
+                            provider_data = {
+                                "name": provider_id.capitalize(),
+                                "description": f"{provider_id.capitalize()} Language Models",
+                                "capabilities": list(provider_capabilities),
+                                "models": data,
+                                "metadata": {},
+                            }
+                        else:
+                            # Assume it's already in the expected format with "models" key
+                            provider_data = data
+
+                        # Store the provider data
                         providers[provider_id] = provider_data
+                        print(f"Loaded provider data for {provider_id}")
 
                     # Save models to MongoDB if possible
+                    models_to_save = []
+
+                    # Check if we have a "models" key with a list of models
                     if "models" in provider_data and isinstance(
                         provider_data["models"], list
                     ):
-                        for model_data in provider_data["models"]:
-                            try:
-                                # Verify model_data is a dictionary
-                                if not isinstance(model_data, dict):
-                                    print(
-                                        f"Warning: Model data is not a dictionary: {model_data}"
-                                    )
-                                    continue
+                        models_to_save = provider_data["models"]
+                    elif isinstance(provider_data, list):
+                        # If provider_data is a list, assume it's a list of models
+                        models_to_save = provider_data
 
-                                # Extract model properties with proper error handling
-                                model_name = model_data.get("name")
-                                if not model_name:
-                                    print(f"Warning: Model missing name: {model_data}")
-                                    continue
-
-                                capabilities = model_data.get("capabilities", [])
-                                if not isinstance(capabilities, list):
-                                    capabilities = []
-
-                                save_model_info(
-                                    provider=provider_id,
-                                    name=model_name,
-                                    capabilities=capabilities,
-                                    description=model_data.get("description"),
-                                    max_tokens=model_data.get("max_tokens"),
-                                    pricing=model_data.get("pricing"),
-                                    metadata=model_data.get("metadata", {}),
+                    for model_data in models_to_save:
+                        try:
+                            # Verify model_data is a dictionary
+                            if not isinstance(model_data, dict):
+                                print(
+                                    f"Warning: Model data is not a dictionary: {model_data}"
                                 )
-                            except Exception as e:
-                                print(f"Warning: Could not save model to MongoDB: {e}")
+                                continue
+
+                            # Extract model properties with proper error handling
+                            model_id = model_data.get("id", model_data.get("modelName"))
+                            model_name = model_data.get("name", model_id)
+
+                            if not model_id:
+                                print(f"Warning: Model missing ID: {model_data}")
+                                continue
+
+                            capabilities = model_data.get("capabilities", [])
+                            if not isinstance(capabilities, list):
+                                capabilities = []
+
+                            save_model_info(
+                                provider=provider_id,
+                                name=model_name,
+                                capabilities=capabilities,
+                                description=model_data.get("description"),
+                                max_tokens=model_data.get("max_tokens"),
+                                pricing=model_data.get("pricing"),
+                                metadata=model_data.get("metadata", {}),
+                            )
+                            print(f"Saved model {model_id} for {provider_id}")
+                        except Exception as e:
+                            print(f"Warning: Could not save model to MongoDB: {e}")
                 except Exception as e:
                     print(f"Error loading provider data from {filename}: {e}")
+                    print(f"Full exception: {traceback.format_exc()}")
 
     return providers
 

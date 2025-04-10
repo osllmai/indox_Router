@@ -35,9 +35,27 @@ class GoogleProvider(BaseProvider):
 
         # Model capabilities mapping
         self.model_capabilities = {
+            # Gemini 2.5 models
+            "gemini-2.5-pro-preview-03-25": ["chat", "completion", "vision", "audio"],
+            # Gemini 2.0 models
+            "gemini-2.0-flash": ["chat", "completion", "vision", "audio"],
+            "gemini-2.0-flash-lite": ["chat", "completion", "vision", "audio"],
+            "gemini-2.0-flash-live-001": ["chat", "completion", "vision", "audio"],
+            # Gemini 1.5 models
+            "gemini-1.5-pro": ["chat", "completion", "vision", "audio"],
+            "gemini-1.5-flash": ["chat", "completion", "vision", "audio"],
+            "gemini-1.5-flash-8b": ["chat", "completion", "vision", "audio"],
+            # Gemini 1.0 models (legacy)
             "gemini-pro": ["chat", "completion"],
-            "gemini-pro-vision": ["chat", "completion", "image"],
+            "gemini-pro-vision": ["chat", "completion", "vision"],
+            # Embedding models
+            "gemini-embedding-exp": ["embedding"],
             "embedding-001": ["embedding"],
+            "text-embedding-gecko": ["embedding"],
+            "text-embedding-004": ["embedding"],
+            # Image and video models
+            "imagen-3.0-generate-002": ["image_generation"],
+            "veo-2.0-generate-001": ["video_generation"],
         }
 
     def chat(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
@@ -315,14 +333,14 @@ class GoogleProvider(BaseProvider):
 
     def embed(self, text: Union[str, List[str]], **kwargs) -> Dict[str, Any]:
         """
-        Send an embedding request to Google.
+        Generate embeddings for text.
 
         Args:
             text: The text to embed. Can be a single string or a list of strings.
             **kwargs: Additional parameters to pass to the Google API.
 
         Returns:
-            A dictionary containing the embeddings from Google.
+            A dictionary containing the embeddings.
         """
         try:
             # Ensure text is a list
@@ -331,27 +349,46 @@ class GoogleProvider(BaseProvider):
             else:
                 text_list = text
 
-            # Get embedding model
-            embedding_model = genai.get_model("embedding-001")
+            model_name = self.model_name.lower()
+            embedding_model = None
 
-            # Generate embeddings
-            embeddings = []
-            for t in text_list:
-                result = embedding_model.embed_content(
-                    content=t, task_type="RETRIEVAL_QUERY", **kwargs
-                )
-                embeddings.append(result["embedding"])
+            # Handle different embedding models
+            if "gemini-embedding" in model_name:
+                # For Gemini embedding models
+                embedding_model = genai.GenerativeModel(model_name=self.model_name)
 
-            # Estimate token usage
-            prompt_tokens = sum(self._estimate_tokens(t) for t in text_list)
+                embeddings = []
+                for text_item in text_list:
+                    result = embedding_model.embed_content(content=text_item)
+                    embeddings.append(result.embedding)
 
-            # Format the response
+                # Extract dimensions from the first embedding
+                dimensions = len(embeddings[0]) if embeddings else 0
+
+                # Estimate token usage (Google doesn't provide token counts for embeddings)
+                tokens_prompt = sum(self._estimate_tokens(t) for t in text_list)
+
+            else:
+                # For older embedding models
+                embedding_model = genai.Embedding(model_name=self.model_name)
+
+                embeddings = []
+                for text_item in text_list:
+                    result = embedding_model.embed_content(content=text_item)
+                    embeddings.append(result.embedding)
+
+                # Extract dimensions from the first embedding
+                dimensions = len(embeddings[0]) if embeddings else 0
+
+                # Estimate token usage (Google doesn't provide token counts for embeddings)
+                tokens_prompt = sum(self._estimate_tokens(t) for t in text_list)
+
             return {
                 "embeddings": embeddings,
-                "dimensions": len(embeddings[0]) if embeddings else 0,
+                "dimensions": dimensions,
                 "usage": {
-                    "prompt_tokens": prompt_tokens,
-                    "total_tokens": prompt_tokens,
+                    "prompt_tokens": tokens_prompt,
+                    "total_tokens": tokens_prompt,
                 },
             }
         except Exception as e:
@@ -359,18 +396,66 @@ class GoogleProvider(BaseProvider):
 
     def generate_image(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """
-        Generate an image from a prompt.
-        Note: Google's Gemini can generate images, but the API is different.
-        This implementation is a placeholder.
+        Generate an image or video from a prompt.
 
         Args:
             prompt: The prompt to generate an image from.
             **kwargs: Additional parameters to pass to the Google API.
 
         Returns:
-            A dictionary containing the image URL or data.
+            A dictionary containing the image or video URL or data.
         """
-        raise Exception("Image generation is not yet implemented for Google provider")
+        try:
+            model_name = self.model_name.lower()
+
+            # Check if it's a video generation model
+            if "veo" in model_name:
+                # Initialize Veo generation model if needed
+                veo_model = genai.GenerativeModel(model_name=self.model_name)
+
+                # Extract video-specific parameters
+                video_params = {
+                    "size": kwargs.get("size", "1024x576"),
+                    "frames_per_second": kwargs.get("frames_per_second", 24),
+                    "duration_seconds": kwargs.get("duration_seconds", 5.0),
+                }
+
+                # Generate video
+                response = veo_model.generate_content(prompt, **video_params)
+
+                return {
+                    "videos": [
+                        {"url": part.uri}
+                        for part in response.parts
+                        if hasattr(part, "uri")
+                    ],
+                    "format": "url",
+                }
+
+            # Default to image generation
+            # Initialize Imagen generation model if needed
+            imagen_model = genai.GenerativeModel(model_name=self.model_name)
+
+            # Extract image-specific parameters
+            image_params = {
+                "size": kwargs.get("size", "1024x1024"),
+                "n": kwargs.get("n", 1),
+                "quality": kwargs.get("quality", "standard"),
+                "style": kwargs.get("style", "vivid"),
+            }
+
+            # Generate image
+            response = imagen_model.generate_content(prompt, **image_params)
+
+            return {
+                "images": [
+                    {"url": part.uri} for part in response.parts if hasattr(part, "uri")
+                ],
+                "format": "url",
+            }
+
+        except Exception as e:
+            raise Exception(f"Error in image/video generation: {str(e)}")
 
     def get_token_count(self, text: str) -> int:
         """

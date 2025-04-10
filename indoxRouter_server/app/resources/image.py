@@ -95,8 +95,26 @@ class Images(BaseResource):
         # Make the request
         start_time = time.time()
         try:
+            # Remove MongoDB logging specific parameters that shouldn't be passed to the provider
+            mongo_specific_params = [
+                "client_info",
+                "session_id",
+                "content_analysis",
+                "performance_metrics",
+            ]
+
+            # Create a clean copy of kwargs without MongoDB-specific parameters
+            filtered_kwargs = {
+                k: v for k, v in kwargs.items() if k not in mongo_specific_params
+            }
+
             response = provider_instance.generate_image(
-                prompt=prompt, size=size, n=n, quality=quality, style=style, **kwargs
+                prompt=prompt,
+                size=size,
+                n=n,
+                quality=quality,
+                style=style,
+                **filtered_kwargs,
             )
         except Exception as e:
             self._handle_provider_error(e)
@@ -158,10 +176,10 @@ class Images(BaseResource):
         if user_id:
             # Import logging functions
             from app.db.database import log_api_request, log_model_usage
-            
+
             # Generate a unique request ID for tracking
             request_id = str(uuid.uuid4())
-            
+
             # Log to PostgreSQL
             log_api_request(
                 user_id=user_id,
@@ -175,9 +193,9 @@ class Images(BaseResource):
                 cost=cost,
                 duration_ms=int(duration * 1000),
                 status_code=200,
-                response_summary=f"Generated {n} images with prompt: {prompt[:50]}..."
+                response_summary=f"Generated {n} images with prompt: {prompt[:50]}...",
             )
-            
+
             # Log to MongoDB for usage analytics
             log_model_usage(
                 user_id=user_id,
@@ -187,18 +205,47 @@ class Images(BaseResource):
                 tokens_completion=tokens_completion,
                 cost=cost,
                 latency=duration,
-                request_id=request_id
+                request_id=request_id,
+                # Add enhanced data for MongoDB
+                session_id=kwargs.get("session_id", None),
+                request_data={
+                    "endpoint": "image",
+                    "prompt": prompt,
+                    "parameters": {
+                        "size": size,
+                        "n": n,
+                        "quality": quality,
+                        "style": style,
+                        **kwargs,
+                    },
+                },
+                response_data={
+                    "status_code": 200,
+                    "image_count": len(response.get("images", [])),
+                    "image_format": response.get("format", "url"),
+                },
+                client_info=kwargs.get("client_info", None),
+                performance_metrics={
+                    "total_request_time": duration,
+                    "model_inference_time": duration
+                    * 0.98,  # Image generation is mostly inference
+                    "processing_time": duration * 0.02,
+                },
+                content_analysis={
+                    "prompt_type": "image_generation",
+                    "prompt_length": len(prompt),
+                },
             )
-            
+
             # Update user credit
             self._update_user_credit(
-                user_id=user_id, 
-                cost=cost, 
-                endpoint="image", 
+                user_id=user_id,
+                cost=cost,
+                endpoint="image",
                 tokens_input=tokens_prompt,
                 tokens_output=tokens_completion,
                 model=model_name,
-                provider=provider
+                provider=provider,
             )
 
         # Create and return the response

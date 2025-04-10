@@ -96,41 +96,46 @@ def init_mongodb():
 
 
 def create_mongo_indexes():
-    """Create indexes for MongoDB collections."""
+    """Create MongoDB indexes."""
     try:
-        # Conversations collection
-        if "conversations" in mongo_db.list_collection_names():
-            mongo_db.conversations.create_index("user_id")
-            mongo_db.conversations.create_index(
-                [("title", "text"), ("messages.content", "text")]
+        if mongo_db:
+            # Create indexes for model_usage collection
+            mongo_db.model_usage.create_index([("user_id", 1)])
+            mongo_db.model_usage.create_index([("provider", 1)])
+            mongo_db.model_usage.create_index([("model", 1)])
+            mongo_db.model_usage.create_index([("timestamp", -1)])
+            mongo_db.model_usage.create_index([("date", 1)])
+            mongo_db.model_usage.create_index([("request_id", 1)], unique=True)
+
+            # Add indexes for new fields
+            mongo_db.model_usage.create_index([("session_id", 1)])
+            mongo_db.model_usage.create_index([("client_info.ip", 1)])
+            mongo_db.model_usage.create_index([("request.endpoint", 1)])
+            mongo_db.model_usage.create_index([("cache.cache_hit", 1)])
+
+            # Compound indexes for analytics
+            mongo_db.model_usage.create_index([("user_id", 1), ("date", 1)])
+            mongo_db.model_usage.create_index(
+                [("user_id", 1), ("provider", 1), ("model", 1)]
             )
+            mongo_db.model_usage.create_index([("user_id", 1), ("session_id", 1)])
 
-        # Embeddings collection
-        if "embeddings" in mongo_db.list_collection_names():
-            mongo_db.embeddings.create_index("user_id")
-            mongo_db.embeddings.create_index([("text", "text")])
+            # Create indexes for model_cache collection
+            mongo_db.model_cache.create_index([("request_hash", 1)], unique=True)
+            mongo_db.model_cache.create_index([("expires_at", 1)], expireAfterSeconds=0)
 
-        # User datasets collection
-        if "user_datasets" in mongo_db.list_collection_names():
-            mongo_db.user_datasets.create_index("user_id")
+            # Create indexes for models collection
+            mongo_db.models.create_index([("provider", 1), ("name", 1)], unique=True)
 
-        # Model outputs collection (for caching)
-        if "model_outputs" in mongo_db.list_collection_names():
-            mongo_db.model_outputs.create_index("request_hash", unique=True)
-            mongo_db.model_outputs.create_index("ttl", expireAfterSeconds=0)
+            # Create indexes for conversations collection
+            mongo_db.conversations.create_index([("user_id", 1)])
+            mongo_db.conversations.create_index([("created_at", -1)])
 
-        # Models collection
-        if "models" in mongo_db.list_collection_names():
-            mongo_db.models.create_index("provider")
-            mongo_db.models.create_index("name")
+            # Create indexes for embeddings collection
+            mongo_db.embeddings.create_index([("user_id", 1)])
+            mongo_db.embeddings.create_index([("model", 1)])
 
-        # Model usage statistics
-        if "model_usage" in mongo_db.list_collection_names():
-            mongo_db.model_usage.create_index("user_id")
-            mongo_db.model_usage.create_index("model")
-            mongo_db.model_usage.create_index("date")
-
-        logger.info("MongoDB indexes created successfully")
+            logger.info("MongoDB indexes created successfully")
     except Exception as e:
         logger.error(f"Error creating MongoDB indexes: {e}")
 
@@ -625,13 +630,44 @@ def log_model_usage(
     cost: float = 0.0,
     latency: float = 0.0,
     request_id: str = None,
+    session_id: str = None,
+    request_data: Dict[str, Any] = None,
+    response_data: Dict[str, Any] = None,
+    client_info: Dict[str, Any] = None,
+    performance_metrics: Dict[str, Any] = None,
+    content_analysis: Dict[str, Any] = None,
 ) -> bool:
-    """Log model usage to MongoDB."""
+    """
+    Log detailed model usage to MongoDB.
+
+    Args:
+        user_id: User ID
+        provider: Provider name (e.g., "openai")
+        model: Model name (e.g., "openai/gpt-4o-mini")
+        tokens_prompt: Number of prompt tokens
+        tokens_completion: Number of completion tokens
+        cost: Cost of the request
+        latency: Total request latency
+        request_id: Unique request ID
+        session_id: Session ID for grouping related requests
+        request_data: Request details including endpoint, messages, parameters
+        response_data: Response details including status code, content length, finish reason
+        client_info: Client information like IP, user agent, device type
+        performance_metrics: Detailed timing metrics for different stages of request processing
+        content_analysis: Content analysis results like topics, languages, sentiment
+
+    Returns:
+        True if logging was successful, False otherwise
+    """
     try:
         if mongo_db is None:
             logger.error("MongoDB not initialized for logging model usage")
             return False
 
+        # Create timestamp
+        current_time = datetime.now()
+
+        # Build the base usage document
         usage_doc = {
             "user_id": user_id,
             "provider": provider,
@@ -642,10 +678,59 @@ def log_model_usage(
             "cost": cost,
             "latency": latency,
             "request_id": request_id,
-            "timestamp": datetime.now(),
-            "date": datetime.now().date().isoformat(),
+            "timestamp": current_time,
+            "date": current_time.date().isoformat(),
         }
 
+        # Add session ID if provided
+        if session_id:
+            usage_doc["session_id"] = session_id
+
+        # Add request data if provided
+        if request_data:
+            # Sanitize request data - remove any sensitive information
+            if "messages" in request_data and isinstance(
+                request_data["messages"], list
+            ):
+                # Make a copy to avoid modifying the original
+                sanitized_messages = []
+                for msg in request_data["messages"]:
+                    # Include role and a truncated content
+                    if isinstance(msg, dict):
+                        sanitized_msg = {"role": msg.get("role", "user")}
+                        content = msg.get("content", "")
+                        # Truncate content if it's too long
+                        if len(content) > 1000:
+                            sanitized_msg["content"] = content[:1000] + "..."
+                            sanitized_msg["content_truncated"] = True
+                        else:
+                            sanitized_msg["content"] = content
+                        sanitized_messages.append(sanitized_msg)
+
+                request_data = {**request_data, "messages": sanitized_messages}
+
+            usage_doc["request"] = request_data
+
+        # Add response data if provided
+        if response_data:
+            usage_doc["response"] = response_data
+
+        # Add client information if provided
+        if client_info:
+            usage_doc["client_info"] = client_info
+
+        # Add performance metrics if provided
+        if performance_metrics:
+            usage_doc["performance"] = performance_metrics
+
+        # Add content analysis if provided
+        if content_analysis:
+            usage_doc["content_analysis"] = content_analysis
+
+        # Add cache information (default to no cache hit)
+        usage_doc["cache"] = {"cache_hit": False, "cached_id": None}
+
+        # Insert into MongoDB
         result = mongo_db.model_usage.insert_one(usage_doc)
         return result.acknowledged
     except Exception as e:
@@ -874,3 +959,126 @@ def log_api_request(
     except Exception as e:
         logger.error(f"Error logging API request: {e}")
         return False
+
+
+def get_usage_analytics(
+    user_id: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    group_by: str = "date",
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    session_id: Optional[str] = None,
+    endpoint: Optional[str] = None,
+    include_content: bool = False,
+) -> List[Dict[str, Any]]:
+    """
+    Get advanced usage analytics with flexible grouping and filtering.
+
+    Args:
+        user_id: Optional user ID to filter by
+        start_date: Optional start date for filtering
+        end_date: Optional end date for filtering
+        group_by: Field to group by (date, model, provider, endpoint, session_id)
+        provider: Optional provider to filter by
+        model: Optional model to filter by
+        session_id: Optional session ID to filter by
+        endpoint: Optional endpoint to filter by (chat, completion, embedding, image)
+        include_content: Whether to include request/response content in results
+
+    Returns:
+        List of aggregated usage statistics
+    """
+    try:
+        if mongo_db is None:
+            logger.error("MongoDB not initialized for advanced analytics")
+            return []
+
+        # Build the match filter
+        match_filter = {}
+
+        if user_id:
+            match_filter["user_id"] = user_id
+
+        if start_date and end_date:
+            match_filter["date"] = {
+                "$gte": start_date.isoformat(),
+                "$lte": end_date.isoformat(),
+            }
+
+        if provider:
+            match_filter["provider"] = provider
+
+        if model:
+            match_filter["model"] = model
+
+        if session_id:
+            match_filter["session_id"] = session_id
+
+        if endpoint:
+            match_filter["request.endpoint"] = endpoint
+
+        # Define group by field
+        group_fields = {
+            "date": "$date",
+            "model": "$model",
+            "provider": "$provider",
+            "endpoint": "$request.endpoint",
+            "session_id": "$session_id",
+            "client_ip": "$client_info.ip",
+        }
+
+        group_by_field = group_fields.get(group_by, "$date")
+
+        # Build the aggregation pipeline
+        pipeline = [
+            {"$match": match_filter},
+            {
+                "$group": {
+                    "_id": group_by_field,
+                    "count": {"$sum": 1},
+                    "total_cost": {"$sum": "$cost"},
+                    "total_tokens_prompt": {"$sum": "$tokens_prompt"},
+                    "total_tokens_completion": {"$sum": "$tokens_completion"},
+                    "total_tokens": {"$sum": "$tokens_total"},
+                    "avg_latency": {"$avg": "$latency"},
+                    "min_latency": {"$min": "$latency"},
+                    "max_latency": {"$max": "$latency"},
+                    "first_timestamp": {"$min": "$timestamp"},
+                    "last_timestamp": {"$max": "$timestamp"},
+                }
+            },
+            {"$sort": {"first_timestamp": 1}},
+        ]
+
+        # If content is requested, include sample requests/responses
+        if include_content and not group_by:
+            # For non-grouped queries, we can include the full content
+            projection = {
+                "_id": 0,
+                "user_id": 1,
+                "provider": 1,
+                "model": 1,
+                "tokens_total": 1,
+                "cost": 1,
+                "latency": 1,
+                "timestamp": 1,
+                "request": 1,
+                "response": 1,
+                "client_info": 1,
+                "performance": 1,
+                "content_analysis": 1,
+            }
+            results = list(mongo_db.model_usage.find(match_filter, projection))
+        else:
+            # For grouped queries, run the aggregation
+            results = list(mongo_db.model_usage.aggregate(pipeline))
+
+            # Format the results
+            for item in results:
+                item["group_value"] = item.pop("_id")
+
+        return results
+    except Exception as e:
+        logger.error(f"Error getting usage analytics: {e}")
+        return []

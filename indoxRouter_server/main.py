@@ -29,7 +29,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import auth, chat, completion, embedding, image, model
+from app.api.routers import auth, chat, completion, embedding, image, model, analytics
 from app.core.config import settings
 from app.db.database import init_db
 from app.resources import Chat, Completions, Embeddings, Images
@@ -64,6 +64,7 @@ app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 app.include_router(completion.router, prefix="/api/v1", tags=["Completions"])
 app.include_router(embedding.router, prefix="/api/v1", tags=["Embeddings"])
 app.include_router(image.router, prefix="/api/v1", tags=["Images"])
+app.include_router(analytics.router, prefix="/api/v1", tags=["Analytics"])
 
 
 @app.on_event("startup")

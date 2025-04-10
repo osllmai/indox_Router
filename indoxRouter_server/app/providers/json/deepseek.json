@@ -1,7 +1,7 @@
 [
   {
     "number": "1",
-    "modelName": "deepseek-llm-67b-chat",
+    "modelName": "deepseek-chat",
     "name": "DeepSeek LLM 67B Chat",
     "type": "Text Generation",
     "inputPricePer1KTokens": 0.0007,

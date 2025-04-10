@@ -87,6 +87,19 @@ class Completions(BaseResource):
             if "api_key_id" in kwargs:
                 del kwargs["api_key_id"]
 
+            # Remove MongoDB logging specific parameters that shouldn't be passed to the provider
+            mongo_specific_params = [
+                "client_info",
+                "session_id",
+                "content_analysis",
+                "performance_metrics",
+            ]
+
+            # Create a clean copy of kwargs without MongoDB-specific parameters
+            filtered_kwargs = {
+                k: v for k, v in kwargs.items() if k not in mongo_specific_params
+            }
+
             response = provider_impl.complete(
                 prompt=prompt,
                 temperature=temperature,
@@ -96,7 +109,7 @@ class Completions(BaseResource):
                 presence_penalty=presence_penalty,
                 stream=stream,
                 # return_generator=return_generator,
-                **kwargs,
+                **filtered_kwargs,
             )
         except Exception as e:
             self._handle_provider_error(e)
@@ -178,7 +191,7 @@ class Completions(BaseResource):
 
                 # Generate a unique request ID for tracking
                 request_id = str(uuid.uuid4())
-                
+
                 # Log to PostgreSQL
                 log_api_request(
                     user_id=user_id,
@@ -194,7 +207,7 @@ class Completions(BaseResource):
                     status_code=200,
                     response_summary=data[:100] if data else None,
                 )
-                
+
                 # Log to MongoDB for usage analytics
                 log_model_usage(
                     user_id=user_id,
@@ -204,7 +217,34 @@ class Completions(BaseResource):
                     tokens_completion=tokens_completion,
                     cost=cost,
                     latency=duration,
-                    request_id=request_id
+                    request_id=request_id,
+                    # Add enhanced data for MongoDB
+                    session_id=kwargs.get("session_id", None),
+                    request_data={
+                        "endpoint": "completion",
+                        "prompt": prompt,
+                        "parameters": {
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "top_p": top_p,
+                            "frequency_penalty": frequency_penalty,
+                            "presence_penalty": presence_penalty,
+                            **kwargs,
+                        },
+                    },
+                    response_data={
+                        "status_code": 200,
+                        "content_length": len(data) if data else 0,
+                        "finish_reason": response.get("finish_reason", None),
+                    },
+                    client_info=kwargs.get("client_info", None),
+                    performance_metrics={
+                        "total_request_time": duration,
+                        "model_inference_time": duration
+                        * 0.9,  # Estimated inference time
+                        "processing_time": duration * 0.1,  # Estimated processing time
+                    },
+                    content_analysis=kwargs.get("content_analysis", None),
                 )
 
                 # Update user credit

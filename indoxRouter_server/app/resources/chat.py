@@ -77,20 +77,53 @@ class Chat(BaseResource):
             else:
                 chat_messages.append(message)
         # Get the provider and model
-        provider, model_name = model.split("/", 1)
+        print(f"DEBUG CHAT: Original model string: {model}")
+        try:
+            provider, model_name = model.split("/", 1)
+            print(
+                f"DEBUG CHAT: Split into provider='{provider}', model_name='{model_name}'"
+            )
+        except Exception as e:
+            print(f"DEBUG CHAT: Error splitting model string: {str(e)}")
+            # Default to openai if there's an error
+            provider = "openai"
+            model_name = model
+            print(
+                f"DEBUG CHAT: Defaulting to provider='{provider}', model_name='{model_name}'"
+            )
+
         # Get the provider API key
         if not provider_api_key:
             provider_api_key = os.getenv(f"{provider.upper()}_API_KEY")
+            print(
+                f"DEBUG CHAT: Using API key from env var {provider.upper()}_API_KEY: {provider_api_key[:5]}...{provider_api_key[-5:] if provider_api_key and len(provider_api_key) > 10 else '****'}"
+            )
+        else:
+            print(
+                f"DEBUG CHAT: Using provided API key: {provider_api_key[:5]}...{provider_api_key[-5:] if provider_api_key and len(provider_api_key) > 10 else '****'}"
+            )
 
         # Get the provider implementation
+        print(f"DEBUG CHAT: Getting provider implementation for {provider}")
         provider_impl = get_provider(provider, provider_api_key, model_name)
 
         # Send the request to the provider
         start_time = time.time()
         try:
-            # Remove api_key_id from kwargs as it's not expected by the provider
             if "api_key_id" in kwargs:
                 del kwargs["api_key_id"]
+
+            mongo_specific_params = [
+                "client_info",
+                "session_id",
+                "content_analysis",
+                "performance_metrics",
+            ]
+
+            # Create a clean copy of kwargs without MongoDB-specific parameters
+            filtered_kwargs = {
+                k: v for k, v in kwargs.items() if k not in mongo_specific_params
+            }
 
             response = provider_impl.chat(
                 messages=chat_messages,
@@ -101,7 +134,7 @@ class Chat(BaseResource):
                 presence_penalty=presence_penalty,
                 stream=stream,
                 # return_generator=return_generator,
-                **kwargs,
+                **filtered_kwargs,
             )
         except Exception as e:
             self._handle_provider_error(e)
@@ -174,7 +207,7 @@ class Chat(BaseResource):
 
                 # Generate a unique request ID for tracking
                 request_id = str(uuid.uuid4())
-                
+
                 # Log to PostgreSQL
                 log_api_request(
                     user_id=user_id,
@@ -190,7 +223,7 @@ class Chat(BaseResource):
                     status_code=200,
                     response_summary=data[:100] if data else None,
                 )
-                
+
                 # Log to MongoDB for usage analytics
                 log_model_usage(
                     user_id=user_id,
@@ -200,7 +233,34 @@ class Chat(BaseResource):
                     tokens_completion=tokens_completion,
                     cost=cost,
                     latency=duration,
-                    request_id=request_id
+                    request_id=request_id,
+                    # Add enhanced data for MongoDB
+                    session_id=kwargs.get("session_id", None),
+                    request_data={
+                        "endpoint": "chat",
+                        "messages": chat_messages,
+                        "parameters": {
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "top_p": top_p,
+                            "frequency_penalty": frequency_penalty,
+                            "presence_penalty": presence_penalty,
+                            **kwargs,
+                        },
+                    },
+                    response_data={
+                        "status_code": 200,
+                        "content_length": len(data) if data else 0,
+                        "finish_reason": response.get("finish_reason", None),
+                    },
+                    client_info=kwargs.get("client_info", None),
+                    performance_metrics={
+                        "total_request_time": duration,
+                        "model_inference_time": duration
+                        * 0.9,  # Estimated inference time
+                        "processing_time": duration * 0.1,  # Estimated processing time
+                    },
+                    content_analysis=kwargs.get("content_analysis", None),
                 )
 
                 # Update user credit

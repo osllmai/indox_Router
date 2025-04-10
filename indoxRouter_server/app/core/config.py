@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     COHERE_API_KEY: Optional[str] = Field(default=None, env="COHERE_API_KEY")
     GOOGLE_API_KEY: Optional[str] = Field(default=None, env="GOOGLE_API_KEY")
     MISTRAL_API_KEY: Optional[str] = Field(default=None, env="MISTRAL_API_KEY")
+    DEEPSEEK_API_KEY: Optional[str] = Field(default=None, env="DEEPSEEK_API_KEY")
 
     # Default provider and model
     DEFAULT_PROVIDER: str = Field(default="openai", env="DEFAULT_PROVIDER")

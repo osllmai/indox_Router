@@ -83,7 +83,20 @@ class Embeddings(BaseResource):
         # Make the request
         start_time = time.time()
         try:
-            response = provider_instance.embed(text=text, **kwargs)
+            # Remove MongoDB logging specific parameters that shouldn't be passed to the provider
+            mongo_specific_params = [
+                "client_info",
+                "session_id",
+                "content_analysis",
+                "performance_metrics",
+            ]
+
+            # Create a clean copy of kwargs without MongoDB-specific parameters
+            filtered_kwargs = {
+                k: v for k, v in kwargs.items() if k not in mongo_specific_params
+            }
+
+            response = provider_instance.embed(text=text, **filtered_kwargs)
         except Exception as e:
             self._handle_provider_error(e)
 
@@ -116,7 +129,7 @@ class Embeddings(BaseResource):
         if user_id:
             # Generate a unique request ID for tracking
             request_id = str(uuid.uuid4())
-            
+
             # Log to PostgreSQL
             log_api_request(
                 user_id=user_id,
@@ -130,9 +143,9 @@ class Embeddings(BaseResource):
                 cost=cost,
                 duration_ms=int(duration * 1000),
                 status_code=200,
-                response_summary=f"Embedding dimensions: {response.get('dimensions', DEFAULT_EMBEDDING_DIMENSIONS)}"
+                response_summary=f"Embedding dimensions: {response.get('dimensions', DEFAULT_EMBEDDING_DIMENSIONS)}",
             )
-            
+
             # Log to MongoDB for usage analytics
             log_model_usage(
                 user_id=user_id,
@@ -142,9 +155,35 @@ class Embeddings(BaseResource):
                 tokens_completion=0,
                 cost=cost,
                 latency=duration,
-                request_id=request_id
+                request_id=request_id,
+                # Add enhanced data for MongoDB
+                session_id=kwargs.get("session_id", None),
+                request_data={
+                    "endpoint": "embedding",
+                    "text": (
+                        text
+                        if isinstance(text, str)
+                        else f"[Array of {len(text)} texts]"
+                    ),
+                    "text_count": 1 if isinstance(text, str) else len(text),
+                    "parameters": kwargs,
+                },
+                response_data={
+                    "status_code": 200,
+                    "dimensions": response.get(
+                        "dimensions", DEFAULT_EMBEDDING_DIMENSIONS
+                    ),
+                    "embeddings_count": len(response.get("embeddings", [])),
+                },
+                client_info=kwargs.get("client_info", None),
+                performance_metrics={
+                    "total_request_time": duration,
+                    "model_inference_time": duration * 0.95,  # Estimated inference time
+                    "processing_time": duration * 0.05,  # Estimated processing time
+                },
+                content_analysis=None,  # Embeddings typically don't have content analysis
             )
-            
+
             # Update user credit
             self._update_user_credit(
                 user_id=user_id,

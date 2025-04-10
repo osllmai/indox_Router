@@ -19,19 +19,18 @@ api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
 
 
 async def get_current_user(
-    request: Request,
-    authorization: Optional[str] = Header(None)
+    request: Request, authorization: Optional[str] = Header(None)
 ) -> Dict[str, Any]:
     """
     Get the current user from the API key in the Authorization header.
-    
+
     Args:
         request: The FastAPI request object.
         authorization: The Authorization header value.
-        
+
     Returns:
         The user information if authenticated.
-        
+
     Raises:
         HTTPException: If authentication fails.
     """
@@ -41,10 +40,10 @@ async def get_current_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Remove "Bearer " prefix if present
     api_key = authorization.replace("Bearer ", "")
-    
+
     # Verify the API key and get the user
     user_info = verify_api_key(api_key)
     if not user_info:
@@ -53,29 +52,31 @@ async def get_current_user(
             detail="Invalid API key",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Check if user is active
     if not user_info.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is disabled",
         )
-        
+
     # Check rate limits
     # Determine the endpoint and estimate token usage
     path = request.url.path
     endpoint = path.split("/")[-1]
-    
+
     # Get estimated token count from request
     estimated_tokens = 0
     if request.method == "POST":
         try:
             body = await request.json()
-            
+
             # Estimate tokens based on endpoint
             if endpoint == "chat":
                 messages = body.get("messages", [])
-                estimated_tokens = sum(len(msg.get("content", "")) // 4 for msg in messages)
+                estimated_tokens = sum(
+                    len(msg.get("content", "")) // 4 for msg in messages
+                )
             elif endpoint == "completions":
                 prompt = body.get("prompt", "")
                 estimated_tokens = len(prompt) // 4
@@ -85,50 +86,48 @@ async def get_current_user(
                     estimated_tokens = sum(len(t) // 4 for t in text)
                 else:
                     estimated_tokens = len(text) // 4
-                    
+
             # Apply minimum token count for any request
             estimated_tokens = max(10, estimated_tokens)
-            
+
         except Exception:
             # If we can't parse the body, use a default estimate
             estimated_tokens = 50
-            
+
     # Get user tier
     user_tier = user_info.get("account_tier", "free")
-    
+
     # Check rate limit
     allowed, rate_info = check_rate_limit(
-        user_id=user_info["id"],
-        user_tier=user_tier,
-        tokens=estimated_tokens
+        user_id=user_info["id"], user_tier=user_tier, tokens=estimated_tokens
     )
-    
+
     # Add rate limit headers to the response
     headers = get_rate_limit_headers(user_info["id"], user_tier)
     request.state.rate_limit_headers = headers
-    
+
     if not allowed:
         raise RateLimitError(
             f"Rate limit exceeded: {rate_info.get('reason', 'unknown reason')}. "
             f"Try again in {rate_info.get('reset_after', 0)} seconds."
         )
-    
+
     return user_info
 
 
 def get_provider_api_key(provider: str) -> Optional[str]:
     """
     Get the API key for a provider.
-    
+
     Args:
         provider: The provider ID.
-        
+
     Returns:
         The API key for the provider, or None if not configured.
     """
     # Check if provider is supported
     provider = provider.lower()
-    
+
     # Get the API key based on the provider
     if provider == "openai":
         return settings.OPENAI_API_KEY
@@ -140,5 +139,7 @@ def get_provider_api_key(provider: str) -> Optional[str]:
         return settings.GOOGLE_API_KEY
     elif provider == "mistral":
         return settings.MISTRAL_API_KEY
+    elif provider == "deepseek":
+        return settings.DEEPSEEK_API_KEY
     else:
         return None

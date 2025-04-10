@@ -3,13 +3,11 @@ Mistral provider implementation for indoxRouter server.
 """
 
 import json
-import os
-from typing import Dict, List, Any, Optional, Union, AsyncGenerator
+from typing import Dict, List, Any, Optional, Union, AsyncGenerator, Generator
 
 import mistralai
-from mistralai.client import MistralClient
-from mistralai.async_client import MistralAsyncClient
-from mistralai.models.chat_completion import ChatMessage as MistralChatMessage
+from mistralai import Mistral
+from mistralai.models import UserMessage, AssistantMessage, SystemMessage
 
 from app.providers.base_provider import BaseProvider
 
@@ -29,51 +27,118 @@ class MistralProvider(BaseProvider):
         if "/" in model_name:
             _, model_name = model_name.split("/", 1)
 
+        print("=" * 50)
+        print(f"INITIALIZING MISTRAL PROVIDER WITH MODEL: {model_name}")
+        print(
+            f"API Key: {api_key[:5]}...{api_key[-5:]}"
+        )  # Print part of the key for debugging
+        print("=" * 50)
+
         super().__init__(api_key, model_name)
-        self.client = MistralClient(api_key=api_key)
-        self.async_client = MistralAsyncClient(api_key=api_key)
+        self.client = Mistral(api_key=api_key)
 
-        # Model capabilities mapping
-        self.model_capabilities = {
-            "mistral-tiny": ["chat", "completion"],
-            "mistral-small": ["chat", "completion"],
-            "mistral-medium": ["chat", "completion"],
-            "mistral-large": ["chat", "completion"],
-            "open-mistral": ["chat", "completion"],
-            "open-mixtral": ["chat", "completion"],
-            "mistral-embed": ["embedding"],
-        }
+        try:
+            available_models = [model.id for model in self.client.models.list().data]
+            print(f"Available Mistral models: {available_models}")
+            self._available_models = available_models
 
-        # Model context window sizes
-        self.context_window_sizes = {
-            "mistral-tiny": 32000,
-            "mistral-small": 32000,
-            "mistral-medium": 32000,
-            "mistral-large": 32000,
-            "open-mistral": 8000,
-            "open-mixtral": 32000,
-        }
+            if model_name not in available_models:
+                print(f"WARNING: Model '{model_name}' not found in available models.")
+                similar_models = [m for m in available_models if model_name in m]
+                if similar_models:
+                    print(f"Similar models: {similar_models}")
+                    if len(similar_models) > 0:
+                        print(f"Switching to similar model: {similar_models[0]}")
+                        self.model_name = similar_models[0]
+        except Exception as e:
+            print(f"Error getting available models: {str(e)}")
+            self._available_models = []
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
+        try:
+            import os
+
+            json_path = os.path.join(os.path.dirname(__file__), "json", "mistral.json")
+            print(f"Loading models from: {json_path}")
+            with open(json_path, "r") as f:
+                model_data = json.load(f)
+
+            self.model_capabilities = {}
+            self.context_window_sizes = {}
+
+            for model in model_data:
+                model_id = model["modelName"]
+                capabilities = ["chat", "completion"]
+                if model["type"] == "Embedding":
+                    capabilities = ["embedding"]
+                elif "Vision" in model["type"]:
+                    capabilities.append("vision")
+
+                self.model_capabilities[model_id] = capabilities
+
+                if "contextWindows" in model and "Tokens" in model["contextWindows"]:
+                    context_str = model["contextWindows"].split(" ")[0]
+                    if "k" in context_str:
+                        context_size = int(float(context_str.replace("k", "")) * 1000)
+                        self.context_window_sizes[model_id] = context_size
+        except Exception as e:
+            print(f"Error loading model data from JSON: {str(e)}")
+            self.model_capabilities = {
+                "mistral-tiny": ["chat", "completion"],
+                "mistral-small": ["chat", "completion"],
+                "mistral-medium": ["chat", "completion"],
+                "mistral-large": ["chat", "completion"],
+                "mistral-embed": ["embedding"],
+            }
+            self.context_window_sizes = {
+                "mistral-tiny": 32000,
+                "mistral-small": 128000,
+                "mistral-medium": 32000,
+                "mistral-large": 128000,
+                "mistral-embed": 8000,
+            }
+
+    def chat(self, messages: List[Any], **kwargs) -> Dict[str, Any]:
         """
         Send a chat request to Mistral.
 
         Args:
-            messages: A list of message dictionaries with 'role' and 'content' keys.
+            messages: A list of message dictionaries with 'role' and 'content' keys or ChatMessage objects.
             **kwargs: Additional parameters to pass to the Mistral API.
 
         Returns:
             A dictionary containing the response from Mistral.
         """
         try:
-            # Convert OpenAI-style messages to Mistral format
-            mistral_messages = self._convert_messages(messages)
+            # Convert messages to our format if they're not already dictionaries
+            normalized_messages = []
+            for msg in messages:
+                if isinstance(msg, dict):
+                    normalized_messages.append(msg)
+                elif hasattr(msg, "role") and hasattr(msg, "content"):
+                    normalized_messages.append(
+                        {"role": msg.role, "content": msg.content}
+                    )
+                else:
+                    print(f"Warning: Unknown message type: {type(msg).__name__}")
 
-            # Extract parameters
+            print(
+                f"Debug - Normalized {len(messages)} messages to {len(normalized_messages)} dicts"
+            )
+
+            mistral_messages = self._convert_messages(normalized_messages)
             temperature = kwargs.pop("temperature", 0.7)
             max_tokens = kwargs.pop("max_tokens", None)
 
-            response = self.client.chat(
+            print(
+                f"Debug - Sending chat request to Mistral using model: {self.model_name}"
+            )
+
+            # For debugging
+            print(
+                f"Debug - Message types: {[type(m).__name__ for m in mistral_messages]}"
+            )
+
+            response = self.client.chat.complete(
                 model=self.model_name,
                 messages=mistral_messages,
                 temperature=temperature,
@@ -81,13 +146,13 @@ class MistralProvider(BaseProvider):
                 **kwargs,
             )
 
-            # Format the response
+            content = response.choices[0].message.content
             return {
                 "choices": [
                     {
                         "message": {
                             "role": response.choices[0].message.role,
-                            "content": response.choices[0].message.content,
+                            "content": content,
                         },
                         "index": 0,
                         "finish_reason": response.choices[0].finish_reason,
@@ -99,33 +164,105 @@ class MistralProvider(BaseProvider):
                     "total_tokens": response.usage.total_tokens,
                 },
             }
-        except mistralai.exceptions.MistralAPIException as e:
-            raise Exception(f"Mistral API error: {str(e)}")
         except Exception as e:
-            raise Exception(f"Error in chat completion: {str(e)}")
+            error_message = str(e)
+            print(f"Mistral API Error: {error_message}")
 
-    async def chat_stream(
-        self, messages: List[Dict[str, str]], **kwargs
-    ) -> AsyncGenerator[str, None]:
+            if "model_not_found" in error_message or "does not exist" in error_message:
+                try:
+                    available_models = [
+                        model.id for model in self.client.models.list().data
+                    ]
+                    self._available_models = available_models
+                    print(f"Available models: {available_models}")
+
+                    similar_models = [
+                        m
+                        for m in available_models
+                        if self.model_name in m or m in self.model_name
+                    ]
+                    if similar_models:
+                        alt_model = similar_models[0]
+                        print(f"Attempting with similar model: {alt_model}")
+
+                        response = self.client.chat.complete(
+                            model=alt_model,
+                            messages=mistral_messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            **kwargs,
+                        )
+
+                        self.model_name = alt_model
+                        print(f"Successfully used alternative model: {alt_model}")
+
+                        content = response.choices[0].message.content
+                        return {
+                            "choices": [
+                                {
+                                    "message": {
+                                        "role": response.choices[0].message.role,
+                                        "content": content,
+                                    },
+                                    "index": 0,
+                                    "finish_reason": response.choices[0].finish_reason,
+                                }
+                            ],
+                            "usage": {
+                                "prompt_tokens": response.usage.prompt_tokens,
+                                "completion_tokens": response.usage.completion_tokens,
+                                "total_tokens": response.usage.total_tokens,
+                            },
+                        }
+                except Exception as retry_error:
+                    print(f"Error during retry: {str(retry_error)}")
+                    pass
+
+                avail_msg = (
+                    ", ".join(self._available_models)
+                    if self._available_models
+                    else "Check your API key permissions"
+                )
+                raise Exception(
+                    f"Model not found: {self.model_name}. Available models: {avail_msg}"
+                )
+            raise Exception(f"Mistral API error: {error_message}")
+
+    def chat_stream(
+        self, messages: List[Any], **kwargs
+    ) -> Generator[Dict[str, Any], None, None]:
         """
-        Send a streaming chat request to Mistral.
+        Stream a chat request to Mistral.
 
         Args:
-            messages: A list of message dictionaries with 'role' and 'content' keys.
+            messages: A list of message dictionaries or ChatMessage objects.
             **kwargs: Additional parameters to pass to the Mistral API.
 
         Yields:
-            Chunks of the response from Mistral.
+            Dictionaries containing response chunks from Mistral.
         """
         try:
-            # Convert OpenAI-style messages to Mistral format
-            mistral_messages = self._convert_messages(messages)
+            # Convert messages to dictionaries if they're not already
+            normalized_messages = []
+            for msg in messages:
+                if isinstance(msg, dict):
+                    normalized_messages.append(msg)
+                elif hasattr(msg, "role") and hasattr(msg, "content"):
+                    normalized_messages.append(
+                        {"role": msg.role, "content": msg.content}
+                    )
+                else:
+                    print(
+                        f"Warning: Unknown message type in chat_stream: {type(msg).__name__}"
+                    )
 
-            # Extract parameters
+            mistral_messages = self._convert_messages(normalized_messages)
             temperature = kwargs.pop("temperature", 0.7)
             max_tokens = kwargs.pop("max_tokens", None)
 
-            stream_response = await self.async_client.chat_stream(
+            print(f"Debug - Streaming chat with model: {self.model_name}")
+
+            stream = self.client.chat.stream(
                 model=self.model_name,
                 messages=mistral_messages,
                 temperature=temperature,
@@ -133,98 +270,257 @@ class MistralProvider(BaseProvider):
                 **kwargs,
             )
 
-            async for chunk in stream_response:
-                if hasattr(chunk, "choices") and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, "content") and delta.content:
-                        # Format the chunk as a JSON string
-                        yield json.dumps(
+            for chunk in stream:
+                delta_content = chunk.data.choices[0].delta.content
+                if delta_content is not None:
+                    yield {
+                        "choices": [
                             {
-                                "choices": [
-                                    {
-                                        "delta": {
-                                            "content": delta.content,
-                                        },
-                                        "index": 0,
-                                        "finish_reason": chunk.choices[0].finish_reason,
-                                    }
-                                ]
+                                "delta": {
+                                    "role": "assistant",
+                                    "content": delta_content,
+                                },
+                                "index": 0,
+                                "finish_reason": None,
                             }
-                        )
-        except Exception as e:
-            yield json.dumps({"error": str(e)})
-
-    def complete(self, prompt: str, **kwargs) -> Dict[str, Any]:
-        """
-        Send a completion request to Mistral.
-        Note: Mistral doesn't have a dedicated completion API, so we use the chat API.
-
-        Args:
-            prompt: The prompt to complete.
-            **kwargs: Additional parameters to pass to the Mistral API.
-
-        Returns:
-            A dictionary containing the response from Mistral.
-        """
-        try:
-            # Convert prompt to a message
-            messages = [{"role": "user", "content": prompt}]
-
-            # Use the chat method
-            chat_response = self.chat(messages, **kwargs)
-
-            # Convert chat response to completion format
-            return {
-                "choices": [
-                    {
-                        "text": chat_response["choices"][0]["message"]["content"],
-                        "index": 0,
-                        "finish_reason": chat_response["choices"][0]["finish_reason"],
+                        ],
+                        "usage": None,
                     }
-                ],
-                "usage": chat_response["usage"],
-            }
+                if chunk.data.choices[0].finish_reason is not None:
+                    yield {
+                        "choices": [
+                            {
+                                "delta": {"role": "assistant", "content": ""},
+                                "index": 0,
+                                "finish_reason": chunk.data.choices[0].finish_reason,
+                            }
+                        ],
+                        "usage": None,
+                    }
         except Exception as e:
-            raise Exception(f"Error in text completion: {str(e)}")
+            error_message = str(e)
+            if "model_not_found" in error_message or "does not exist" in error_message:
+                available_models = "mistral-large-latest, mistral-small-latest, mistral-tiny, pixtral-large-latest"
+                raise Exception(
+                    f"Model not found: {self.model_name}. Available models for Mistral include: {available_models}"
+                )
+            raise Exception(f"Mistral API error: {error_message}")
 
-    async def complete_stream(self, prompt: str, **kwargs) -> AsyncGenerator[str, None]:
+    def complete(self, prompt: str, **kwargs):
+        """Send a completion request to Mistral"""
+        model = kwargs.pop("model", self.model_name)
+
+        # Remove provider prefix if present
+        if "/" in model:
+            _, model = model.split("/", 1)
+
+        messages = [{"role": "user", "content": prompt}]
+
+        response = self.chat(messages=messages, model=model, **kwargs)
+        return {
+            "choices": response["choices"],
+            "usage": response["usage"],
+        }
+
+    async def chat_stream(
+        self, messages: List[Any], **kwargs
+    ) -> AsyncGenerator[str, None]:
         """
-        Send a streaming completion request to Mistral.
-        Note: Mistral doesn't have a dedicated completion API, so we use the chat API.
+        Send a streaming chat request to Mistral.
 
         Args:
-            prompt: The prompt to complete.
+            messages: A list of message dictionaries or ChatMessage objects.
             **kwargs: Additional parameters to pass to the Mistral API.
 
         Yields:
             Chunks of the response from Mistral.
         """
         try:
-            # Convert prompt to a message
-            messages = [{"role": "user", "content": prompt}]
+            # Convert messages to dictionaries if they're not already
+            normalized_messages = []
+            for msg in messages:
+                if isinstance(msg, dict):
+                    normalized_messages.append(msg)
+                elif hasattr(msg, "role") and hasattr(msg, "content"):
+                    normalized_messages.append(
+                        {"role": msg.role, "content": msg.content}
+                    )
+                else:
+                    print(
+                        f"Warning: Unknown message type in async chat_stream: {type(msg).__name__}"
+                    )
 
-            # Use the chat_stream method
-            async for chunk_str in self.chat_stream(messages, **kwargs):
-                # Parse the chunk
-                chunk = json.loads(chunk_str)
+            mistral_messages = self._convert_messages(normalized_messages)
+            temperature = kwargs.pop("temperature", 0.7)
+            max_tokens = kwargs.pop("max_tokens", None)
 
-                # Convert chat chunk to completion format
-                if "choices" in chunk and len(chunk["choices"]) > 0:
+            print(f"Debug - Async streaming with model: {self.model_name}")
+
+            stream = self.client.chat.stream(
+                model=self.model_name,
+                messages=mistral_messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
+            )
+
+            import asyncio
+
+            for chunk in stream:
+                await asyncio.sleep(0)
+                delta_content = chunk.data.choices[0].delta.content
+                if delta_content is not None:
                     yield json.dumps(
                         {
                             "choices": [
                                 {
-                                    "text": chunk["choices"][0]["delta"]["content"],
-                                    "index": chunk["choices"][0]["index"],
-                                    "finish_reason": chunk["choices"][0][
-                                        "finish_reason"
-                                    ],
+                                    "delta": {
+                                        "content": delta_content,
+                                    },
+                                    "index": 0,
+                                    "finish_reason": None,
                                 }
                             ]
                         }
                     )
+                if chunk.data.choices[0].finish_reason is not None:
+                    yield json.dumps(
+                        {
+                            "choices": [
+                                {
+                                    "delta": {
+                                        "content": "",
+                                    },
+                                    "index": 0,
+                                    "finish_reason": chunk.data.choices[
+                                        0
+                                    ].finish_reason,
+                                }
+                            ]
+                        }
+                    )
+                    break
         except Exception as e:
-            yield json.dumps({"error": str(e)})
+            error_message = str(e)
+            print(f"Mistral API Error in streaming: {error_message}")
+
+            if "model_not_found" in error_message or "does not exist" in error_message:
+                try:
+                    available_models = [
+                        model.id for model in self.client.models.list().data
+                    ]
+                    print(f"Available models for streaming: {available_models}")
+
+                    similar_models = [
+                        m
+                        for m in available_models
+                        if self.model_name in m or m in self.model_name
+                    ]
+                    if similar_models:
+                        alt_model = similar_models[0]
+                        print(f"Attempting streaming with similar model: {alt_model}")
+
+                        alt_stream = self.client.chat.stream(
+                            model=alt_model,
+                            messages=mistral_messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            **kwargs,
+                        )
+
+                        self.model_name = alt_model
+                        print(
+                            f"Successfully using alternative model for streaming: {alt_model}"
+                        )
+
+                        for chunk in alt_stream:
+                            await asyncio.sleep(0)
+                            delta_content = chunk.data.choices[0].delta.content
+                            if delta_content is not None:
+                                yield json.dumps(
+                                    {
+                                        "choices": [
+                                            {
+                                                "delta": {
+                                                    "content": delta_content,
+                                                },
+                                                "index": 0,
+                                                "finish_reason": None,
+                                            }
+                                        ]
+                                    }
+                                )
+                            if chunk.data.choices[0].finish_reason is not None:
+                                yield json.dumps(
+                                    {
+                                        "choices": [
+                                            {
+                                                "delta": {
+                                                    "content": "",
+                                                },
+                                                "index": 0,
+                                                "finish_reason": chunk.data.choices[
+                                                    0
+                                                ].finish_reason,
+                                            }
+                                        ]
+                                    }
+                                )
+                                break
+                        return
+                except Exception as retry_error:
+                    print(f"Error during streaming retry: {str(retry_error)}")
+                    pass
+
+                available_models = (
+                    ", ".join(self._available_models)
+                    if self._available_models
+                    else "Check your API key permissions"
+                )
+                error = {
+                    "error": f"Model not found: {self.model_name}. Available models: {available_models}"
+                }
+            else:
+                error = {"error": f"Mistral API error: {error_message}"}
+            yield json.dumps(error)
+
+    async def complete_stream(self, prompt: str, **kwargs):
+        """
+        Stream a completion request to Mistral
+        """
+        model = kwargs.pop("model", self.model_name)
+
+        # Remove provider prefix if present
+        if "/" in model:
+            _, model = model.split("/", 1)
+
+        messages = [{"role": "user", "content": prompt}]
+
+        try:
+            async for chunk in self.chat_stream(
+                messages=messages, model=model, **kwargs
+            ):
+                chunk_data = json.loads(chunk)
+                if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                    yield json.dumps(
+                        {
+                            "choices": [
+                                {
+                                    "text": chunk_data["choices"][0]["delta"][
+                                        "content"
+                                    ],
+                                    "index": chunk_data["choices"][0].get("index", 0),
+                                    "finish_reason": chunk_data["choices"][0].get(
+                                        "finish_reason", None
+                                    ),
+                                }
+                            ]
+                        }
+                    )
+                elif "error" in chunk_data:
+                    yield chunk
+        except Exception as e:
+            yield json.dumps({"error": f"Error in complete_stream: {str(e)}"})
 
     def embed(self, text: Union[str, List[str]], **kwargs) -> Dict[str, Any]:
         """
@@ -238,23 +534,17 @@ class MistralProvider(BaseProvider):
             A dictionary containing the embeddings from Mistral.
         """
         try:
-            # Ensure text is a list
-            if isinstance(text, str):
-                text_list = [text]
-            else:
-                text_list = text
+            text_list = [text] if isinstance(text, str) else text
+            embed_model = "mistral-embed"
+            print(f"Debug - Using embedding model: {embed_model}")
 
-            # Generate embeddings
-            response = self.client.embeddings(
-                model="mistral-embed",  # Mistral only has one embedding model
+            response = self.client.embeddings.create(
+                model=embed_model,
                 input=text_list,
                 **kwargs,
             )
 
-            # Extract embeddings
             embeddings = [data.embedding for data in response.data]
-
-            # Format the response
             return {
                 "embeddings": embeddings,
                 "dimensions": len(embeddings[0]) if embeddings else 0,
@@ -263,8 +553,6 @@ class MistralProvider(BaseProvider):
                     "total_tokens": response.usage.total_tokens,
                 },
             }
-        except mistralai.exceptions.MistralAPIException as e:
-            raise Exception(f"Mistral API error: {str(e)}")
         except Exception as e:
             raise Exception(f"Error in embedding: {str(e)}")
 
@@ -303,20 +591,17 @@ class MistralProvider(BaseProvider):
         Returns:
             A dictionary containing information about the model.
         """
-        # Get model capabilities
-        model_id = self.model_name.lower()
-        capabilities = []
+        model_id = self.model_name
+        capabilities = self.model_capabilities.get(model_id, [])
 
-        # Check if model is in our capabilities mapping
-        for model_prefix, model_capabilities in self.model_capabilities.items():
-            if model_id.startswith(model_prefix):
-                capabilities = model_capabilities
-                break
+        if not capabilities:
+            for model_prefix, model_caps in self.model_capabilities.items():
+                if model_id.startswith(model_prefix):
+                    capabilities = model_caps
+                    break
 
-        # Get context window size
-        context_window = self.context_window_sizes.get(model_id, 8000)
+        context_window = self.context_window_sizes.get(model_id, 32000)
 
-        # Basic model information
         model_info = {
             "id": self.model_name,
             "name": self.model_name,
@@ -328,25 +613,65 @@ class MistralProvider(BaseProvider):
         return model_info
 
     def _convert_messages(
-        self, messages: List[Dict[str, str]]
-    ) -> List[MistralChatMessage]:
+        self, messages: List[Any]
+    ) -> List[Union[UserMessage, AssistantMessage, SystemMessage]]:
         """
-        Convert OpenAI-style messages to Mistral format.
+        Convert OpenAI-style messages or ChatMessage objects to Mistral format.
 
         Args:
-            messages: A list of message dictionaries with 'role' and 'content' keys.
+            messages: A list of message dictionaries or ChatMessage objects.
 
         Returns:
             A list of Mistral-style messages.
         """
         mistral_messages = []
 
-        for message in messages:
-            role = message["role"]
-            content = message["content"]
+        print(f"Debug - Converting {len(messages)} messages to Mistral format")
+        print(f"Debug - Message types: {[type(m).__name__ for m in messages]}")
 
-            # Mistral supports the same roles as OpenAI: system, user, assistant
-            mistral_messages.append(MistralChatMessage(role=role, content=content))
+        for i, message in enumerate(messages):
+            # Handle different types of input messages
+            if hasattr(message, "role") and hasattr(message, "content"):
+                # This is a ChatMessage object from resources layer
+                role = message.role
+                content = message.content
+            elif isinstance(message, dict):
+                # This is a dictionary
+                role = message.get("role", "user")  # Default to user if role is missing
+                content = message.get(
+                    "content", ""
+                )  # Default to empty string if content is missing
+            else:
+                print(
+                    f"Debug - Unknown message type: {type(message).__name__}, skipping"
+                )
+                continue
+
+            print(f"Debug - Message {i+1}: role={role}, content_length={len(content)}")
+
+            if role == "system":
+                mistral_messages.append(SystemMessage(content=content))
+            elif role == "user":
+                mistral_messages.append(UserMessage(content=content))
+            elif role == "assistant":
+                mistral_messages.append(AssistantMessage(content=content))
+            else:
+                # For any unknown role, convert to a user message with role prefix
+                print(
+                    f"Debug - Unknown message role: {role}, converting to user message"
+                )
+                mistral_messages.append(UserMessage(content=f"{role}: {content}"))
+
+        # Ensure there's at least one message
+        if not mistral_messages:
+            print("Debug - No messages found, adding a default user message")
+            mistral_messages.append(UserMessage(content="Hello"))
+
+        # Mistral API requires at least one UserMessage
+        user_message_exists = any(isinstance(m, UserMessage) for m in mistral_messages)
+        if not user_message_exists:
+            print("Debug - No user messages found, adding a default user message")
+            mistral_messages.append(UserMessage(content="Please respond to the above"))
 
         return mistral_messages
 
