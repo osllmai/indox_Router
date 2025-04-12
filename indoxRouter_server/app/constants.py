@@ -33,3 +33,6 @@ ERROR_INSUFFICIENT_CREDITS = "Insufficient credits"
 
 # Available Providers
 AVAILABLE_PROVIDERS = ["openai", "mistral", "deepseek"]
+
+# Temporary fix for import error - Empty AVAILABLE_MODELS
+AVAILABLE_MODELS = {}

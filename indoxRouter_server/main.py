@@ -29,7 +29,16 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import auth, chat, completion, embedding, image, model, analytics
+from app.api.routers import (
+    auth,
+    chat,
+    completion,
+    embedding,
+    image,
+    model,
+    analytics,
+    user,
+)
 from app.core.config import settings
 from app.db.database import init_db
 from app.resources import Chat, Completions, Embeddings, Images
@@ -58,13 +67,23 @@ app.add_middleware(SecurityMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
 # Include routers
+print("Registering API routers...")
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
+print("Registered auth router")
 app.include_router(model.router, prefix="/api/v1", tags=["Models"])
+print("Registered model router")
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
+print("Registered chat router")
 app.include_router(completion.router, prefix="/api/v1", tags=["Completions"])
+print("Registered completion router")
 app.include_router(embedding.router, prefix="/api/v1", tags=["Embeddings"])
+print("Registered embedding router")
 app.include_router(image.router, prefix="/api/v1", tags=["Images"])
+print("Registered image router")
 app.include_router(analytics.router, prefix="/api/v1", tags=["Analytics"])
+print("Registered analytics router")
+app.include_router(user.router, prefix="/api/v1", tags=["User"])
+print("Registered user router")
 
 
 @app.on_event("startup")

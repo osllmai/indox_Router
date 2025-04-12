@@ -171,3 +171,33 @@ class ImageResponse(SuccessResponse):
     """Image generation response model."""
 
     data: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class TokenUsage(BaseModel):
+    input: int
+    output: int
+    total: int
+
+
+class UsageStats(BaseModel):
+    requests: int
+    cost: float
+    tokens: TokenUsage
+
+
+class DailyUsage(BaseModel):
+    date: str
+    requests: int
+    cost: float
+    tokens: TokenUsage
+
+
+class UsageResponse(BaseModel):
+    total_requests: int
+    total_cost: float
+    remaining_credits: float
+    total_tokens: TokenUsage = None
+    endpoints: Dict[str, UsageStats]
+    providers: Dict[str, UsageStats]
+    models: Dict[str, Dict[str, Any]]
+    daily_usage: List[DailyUsage]

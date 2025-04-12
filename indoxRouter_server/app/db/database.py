@@ -12,6 +12,7 @@ from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+import traceback
 
 # MongoDB imports
 from pymongo import MongoClient
@@ -1082,3 +1083,224 @@ def get_usage_analytics(
     except Exception as e:
         logger.error(f"Error getting usage analytics: {e}")
         return []
+
+
+def get_user_usage_stats(
+    user_id: int, start_date: date = None, end_date: date = None
+) -> Dict[str, Any]:
+    """
+    Get user usage statistics from both PostgreSQL and MongoDB.
+
+    Args:
+        user_id: The user ID.
+        start_date: Optional start date for filtering.
+        end_date: Optional end date for filtering.
+
+    Returns:
+        A dictionary with usage statistics.
+    """
+    try:
+        result = {
+            "total_requests": 0,
+            "total_cost": 0,
+            "remaining_credits": 0,
+            "endpoints": {},
+            "providers": {},
+            "models": {},
+            "daily_usage": [],
+        }
+
+        # Get user current credits from PostgreSQL
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Get user remaining credits
+                cur.execute(
+                    """
+                    SELECT credits FROM users WHERE id = %s
+                    """,
+                    (user_id,),
+                )
+                user_data = cur.fetchone()
+                if user_data:
+                    result["remaining_credits"] = float(user_data["credits"])
+
+                # Get aggregated usage from daily summary
+                date_filter = ""
+                params = [user_id]
+
+                if start_date and end_date:
+                    date_filter = "AND date >= %s AND date <= %s"
+                    params.extend([start_date, end_date])
+
+                cur.execute(
+                    f"""
+                    SELECT 
+                        SUM(total_requests) as total_requests,
+                        SUM(total_tokens_input) as total_tokens_input,
+                        SUM(total_tokens_output) as total_tokens_output,
+                        SUM(total_tokens) as total_tokens,
+                        SUM(total_cost) as total_cost
+                    FROM usage_daily_summary
+                    WHERE user_id = %s {date_filter}
+                    """,
+                    params,
+                )
+                summary = cur.fetchone()
+
+                if summary:
+                    result["total_requests"] = summary["total_requests"] or 0
+                    result["total_cost"] = float(summary["total_cost"] or 0)
+                    result["total_tokens"] = {
+                        "input": summary["total_tokens_input"] or 0,
+                        "output": summary["total_tokens_output"] or 0,
+                        "total": summary["total_tokens"] or 0,
+                    }
+
+                # Get daily usage data
+                cur.execute(
+                    f"""
+                    SELECT 
+                        date,
+                        total_requests,
+                        total_tokens_input,
+                        total_tokens_output,
+                        total_tokens,
+                        total_cost
+                    FROM usage_daily_summary
+                    WHERE user_id = %s {date_filter}
+                    ORDER BY date DESC
+                    """,
+                    params,
+                )
+                daily_data = cur.fetchall()
+
+                if daily_data:
+                    result["daily_usage"] = [
+                        {
+                            "date": item["date"].isoformat(),
+                            "requests": item["total_requests"],
+                            "tokens": {
+                                "input": item["total_tokens_input"],
+                                "output": item["total_tokens_output"],
+                                "total": item["total_tokens"],
+                            },
+                            "cost": float(item["total_cost"]),
+                        }
+                        for item in daily_data
+                    ]
+        finally:
+            release_pg_connection(conn)
+
+        # Get detailed usage from MongoDB
+        if mongo_db is not None:
+            # Build MongoDB query
+            match_filter = {"user_id": user_id}
+            if start_date and end_date:
+                match_filter["date"] = {
+                    "$gte": start_date.isoformat(),
+                    "$lte": end_date.isoformat(),
+                }
+
+            # Get endpoint stats
+            pipeline = [
+                {"$match": match_filter},
+                {
+                    "$group": {
+                        "_id": "$request.endpoint",
+                        "requests": {"$sum": 1},
+                        "cost": {"$sum": "$cost"},
+                        "tokens_input": {"$sum": "$tokens_prompt"},
+                        "tokens_output": {"$sum": "$tokens_completion"},
+                    }
+                },
+            ]
+
+            endpoint_stats = list(mongo_db.model_usage.aggregate(pipeline))
+
+            for stat in endpoint_stats:
+                endpoint = stat["_id"] or "unknown"
+                result["endpoints"][endpoint] = {
+                    "requests": stat["requests"],
+                    "cost": round(stat["cost"], 6),
+                    "tokens": {
+                        "input": stat["tokens_input"],
+                        "output": stat["tokens_output"],
+                        "total": stat["tokens_input"] + stat["tokens_output"],
+                    },
+                }
+
+            # Get provider stats
+            pipeline = [
+                {"$match": match_filter},
+                {
+                    "$group": {
+                        "_id": "$provider",
+                        "requests": {"$sum": 1},
+                        "cost": {"$sum": "$cost"},
+                        "tokens_input": {"$sum": "$tokens_prompt"},
+                        "tokens_output": {"$sum": "$tokens_completion"},
+                    }
+                },
+            ]
+
+            provider_stats = list(mongo_db.model_usage.aggregate(pipeline))
+
+            for stat in provider_stats:
+                provider = stat["_id"] or "unknown"
+                result["providers"][provider] = {
+                    "requests": stat["requests"],
+                    "cost": round(stat["cost"], 6),
+                    "tokens": {
+                        "input": stat["tokens_input"],
+                        "output": stat["tokens_output"],
+                        "total": stat["tokens_input"] + stat["tokens_output"],
+                    },
+                }
+
+            # Get model stats
+            pipeline = [
+                {"$match": match_filter},
+                {
+                    "$group": {
+                        "_id": {"provider": "$provider", "model": "$model"},
+                        "requests": {"$sum": 1},
+                        "cost": {"$sum": "$cost"},
+                        "tokens_input": {"$sum": "$tokens_prompt"},
+                        "tokens_output": {"$sum": "$tokens_completion"},
+                    }
+                },
+            ]
+
+            model_stats = list(mongo_db.model_usage.aggregate(pipeline))
+
+            for stat in model_stats:
+                provider = stat["_id"]["provider"] or "unknown"
+                model = stat["_id"]["model"] or "unknown"
+                model_key = f"{provider}/{model}"
+
+                result["models"][model_key] = {
+                    "provider": provider,
+                    "model": model,
+                    "requests": stat["requests"],
+                    "cost": round(stat["cost"], 6),
+                    "tokens": {
+                        "input": stat["tokens_input"],
+                        "output": stat["tokens_output"],
+                        "total": stat["tokens_input"] + stat["tokens_output"],
+                    },
+                }
+
+        return result
+    except Exception as e:
+        logger.error(f"Error getting user usage stats: {e}")
+        logger.error(traceback.format_exc())
+        return {
+            "total_requests": 0,
+            "total_cost": 0,
+            "remaining_credits": 0,
+            "endpoints": {},
+            "providers": {},
+            "models": {},
+            "daily_usage": [],
+        }

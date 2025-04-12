@@ -20,7 +20,7 @@ COMPLETION_ENDPOINT = "completions"
 EMBEDDING_ENDPOINT = "embeddings"
 IMAGE_ENDPOINT = "images/generations"
 MODEL_ENDPOINT = "models"
-USAGE_ENDPOINT = "usage"
+USAGE_ENDPOINT = "user/usage"
 
 # Error messages
 ERROR_INVALID_API_KEY = "API key must be provided either as an argument or as the INDOXROUTER_API_KEY environment variable"
