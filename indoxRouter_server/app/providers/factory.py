@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 
 from app.providers.base_provider import BaseProvider
 from app.exceptions import ProviderNotFoundError
+from app.constants import AVAILABLE_PROVIDERS
 
 
 # Import provider implementations
@@ -83,11 +84,17 @@ def get_provider(provider_id: str, api_key: str, model: str) -> BaseProvider:
     print(f"DEBUG: get_provider called with provider_id={provider_id}, model={model}")
     provider_id = provider_id.lower()
 
-    # If the provider is not found, raise an error
-    if provider_id not in PROVIDER_FACTORIES:
-        available_providers = list(PROVIDER_FACTORIES.keys())
+    # Check if the provider is in the list of available providers
+    if provider_id not in AVAILABLE_PROVIDERS:
         raise ProviderNotFoundError(
-            f"Provider '{provider_id}' not found. Available providers: {', '.join(available_providers)}"
+            f"Provider '{provider_id}' not available. Available providers: {', '.join(AVAILABLE_PROVIDERS)}"
+        )
+
+    # If the provider is not found in the factory mapping, raise an error
+    if provider_id not in PROVIDER_FACTORIES:
+        available_factories = list(PROVIDER_FACTORIES.keys())
+        raise ProviderNotFoundError(
+            f"Provider '{provider_id}' not implemented. Implemented providers: {', '.join(available_factories)}"
         )
 
     try:

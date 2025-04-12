@@ -15,6 +15,7 @@ from app.api.dependencies import get_current_user, get_provider_api_key
 from app.resources import Embeddings
 from app.exceptions import InsufficientCreditsError
 from app.utils.cache import get_cached_response, cache_response
+from app.constants import MISTRAL_EMBEDDING_MODEL
 
 router = APIRouter(prefix="/embeddings", tags=["Embeddings"])
 
@@ -40,6 +41,17 @@ async def create_embedding(
     # Get provider and model
     provider_id = request.provider or settings.DEFAULT_PROVIDER
     model_id = request.model or settings.DEFAULT_EMBEDDING_MODEL
+
+    # If the provider is mistral, use the mistral-specific embedding model
+    if (
+        provider_id.lower() == "mistral"
+        and model_id == settings.DEFAULT_EMBEDDING_MODEL
+    ):
+        model_id = MISTRAL_EMBEDDING_MODEL
+    # Conversely, if the model is a Mistral embedding model, ensure the provider is set to Mistral
+    elif "mistral-embed" in model_id.lower() and provider_id.lower() != "mistral":
+        provider_id = "mistral"
+        print(f"Switching provider to 'mistral' to match embedding model {model_id}")
 
     # Check if model_id already includes provider info (e.g., "openai/text-embedding-ada-002")
     if "/" in model_id:

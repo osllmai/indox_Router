@@ -90,6 +90,15 @@ class Token(BaseModel):
     expires_in: int
 
 
+class PricingInfo(BaseModel):
+    """Model pricing information."""
+
+    input: float = 0.0
+    output: float = 0.0
+    currency: str = "USD"
+    unit: str = "1K tokens"
+
+
 class ModelInfo(BaseModel):
     """Model information model."""
 
@@ -99,7 +108,7 @@ class ModelInfo(BaseModel):
     capabilities: List[str]
     description: Optional[str] = None
     max_tokens: Optional[int] = None
-    pricing: Optional[Dict[str, Any]] = None
+    pricing: Optional[PricingInfo] = None
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
