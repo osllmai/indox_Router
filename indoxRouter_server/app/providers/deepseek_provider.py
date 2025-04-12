@@ -1,5 +1,5 @@
 """
-OpenAI provider implementation for indoxRouter server.
+DeepSeek provider implementation for indoxRouter server.
 """
 
 import json
@@ -28,37 +28,20 @@ class DeepSeekProvider(BaseProvider):
         # Clean up model name if needed (remove any provider prefix)
         if "/" in model_name:
             _, model_name = model_name.split("/", 1)
+        self.DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+        # Use beta URL for completions
+        self.DEEPSEEK_BETA_URL = "https://api.deepseek.com/beta"
 
         super().__init__(api_key, model_name)
-
-        # DeepSeek base URL for API calls
-        self.DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-
-        # Initialize OpenAI client with the DeepSeek base URL
         self.client = OpenAI(api_key=api_key, base_url=self.DEEPSEEK_BASE_URL)
-
-        # Initialize async client
         self.async_client = AsyncOpenAI(
             api_key=api_key, base_url=self.DEEPSEEK_BASE_URL
         )
-
-        # List of supported models based on the JSON configuration
-        self.supported_models = [
-            "deepseek-chat",
-            "deepseek-coder-33b-instruct",
-            "deepseek-coder-6.7b-instruct",
-            "deepseek-math-7b",
-            "deepseek-v2-base",
-            "deepseek-vision-7b",
-        ]
-
-        print(f"Supported DeepSeek models: {self.supported_models}")
-
-        if model_name not in self.supported_models:
-            print(f"WARNING: Model '{model_name}' not found in supported models.")
-            print(
-                f"Will attempt to use it anyway, but it may fail if not supported by DeepSeek API."
-            )
+        # Create a separate client for beta API (completions)
+        self.beta_client = OpenAI(api_key=api_key, base_url=self.DEEPSEEK_BETA_URL)
+        self.async_beta_client = AsyncOpenAI(
+            api_key=api_key, base_url=self.DEEPSEEK_BETA_URL
+        )
 
         # Set up tokenizer for token counting
         try:
@@ -67,41 +50,117 @@ class DeepSeekProvider(BaseProvider):
             # Fall back to cl100k_base for newer models not yet in tiktoken
             self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
-    def chat(self, messages: List[Any], **kwargs) -> Dict[str, Any]:
+        # DeepSeek doesn't currently support these capabilities
+        self._supported_capabilities = ["chat", "completion"]
+
+    def chat(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
         """
-        Send a chat request to DeepSeek using the OpenAI SDK.
+        Send a chat request to DeepSeek.
 
         Args:
-            messages: A list of message dictionaries with 'role' and 'content' keys or ChatMessage objects.
+            messages: A list of message dictionaries with 'role' and 'content' keys.
             **kwargs: Additional parameters to pass to the DeepSeek API.
 
         Returns:
             A dictionary containing the response from DeepSeek.
         """
+        # Check if streaming is requested
+        stream = kwargs.pop("stream", False)
+
+        # If streaming is requested, handle it separately
+        if stream:
+            # Create a very simple synchronous generator that doesn't use event loops
+            def sync_stream_generator():
+                import asyncio
+                import threading
+                import queue
+
+                # Create a queue to communicate between threads
+                result_queue = queue.Queue()
+
+                # Function to run in a separate thread
+                def run_async_stream():
+                    try:
+                        # Create a new loop for this thread
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+
+                        # Define an async function to process the stream
+                        async def process_stream():
+                            try:
+                                # Create the streaming request
+                                stream_response = (
+                                    await self.async_client.chat.completions.create(
+                                        model=self.model_name,
+                                        messages=messages,
+                                        stream=True,
+                                        **kwargs,
+                                    )
+                                )
+
+                                # Process each chunk
+                                async for chunk in stream_response:
+                                    if (
+                                        hasattr(chunk, "choices")
+                                        and chunk.choices
+                                        and len(chunk.choices) > 0
+                                    ):
+                                        delta = chunk.choices[0].delta
+                                        if hasattr(delta, "content") and delta.content:
+                                            # Format chunk and put in queue
+                                            json_chunk = json.dumps(
+                                                {
+                                                    "choices": [
+                                                        {
+                                                            "delta": {
+                                                                "content": delta.content
+                                                            },
+                                                            "index": chunk.choices[
+                                                                0
+                                                            ].index,
+                                                            "finish_reason": chunk.choices[
+                                                                0
+                                                            ].finish_reason,
+                                                        }
+                                                    ]
+                                                }
+                                            )
+                                            result_queue.put(json_chunk)
+                            except Exception as e:
+                                result_queue.put(json.dumps({"error": str(e)}))
+                            finally:
+                                # Signal that we're done
+                                result_queue.put(None)
+
+                        # Run the async function to completion
+                        loop.run_until_complete(process_stream())
+                    except Exception as e:
+                        result_queue.put(json.dumps({"error": str(e)}))
+                        result_queue.put(None)  # Signal we're done
+                    finally:
+                        loop.close()
+
+                # Start a thread to run the async code
+                thread = threading.Thread(target=run_async_stream)
+                thread.daemon = (
+                    True  # Allow the thread to exit when the main thread exits
+                )
+                thread.start()
+
+                # Yield results from the queue as they arrive
+                while True:
+                    chunk = result_queue.get()
+                    if chunk is None:  # End of stream signal
+                        break
+                    yield chunk
+
+            # Return the synchronous generator
+            return sync_stream_generator()
+
+        # Non-streaming request
         try:
-            # Normalize messages to dictionary format if they're from another format
-            normalized_messages = []
-            for msg in messages:
-                if isinstance(msg, dict):
-                    normalized_messages.append(msg)
-                elif hasattr(msg, "role") and hasattr(msg, "content"):
-                    normalized_messages.append(
-                        {"role": msg.role, "content": msg.content}
-                    )
-                else:
-                    print(f"Warning: Unknown message type: {type(msg).__name__}")
-
-            print(f"Sending chat request to DeepSeek using model: {self.model_name}")
-            print(
-                f"Request parameters: temperature={kwargs.get('temperature', 'default')}, max_tokens={kwargs.get('max_tokens', 'default')}"
-            )
-            print(f"Number of messages: {len(normalized_messages)}")
-
-            # Configure OpenAI client with DeepSeek base URL
             response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=normalized_messages,
-                **kwargs,
+                model=self.model_name, messages=messages, **kwargs
             )
 
             # Format the response
@@ -124,64 +183,36 @@ class DeepSeekProvider(BaseProvider):
                 },
             }
         except openai.RateLimitError as e:
-            print(f"DeepSeek Rate Limit Error: {str(e)}")
             raise Exception(f"Rate limit exceeded: {str(e)}")
         except openai.APIError as e:
-            print(f"DeepSeek API Error: {str(e)}")
-            error_message = str(e)
-
-            # Check for model not found errors
-            if "does not exist" in error_message or "not found" in error_message:
-                recommendations = ", ".join(self.supported_models)
-                print(f"Model not found. Recommended models: {recommendations}")
-                raise Exception(
-                    f"API error: {str(e)}. Try one of these models instead: {recommendations}"
-                )
-
             raise Exception(f"API error: {str(e)}")
         except Exception as e:
-            print(f"DeepSeek General Error: {str(e)}")
             raise Exception(f"Error in chat completion: {str(e)}")
 
     async def chat_stream(
-        self, messages: List[Any], **kwargs
+        self, messages: List[Dict[str, str]], **kwargs
     ) -> AsyncGenerator[str, None]:
         """
         Send a streaming chat request to DeepSeek.
 
         Args:
-            messages: A list of message dictionaries or ChatMessage objects.
+            messages: A list of message dictionaries with 'role' and 'content' keys.
             **kwargs: Additional parameters to pass to the DeepSeek API.
 
         Yields:
             Chunks of the response from DeepSeek.
         """
         try:
-            # Normalize messages to dictionary format
-            normalized_messages = []
-            for msg in messages:
-                if isinstance(msg, dict):
-                    normalized_messages.append(msg)
-                elif hasattr(msg, "role") and hasattr(msg, "content"):
-                    normalized_messages.append(
-                        {"role": msg.role, "content": msg.content}
-                    )
-                else:
-                    print(
-                        f"Warning: Unknown message type in streaming: {type(msg).__name__}"
-                    )
-
-            print(f"Streaming chat request to DeepSeek using model: {self.model_name}")
-
             stream = await self.async_client.chat.completions.create(
-                model=self.model_name,
-                messages=normalized_messages,
-                stream=True,
-                **kwargs,
+                model=self.model_name, messages=messages, stream=True, **kwargs
             )
 
             async for chunk in stream:
-                if chunk.choices and len(chunk.choices) > 0:
+                if (
+                    hasattr(chunk, "choices")
+                    and chunk.choices
+                    and len(chunk.choices) > 0
+                ):
                     delta = chunk.choices[0].delta
                     if hasattr(delta, "content") and delta.content:
                         # Format the chunk as a JSON string
@@ -204,7 +235,6 @@ class DeepSeekProvider(BaseProvider):
     def complete(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """
         Send a completion request to DeepSeek.
-        For DeepSeek, we'll convert this to a chat request since that's their primary API.
 
         Args:
             prompt: The prompt to complete.
@@ -214,50 +244,209 @@ class DeepSeekProvider(BaseProvider):
             A dictionary containing the response from DeepSeek.
         """
         try:
-            print(
-                f"Converting completion request to chat for DeepSeek with prompt: {prompt[:30]}..."
-            )
+            # Check if streaming is requested
+            stream = kwargs.pop("stream", False)
+            if stream:
+                return self._stream_completion(prompt, **kwargs)
 
-            # Convert to message format for DeepSeek
+            # DeepSeek completions require the beta API
             messages = [{"role": "user", "content": prompt}]
 
-            # Use the chat API with the converted message
-            chat_response = self.chat(messages=messages, **kwargs)
+            # Pass through relevant parameters
+            chat_kwargs = {}
+            for key, value in kwargs.items():
+                if key in [
+                    "temperature",
+                    "max_tokens",
+                    "top_p",
+                    "frequency_penalty",
+                    "presence_penalty",
+                    "n",
+                    "stop",
+                ]:
+                    chat_kwargs[key] = value
 
-            # Extract content from the response
-            if "choices" in chat_response and len(chat_response["choices"]) > 0:
-                content = chat_response["choices"][0]["message"]["content"]
+            # Try using the completions API first with the beta client
+            try:
+                response = self.beta_client.completions.create(
+                    model=self.model_name, prompt=prompt, **chat_kwargs
+                )
 
-                # Format as completion response
+                # Format the response
                 return {
                     "choices": [
                         {
-                            "text": content,
-                            "index": 0,
-                            "finish_reason": chat_response["choices"][0][
-                                "finish_reason"
-                            ],
+                            "text": choice.text,
+                            "index": choice.index,
+                            "finish_reason": choice.finish_reason,
                         }
+                        for choice in response.choices
                     ],
-                    "usage": chat_response["usage"],
+                    "usage": {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "total_tokens": response.usage.total_tokens,
+                    },
+                }
+            except Exception as completion_error:
+                # Fallback to chat API
+                response = self.client.chat.completions.create(
+                    model=self.model_name, messages=messages, **chat_kwargs
+                )
+
+                # Format the response to match completions API format
+                return {
+                    "choices": [
+                        {
+                            "text": choice.message.content,
+                            "index": choice.index,
+                            "finish_reason": choice.finish_reason,
+                        }
+                        for choice in response.choices
+                    ],
+                    "usage": {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "total_tokens": response.usage.total_tokens,
+                    },
                 }
 
-            # Return empty response if chat response is invalid
-            return {
-                "choices": [{"text": "", "index": 0, "finish_reason": "error"}],
-                "usage": {
-                    "prompt_tokens": 0,
-                    "completion_tokens": 0,
-                    "total_tokens": 0,
-                },
-            }
+        except openai.RateLimitError as e:
+            raise Exception(f"Rate limit exceeded: {str(e)}")
+        except openai.APIError as e:
+            # Special handling for beta API requirement
+            if (
+                "completions api is only available when using beta api"
+                in str(e).lower()
+            ):
+                raise Exception(
+                    f"API error: DeepSeek completions API requires the beta endpoint. The server may need to be updated to support this."
+                )
+            raise Exception(f"API error: {str(e)}")
         except Exception as e:
             raise Exception(f"Error in text completion: {str(e)}")
 
+    def _stream_completion(self, prompt: str, **kwargs):
+        """Internal helper for streaming completions"""
+
+        # Create a synchronous generator
+        def sync_stream_generator():
+            import asyncio
+            import threading
+            import queue
+
+            # Create a queue to communicate between threads
+            result_queue = queue.Queue()
+
+            # Function to run in a separate thread
+            def run_async_stream():
+                try:
+                    # Create a new loop for this thread
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                    # Define an async function to process the stream
+                    async def process_stream():
+                        try:
+                            # Try beta endpoint first
+                            try:
+                                stream = (
+                                    await self.async_beta_client.completions.create(
+                                        model=self.model_name,
+                                        prompt=prompt,
+                                        stream=True,
+                                        **kwargs,
+                                    )
+                                )
+
+                                async for chunk in stream:
+                                    if (
+                                        hasattr(chunk, "choices")
+                                        and chunk.choices
+                                        and len(chunk.choices) > 0
+                                    ):
+                                        json_chunk = json.dumps(
+                                            {
+                                                "choices": [
+                                                    {
+                                                        "text": chunk.choices[0].text,
+                                                        "index": chunk.choices[0].index,
+                                                        "finish_reason": chunk.choices[
+                                                            0
+                                                        ].finish_reason,
+                                                    }
+                                                ]
+                                            }
+                                        )
+                                        result_queue.put(json_chunk)
+                            except Exception as beta_error:
+                                # Fallback to chat API
+                                messages = [{"role": "user", "content": prompt}]
+                                stream = (
+                                    await self.async_client.chat.completions.create(
+                                        model=self.model_name,
+                                        messages=messages,
+                                        stream=True,
+                                        **kwargs,
+                                    )
+                                )
+
+                                async for chunk in stream:
+                                    if (
+                                        hasattr(chunk, "choices")
+                                        and chunk.choices
+                                        and len(chunk.choices) > 0
+                                    ):
+                                        delta = chunk.choices[0].delta
+                                        if hasattr(delta, "content") and delta.content:
+                                            json_chunk = json.dumps(
+                                                {
+                                                    "choices": [
+                                                        {
+                                                            "text": delta.content,
+                                                            "index": chunk.choices[
+                                                                0
+                                                            ].index,
+                                                            "finish_reason": chunk.choices[
+                                                                0
+                                                            ].finish_reason,
+                                                        }
+                                                    ]
+                                                }
+                                            )
+                                            result_queue.put(json_chunk)
+                        except Exception as e:
+                            result_queue.put(json.dumps({"error": str(e)}))
+                        finally:
+                            # Signal that we're done
+                            result_queue.put(None)
+
+                    # Run the async function
+                    loop.run_until_complete(process_stream())
+                except Exception as e:
+                    result_queue.put(json.dumps({"error": str(e)}))
+                    result_queue.put(None)  # Signal we're done
+                finally:
+                    loop.close()
+
+            # Start a thread to run the async code
+            thread = threading.Thread(target=run_async_stream)
+            thread.daemon = True
+            thread.start()
+
+            # Yield results from the queue as they arrive
+            while True:
+                chunk = result_queue.get()
+                if chunk is None:  # End of stream signal
+                    break
+                yield chunk
+
+        # Return the synchronous generator
+        return sync_stream_generator()
+
     async def complete_stream(self, prompt: str, **kwargs) -> AsyncGenerator[str, None]:
         """
-        Stream a completion request to DeepSeek.
-        For DeepSeek, we convert this to a chat request since that's their primary API.
+        Send a streaming completion request to DeepSeek.
 
         Args:
             prompt: The prompt to complete.
@@ -267,31 +456,65 @@ class DeepSeekProvider(BaseProvider):
             Chunks of the response from DeepSeek.
         """
         try:
-            print(
-                f"Converting streaming completion to chat for DeepSeek: {prompt[:30]}..."
+            # Check if we're using a newer model that doesn't support completions API
+            newer_models = ["deepseek-chat", "deepseek-coder"]
+            is_newer_model = any(
+                model in self.model_name.lower() for model in newer_models
             )
 
-            # Convert to message format for DeepSeek
-            messages = [{"role": "user", "content": prompt}]
+            if is_newer_model:
+                # For newer models, use the chat completions API
+                messages = [{"role": "user", "content": prompt}]
 
-            # Use streaming chat with the converted message format
-            stream = await self.async_client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                stream=True,
-                **kwargs,
-            )
+                # Pass through relevant parameters
+                chat_kwargs = {k: v for k, v in kwargs.items() if k not in ["stream"]}
 
-            async for chunk in stream:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, "content") and delta.content:
-                        # Format the chat chunk as a completion-style response
+                # Create chat stream
+                stream = await self.async_client.chat.completions.create(
+                    model=self.model_name, messages=messages, stream=True, **chat_kwargs
+                )
+
+                # Process each chunk and convert to completions format
+                async for chunk in stream:
+                    if (
+                        hasattr(chunk, "choices")
+                        and chunk.choices
+                        and len(chunk.choices) > 0
+                    ):
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content") and delta.content:
+                            # Format as completions API response
+                            yield json.dumps(
+                                {
+                                    "choices": [
+                                        {
+                                            "text": delta.content,
+                                            "index": chunk.choices[0].index,
+                                            "finish_reason": chunk.choices[
+                                                0
+                                            ].finish_reason,
+                                        }
+                                    ]
+                                }
+                            )
+            else:
+                # Use beta client for completions API
+                stream = await self.async_beta_client.completions.create(
+                    model=self.model_name, prompt=prompt, stream=True, **kwargs
+                )
+
+                async for chunk in stream:
+                    if (
+                        hasattr(chunk, "choices")
+                        and chunk.choices
+                        and len(chunk.choices) > 0
+                    ):
+                        # Format the chunk as a JSON string
                         yield json.dumps(
                             {
                                 "choices": [
                                     {
-                                        "text": delta.content,
+                                        "text": chunk.choices[0].text,
                                         "index": chunk.choices[0].index,
                                         "finish_reason": chunk.choices[0].finish_reason,
                                     }
@@ -299,55 +522,28 @@ class DeepSeekProvider(BaseProvider):
                             }
                         )
         except Exception as e:
-            print(f"DeepSeek streaming error: {str(e)}")
+            # Handle any errors
             yield json.dumps({"error": str(e)})
 
     def embed(self, text: Union[str, List[str]], **kwargs) -> Dict[str, Any]:
         """
-        Send an embedding request to OpenAI.
+        Send an embedding request to DeepSeek.
 
         Args:
             text: The text to embed. Can be a single string or a list of strings.
-            **kwargs: Additional parameters to pass to the OpenAI API.
+            **kwargs: Additional parameters to pass to the DeepSeek API.
 
         Returns:
-            A dictionary containing the embeddings from OpenAI.
+            A dictionary containing the embeddings from DeepSeek.
         """
-        try:
-            # Ensure text is a list
-            if isinstance(text, str):
-                text_list = [text]
-            else:
-                text_list = text
-
-            response = self.client.embeddings.create(
-                model=self.model_name,
-                input=text_list,
-                **kwargs,
-            )
-
-            # Extract embeddings
-            embeddings = [data.embedding for data in response.data]
-
-            # Format the response
-            return {
-                "embeddings": embeddings,
-                "dimensions": len(embeddings[0]) if embeddings else 0,
-                "usage": {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "total_tokens": response.usage.total_tokens,
-                },
-            }
-        except openai.RateLimitError as e:
-            raise Exception(f"Rate limit exceeded: {str(e)}")
-        except openai.APIError as e:
-            raise Exception(f"API error: {str(e)}")
-        except Exception as e:
-            raise Exception(f"Error in embedding: {str(e)}")
+        # DeepSeek currently doesn't support embeddings
+        raise Exception(
+            "DeepSeek doesn't currently support embeddings. Please use a different provider like OpenAI or Cohere for embeddings."
+        )
 
     def generate_image(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """
-        Generate an image from a prompt using DALL-E.
+        Generate an image from a prompt using DeepSeek.
 
         Args:
             prompt: The prompt to generate an image from.
@@ -356,35 +552,10 @@ class DeepSeekProvider(BaseProvider):
         Returns:
             A dictionary containing the image URL or data.
         """
-        try:
-            # Extract parameters
-            size = kwargs.pop("size", "1024x1024")
-            n = kwargs.pop("n", 1)
-
-            response = self.client.images.generate(
-                model=self.model_name,
-                prompt=prompt,
-                size=size,
-                n=n,
-                **kwargs,
-            )
-
-            # Format the response
-            return {
-                "images": [
-                    {
-                        "url": image.url,
-                        "revised_prompt": getattr(image, "revised_prompt", None),
-                    }
-                    for image in response.data
-                ],
-            }
-        except openai.RateLimitError as e:
-            raise Exception(f"Rate limit exceeded: {str(e)}")
-        except openai.APIError as e:
-            raise Exception(f"API error: {str(e)}")
-        except Exception as e:
-            raise Exception(f"Error in image generation: {str(e)}")
+        # DeepSeek currently doesn't support image generation
+        raise Exception(
+            "DeepSeek doesn't currently support image generation. Please use a different provider like OpenAI or Stability for image generation."
+        )
 
     def get_token_count(self, text: str) -> int:
         """
@@ -409,7 +580,7 @@ class DeepSeekProvider(BaseProvider):
         model_info = {
             "id": self.model_name,
             "name": self.model_name,
-            "provider": "openai",
+            "provider": "deepseek",
             "capabilities": [],
         }
 

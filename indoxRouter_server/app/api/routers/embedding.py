@@ -40,6 +40,14 @@ async def create_embedding(
     # Get provider and model
     provider_id = request.provider or settings.DEFAULT_PROVIDER
     model_id = request.model or settings.DEFAULT_EMBEDDING_MODEL
+
+    # Check if model_id already includes provider info (e.g., "openai/text-embedding-ada-002")
+    if "/" in model_id:
+        # Extract provider from model string if present
+        extracted_provider, extracted_model = model_id.split("/", 1)
+        provider_id = extracted_provider
+        model_id = extracted_model
+
     model = f"{provider_id}/{model_id}"
 
     # Check if response is cached
@@ -50,15 +58,15 @@ async def create_embedding(
             provider=provider_id,
             model=model_id,
             input_data=request.text,
-            params=request.additional_params
+            params=request.additional_params,
         )
-        
+
         if cached_response:
             # Add request_id and timing information
             cached_response["request_id"] = request_id
             cached_response["created_at"] = datetime.now().isoformat()
             cached_response["duration_ms"] = 0  # Effectively instant
-            
+
             # Return cached response
             return cached_response
 
@@ -100,7 +108,7 @@ async def create_embedding(
             "usage": response.usage,
             "raw_response": response.raw_response,
         }
-        
+
         # Cache the response if applicable
         if settings.ENABLE_RESPONSE_CACHE and response.success:
             cache_response(
@@ -109,7 +117,7 @@ async def create_embedding(
                 model=model_id,
                 input_data=request.text,
                 response=result,
-                params=request.additional_params
+                params=request.additional_params,
             )
 
         return result
@@ -120,7 +128,7 @@ async def create_embedding(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail="Insufficient credits for this request",
             )
-        
+
         # Handle other errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

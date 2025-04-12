@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional
 from fastapi import HTTPException, status
 
 from app.providers.base_provider import BaseProvider
+from app.exceptions import ProviderNotFoundError
 
 
 # Import provider implementations
@@ -65,7 +66,7 @@ PROVIDER_FACTORIES = {
 
 def get_provider(provider_id: str, api_key: str, model: str) -> BaseProvider:
     """
-    Get a provider instance.
+    Get a provider instance based on the provider ID.
 
     Args:
         provider_id: The provider ID.
@@ -76,32 +77,27 @@ def get_provider(provider_id: str, api_key: str, model: str) -> BaseProvider:
         A provider instance.
 
     Raises:
-        HTTPException: If the provider is not found.
+        ProviderNotFoundError: If the provider is not found.
     """
-    print(f"DEBUG: get_provider called for provider_id={provider_id}, model={model}")
-    print(
-        f"DEBUG: API key (masked): {api_key[:5]}...{api_key[-5:] if len(api_key) > 10 else '****'}"
-    )
+    # Normalize provider_id to lowercase
+    print(f"DEBUG: get_provider called with provider_id={provider_id}, model={model}")
+    provider_id = provider_id.lower()
 
-    factory = PROVIDER_FACTORIES.get(provider_id)
-
-    if not factory:
-        print(f"DEBUG: Provider '{provider_id}' not found in PROVIDER_FACTORIES")
-        print(f"DEBUG: Available providers: {list(PROVIDER_FACTORIES.keys())}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Provider '{provider_id}' not supported",
+    # If the provider is not found, raise an error
+    if provider_id not in PROVIDER_FACTORIES:
+        available_providers = list(PROVIDER_FACTORIES.keys())
+        raise ProviderNotFoundError(
+            f"Provider '{provider_id}' not found. Available providers: {', '.join(available_providers)}"
         )
 
-    print(
-        f"DEBUG: Found factory for provider '{provider_id}', about to instantiate provider"
-    )
     try:
-        provider = factory(api_key, model)
-        print(
-            f"DEBUG: Successfully created provider instance: {provider.__class__.__name__}"
-        )
-        return provider
+        # Get the factory function for the provider
+        factory_func = PROVIDER_FACTORIES[provider_id]
+
+        # Create the provider instance
+        return factory_func(api_key, model)
     except Exception as e:
-        print(f"DEBUG: Error creating provider: {str(e)}")
-        raise
+        # Re-raise with more context
+        raise ProviderNotFoundError(
+            f"Error creating provider '{provider_id}': {str(e)}"
+        )

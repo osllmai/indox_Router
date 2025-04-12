@@ -77,34 +77,18 @@ class Chat(BaseResource):
             else:
                 chat_messages.append(message)
         # Get the provider and model
-        print(f"DEBUG CHAT: Original model string: {model}")
         try:
             provider, model_name = model.split("/", 1)
-            print(
-                f"DEBUG CHAT: Split into provider='{provider}', model_name='{model_name}'"
-            )
         except Exception as e:
-            print(f"DEBUG CHAT: Error splitting model string: {str(e)}")
             # Default to openai if there's an error
             provider = "openai"
             model_name = model
-            print(
-                f"DEBUG CHAT: Defaulting to provider='{provider}', model_name='{model_name}'"
-            )
 
         # Get the provider API key
         if not provider_api_key:
             provider_api_key = os.getenv(f"{provider.upper()}_API_KEY")
-            print(
-                f"DEBUG CHAT: Using API key from env var {provider.upper()}_API_KEY: {provider_api_key[:5]}...{provider_api_key[-5:] if provider_api_key and len(provider_api_key) > 10 else '****'}"
-            )
-        else:
-            print(
-                f"DEBUG CHAT: Using provided API key: {provider_api_key[:5]}...{provider_api_key[-5:] if provider_api_key and len(provider_api_key) > 10 else '****'}"
-            )
 
         # Get the provider implementation
-        print(f"DEBUG CHAT: Getting provider implementation for {provider}")
         provider_impl = get_provider(provider, provider_api_key, model_name)
 
         # Send the request to the provider
@@ -180,6 +164,10 @@ class Chat(BaseResource):
                 tokens_prompt=tokens_prompt,
                 tokens_completion=tokens_completion,
             )
+
+            # Add cost to the usage data if it doesn't exist
+            if "usage" in response and not usage_data.get("cost"):
+                response["usage"]["cost"] = cost
 
             usage = Usage(
                 tokens_prompt=tokens_prompt,

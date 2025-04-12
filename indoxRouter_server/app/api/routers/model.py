@@ -237,7 +237,7 @@ async def get_providers(current_user: Dict[str, Any] = Depends(get_current_user)
             models=[
                 ModelInfo(
                     id=model["id"],
-                    name=model["name"],
+                    name=model["modelName"],
                     provider=provider_id,
                     capabilities=model["capabilities"],
                     description=model.get("description"),
@@ -320,7 +320,7 @@ async def get_provider(
         models=[
             ModelInfo(
                 id=model["id"],
-                name=model["name"],
+                name=model["modelName"],
                 provider=provider_id,
                 capabilities=model["capabilities"],
                 description=model.get("description"),
@@ -371,7 +371,7 @@ async def get_model_info(
         if model["id"] == model_id:
             return ModelInfo(
                 id=model["id"],
-                name=model["name"],
+                name=model["modelName"],
                 provider=provider_id,
                 capabilities=model["capabilities"],
                 description=model.get("description"),

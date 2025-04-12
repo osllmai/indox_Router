@@ -624,9 +624,25 @@ class Client:
                         if data == "[DONE]":
                             break
                         try:
-                            yield json.loads(data)
+                            # Parse JSON chunk
+                            chunk = json.loads(data)
+
+                            # For chat responses, return the processed chunk
+                            # with data field for backward compatibility
+                            if "choices" in chunk:
+                                # For delta responses (streaming)
+                                choice = chunk["choices"][0]
+                                if "delta" in choice and "content" in choice["delta"]:
+                                    # Add a data field for backward compatibility
+                                    chunk["data"] = choice["delta"]["content"]
+                                # For text responses (completion)
+                                elif "text" in choice:
+                                    chunk["data"] = choice["text"]
+
+                            yield chunk
                         except json.JSONDecodeError:
-                            yield data
+                            # For raw text responses
+                            yield {"data": data}
         finally:
             response.close()
 

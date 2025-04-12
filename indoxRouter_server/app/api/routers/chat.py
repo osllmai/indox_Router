@@ -4,6 +4,7 @@ Chat router for the IndoxRouter server.
 
 import time
 import uuid
+import json
 from datetime import datetime
 from typing import Dict, Any, List
 
@@ -44,30 +45,17 @@ async def create_chat_completion(
     provider_id = chat_request.provider or settings.DEFAULT_PROVIDER
     model_id = chat_request.model or settings.DEFAULT_CHAT_MODEL
 
-    # Add debug info to trace provider/model handling
-    print(f"DEBUG API: Original provider_id={provider_id}, model_id={model_id}")
-    print(
-        f"DEBUG API: Provider keys available: OPENAI={bool(settings.OPENAI_API_KEY)}, MISTRAL={bool(settings.MISTRAL_API_KEY)}, DEEPSEEK={bool(settings.DEEPSEEK_API_KEY)}"
-    )
-
     # Check if model_id already includes provider info (e.g., "deepseek/deepseek-chat")
     if "/" in model_id:
         # Extract provider from model string if present
         extracted_provider, extracted_model = model_id.split("/", 1)
-        print(
-            f"DEBUG API: Model contains provider info: {extracted_provider}/{extracted_model}"
-        )
         provider_id = extracted_provider
         model_id = extracted_model
 
     model = f"{provider_id}/{model_id}"
-    print(f"DEBUG API: Final model string being sent to resource: {model}")
 
     # Get API key for the provider
     api_key = get_provider_api_key(provider_id)
-    print(
-        f"DEBUG API: Got API key for provider '{provider_id}': {api_key[:5]}...{api_key[-5:] if api_key and len(api_key) > 10 else 'None/Invalid'}"
-    )
 
     if not api_key:
         available_providers = [
@@ -75,7 +63,6 @@ async def create_chat_completion(
             for p in ["openai", "mistral", "deepseek", "anthropic", "cohere", "google"]
             if getattr(settings, f"{p.upper()}_API_KEY", None)
         ]
-        print(f"DEBUG API: Available providers with API keys: {available_providers}")
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,32 +86,42 @@ async def create_chat_completion(
             # Create a streaming response
             async def generate_stream():
                 # Call the Chat resource with streaming enabled
-                generator = chat_resource(
-                    messages=chat_request.messages,
-                    model=model,
-                    temperature=chat_request.temperature,
-                    max_tokens=chat_request.max_tokens,
-                    provider_api_key=api_key,
-                    stream=True,
-                    return_generator=True,
-                    user_id=current_user.get("id"),
-                    api_key_id=current_user.get("api_key_id"),
-                    client_info=client_info,
-                    session_id=session_id,
-                    **chat_request.additional_params,
-                )
+                try:
+                    generator = chat_resource(
+                        messages=chat_request.messages,
+                        model=model,
+                        temperature=chat_request.temperature,
+                        max_tokens=chat_request.max_tokens,
+                        provider_api_key=api_key,
+                        stream=True,
+                        user_id=current_user.get("id"),
+                        api_key_id=current_user.get("api_key_id"),
+                        client_info=client_info,
+                        session_id=session_id,
+                        **chat_request.additional_params,
+                    )
 
-                # Yield each chunk from the generator
-                for chunk in generator:
-                    yield f"data: {chunk}\n\n"
+                    # The generator we get back is already a synchronous generator
+                    # that yields JSON-serialized strings
+                    for chunk in generator:
+                        # Simply yield the chunk with SSE format
+                        yield f"data: {chunk}\n\n"
+
+                except Exception as e:
+                    # Handle any exceptions
+                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
                 # End the stream
                 yield "data: [DONE]\n\n"
 
-            # Return a streaming response
+            # Return a streaming response with proper headers
             return StreamingResponse(
                 generate_stream(),
                 media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                },
             )
 
         # Add processing time tracking

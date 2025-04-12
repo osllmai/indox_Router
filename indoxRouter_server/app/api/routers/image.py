@@ -39,6 +39,14 @@ async def create_image(
     # Get provider and model
     provider_id = request.provider or settings.DEFAULT_PROVIDER
     model_id = request.model or settings.DEFAULT_IMAGE_MODEL
+
+    # Check if model_id already includes provider info (e.g., "openai/dall-e-3")
+    if "/" in model_id:
+        # Extract provider from model string if present
+        extracted_provider, extracted_model = model_id.split("/", 1)
+        provider_id = extracted_provider
+        model_id = extracted_model
+
     model = f"{provider_id}/{model_id}"
 
     # Get API key for the provider
@@ -87,7 +95,7 @@ async def create_image(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail="Insufficient credits for this request",
             )
-        
+
         # Handle other errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

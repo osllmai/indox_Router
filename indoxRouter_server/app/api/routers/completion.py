@@ -38,9 +38,19 @@ async def create_completion(
     start_time = time.time()
 
     # Get provider and model
-    provider_id = request.provider or settings.DEFAULT_PROVIDER
     model_id = request.model or settings.DEFAULT_COMPLETION_MODEL
-    model = f"{provider_id}/{model_id}"
+
+    # Check if model already includes provider prefix
+    if "/" in model_id:
+        # Model includes provider, extract it
+        provider_id, model_name = model_id.split("/", 1)
+    else:
+        # Use specified provider or default
+        provider_id = request.provider or settings.DEFAULT_PROVIDER
+        model_name = model_id
+
+    # Construct full model string
+    model = f"{provider_id}/{model_name}"
 
     # Get API key for the provider
     api_key = get_provider_api_key(provider_id)
@@ -127,7 +137,7 @@ async def create_completion(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail="Insufficient credits for this request",
             )
-        
+
         # Handle other errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
