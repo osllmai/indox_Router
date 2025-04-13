@@ -30,7 +30,7 @@ try:
 
     POSTGRES_URI = settings.DATABASE_URL or os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:postgrespassword@localhost:5433/indoxrouter",
+        "postgresql://postgres:postgrespassword@localhost:15432/indoxrouter",
     )
     MONGODB_URI = settings.MONGODB_URI or os.getenv(
         "MONGODB_URI", "mongodb://localhost:27018/indoxrouter"
@@ -42,7 +42,7 @@ except ImportError:
     # Fallback if app config is not available
     POSTGRES_URI = os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:postgrespassword@localhost:5433/indoxrouter",
+        "postgresql://postgres:postgrespassword@localhost:15432/indoxrouter",
     )
     MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27018/indoxrouter")
     MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "indoxrouter")
