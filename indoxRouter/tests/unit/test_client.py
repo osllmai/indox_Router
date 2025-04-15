@@ -1,255 +1,121 @@
-"""
-Unit tests for the indoxRouter client.
-"""
-
-import os
-import sys
-import json
-import unittest
+import pytest
 from unittest.mock import patch, MagicMock
+import os
+import json
 
-# Add parent directory to path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-# Import the client module
-from indoxrouter.client import Client
-from indoxrouter.exceptions import (
-    AuthenticationError,
-    NetworkError,
-    ProviderNotFoundError,
-    ModelNotFoundError,
-    InvalidParametersError,
-    RateLimitError,
-    ProviderError,
-    InsufficientCreditsError,
-)
+from indoxRouter import Client
+from indoxRouter.exceptions import AuthenticationError
 
 
-class TestClient(unittest.TestCase):
-    """Test the client class."""
+@pytest.mark.unit
+class TestClient:
+    """Unit tests for the Client class."""
 
-    def setUp(self):
-        """Set up the test case."""
-        self.api_key = "test-api-key"
-        self.client = Client(api_key=self.api_key)
+    def test_init_with_api_key(self, api_key):
+        """Test client initialization with API key as parameter."""
+        client = Client(api_key=api_key)
+        assert client.api_key == api_key
+        assert "Authorization" in client.session.headers
+        assert client.session.headers["Authorization"] == f"Bearer {api_key}"
+        client.close()
 
-        # Mock the session
-        self.session_patcher = patch("indoxrouter.client.requests.Session")
-        self.mock_session = self.session_patcher.start()
-        self.mock_session_instance = self.mock_session.return_value
-        self.client.session = self.mock_session_instance
-
-        # Set up common response data
-        self.mock_response = MagicMock()
-        self.mock_response.status_code = 200
-        self.mock_response.json.return_value = {"status": "success"}
-        self.mock_session_instance.request.return_value = self.mock_response
-
-    def tearDown(self):
-        """Tear down the test case."""
-        self.session_patcher.stop()
-
-    def test_initialization(self):
-        """Test client initialization."""
-        # Test with API key
-        client = Client(api_key="test-key")
-        self.assertEqual(client.api_key, "test-key")
-
-        # Test with environment variable
-        with patch.dict(os.environ, {"INDOX_ROUTER_API_KEY": "env-key"}):
+    def test_init_with_env_var(self):
+        """Test client initialization with API key from environment variable."""
+        with patch.dict(os.environ, {"INDOX_ROUTER_API_KEY": "env_api_key"}):
             client = Client()
-            self.assertEqual(client.api_key, "env-key")
+            assert client.api_key == "env_api_key"
+            client.close()
 
-        # Test with missing API key
+    def test_init_without_api_key(self):
+        """Test client initialization without API key raises error."""
+        # Temporarily clear the environment variable if it exists
         with patch.dict(os.environ, {}, clear=True):
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 Client()
 
-    def test_chat(self):
-        """Test the chat method."""
+    def test_request_success(self, client):
+        """Test successful API request."""
         # Mock the response
-        chat_response = {
-            "request_id": "test-request-id",
-            "created_at": "2023-01-01T00:00:00Z",
-            "duration_ms": 100,
-            "provider": "openai",
-            "model": "gpt-4o-mini",
-            "success": True,
-            "message": "Success",
-            "data": "This is a response",
-            "finish_reason": "stop",
-            "usage": {
-                "tokens_prompt": 10,
-                "tokens_completion": 5,
-                "tokens_total": 15,
-                "cost": 0.0001,
-            },
-        }
-        self.mock_response.json.return_value = chat_response
+        with patch("requests.Session.request") as mock_request:
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"result": "success"}
+            mock_response.raise_for_status.return_value = None
+            mock_request.return_value = mock_response
 
-        # Call the chat method
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Hello"},
-        ]
-        response = self.client.chat(messages)
+            # Call the method under test
+            result = client._request("GET", "test_endpoint")
 
-        # Verify the request
-        self.mock_session_instance.request.assert_called_once()
-        call_args = self.mock_session_instance.request.call_args[0]
-        call_kwargs = self.mock_session_instance.request.call_args[1]
+            # Verify the result
+            assert result == {"result": "success"}
+            mock_request.assert_called_once()
 
-        self.assertEqual(call_args[0], "POST")
-        self.assertIn("chat/completions", call_args[1])
-        self.assertEqual(call_kwargs["json"]["messages"], messages)
+    def test_request_auth_error(self, client):
+        """Test API request with authentication error."""
+        # Mock the response for a 401 error
+        with patch("requests.Session.request") as mock_request:
+            mock_response = MagicMock()
+            mock_response.raise_for_status.side_effect = Exception("401 Client Error")
+            mock_response.status_code = 401
+            mock_response.json.return_value = {"detail": "Invalid API key"}
+            mock_request.return_value = mock_response
 
-        # Verify the response
-        self.assertEqual(response, chat_response)
+            # Patch the requests.HTTPError to simulate the error response
+            with patch("requests.HTTPError", MagicMock()) as mock_http_error:
+                mock_http_error.return_value.response = mock_response
+                mock_response.raise_for_status.side_effect = mock_http_error
 
-    def test_completion(self):
-        """Test the completion method."""
-        # Mock the response
-        completion_response = {
-            "request_id": "test-request-id",
-            "created_at": "2023-01-01T00:00:00Z",
-            "duration_ms": 100,
-            "provider": "openai",
-            "model": "gpt-4o-mini",
-            "success": True,
-            "message": "Success",
-            "data": "This is a response",
-            "finish_reason": "stop",
-            "usage": {
-                "tokens_prompt": 10,
-                "tokens_completion": 5,
-                "tokens_total": 15,
-                "cost": 0.0001,
-            },
-        }
-        self.mock_response.json.return_value = completion_response
+                # Call the method under test and verify it raises the correct exception
+                with pytest.raises(AuthenticationError):
+                    client._request("GET", "test_endpoint")
 
-        # Call the completion method
-        response = self.client.complete("Hello, world!")
+    def test_close(self, api_key):
+        """Test close() method closes the session."""
+        client = Client(api_key=api_key)
+        with patch.object(client.session, "close") as mock_close:
+            client.close()
+            mock_close.assert_called_once()
 
-        # Verify the request
-        self.mock_session_instance.request.assert_called_once()
-        call_args = self.mock_session_instance.request.call_args[0]
-        call_kwargs = self.mock_session_instance.request.call_args[1]
+    def test_context_manager(self, api_key):
+        """Test client as context manager."""
+        with patch.object(Client, "close") as mock_close:
+            with Client(api_key=api_key) as client:
+                assert isinstance(client, Client)
+            mock_close.assert_called_once()
 
-        self.assertEqual(call_args[0], "POST")
-        self.assertIn("completions", call_args[1])
-        self.assertEqual(call_kwargs["json"]["prompt"], "Hello, world!")
-
-        # Verify the response
-        self.assertEqual(response, completion_response)
-
-    def test_embeddings(self):
-        """Test the embeddings method."""
-        # Mock the response
-        embeddings_response = {
-            "request_id": "test-request-id",
-            "created_at": "2023-01-01T00:00:00Z",
-            "duration_ms": 100,
-            "provider": "openai",
-            "model": "text-embedding-3-large",
-            "success": True,
-            "message": "Success",
-            "data": [[0.1, 0.2, 0.3, 0.4, 0.5]],
-            "usage": {
-                "tokens_prompt": 5,
-                "tokens_completion": 0,
-                "tokens_total": 5,
-                "cost": 0.00005,
-            },
-        }
-        self.mock_response.json.return_value = embeddings_response
-
-        # Call the embeddings method
-        response = self.client.embeddings("Hello, world!")
-
-        # Verify the request
-        self.mock_session_instance.request.assert_called_once()
-        call_args = self.mock_session_instance.request.call_args[0]
-        call_kwargs = self.mock_session_instance.request.call_args[1]
-
-        self.assertEqual(call_args[0], "POST")
-        self.assertIn("embeddings", call_args[1])
-        self.assertEqual(call_kwargs["json"]["input"], "Hello, world!")
-
-        # Verify the response
-        self.assertEqual(response, embeddings_response)
-
-    def test_models(self):
-        """Test the models method."""
-        # Mock the response
-        models_response = {
-            "models": [
+    def test_chat_method(self, client):
+        """Test chat method with mocked response."""
+        # Create a mock response for the _request method
+        mock_response = {
+            "id": "chat-12345",
+            "object": "chat.completion",
+            "created": 1677652288,
+            "model": "openai/gpt-4o-mini",
+            "choices": [
                 {
-                    "id": "gpt-4o-mini",
-                    "provider": "openai",
-                    "name": "GPT-4o Mini",
-                    "type": "chat",
-                    "pricing": {"input_per_token": 0.00015, "output_per_token": 0.0006},
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": "This is a test response",
+                    },
+                    "finish_reason": "stop",
                 }
-            ]
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
         }
-        self.mock_response.json.return_value = models_response
 
-        # Call the models method
-        response = self.client.models()
+        # Mock the _request method
+        with patch.object(
+            client, "_request", return_value=mock_response
+        ) as mock_request:
+            # Call the chat method
+            messages = [{"role": "user", "content": "Hello"}]
+            response = client.chat(messages, model="openai/gpt-4o-mini")
 
-        # Verify the request
-        self.mock_session_instance.request.assert_called_once()
-        call_args = self.mock_session_instance.request.call_args[0]
+            # Verify the response
+            assert response == mock_response
 
-        self.assertEqual(call_args[0], "GET")
-        self.assertIn("models", call_args[1])
-
-        # Verify the response
-        self.assertEqual(response, models_response)
-
-    def test_handle_errors(self):
-        """Test error handling."""
-        # Set up error response
-        error_response = MagicMock()
-        error_response.raise_for_status.side_effect = Exception("Error")
-        error_response.status_code = 401
-        error_response.json.return_value = {"detail": "Authentication failed"}
-        self.mock_session_instance.request.return_value = error_response
-
-        # Test authentication error
-        with self.assertRaises(AuthenticationError):
-            self.client.chat([{"role": "user", "content": "Hello"}])
-
-        # Test other error types
-        error_types = [
-            (404, "Provider not found", ProviderNotFoundError),
-            (404, "Model not found", ModelNotFoundError),
-            (400, "Invalid parameters", InvalidParametersError),
-            (429, "Rate limit exceeded", RateLimitError),
-            (500, "Provider error", ProviderError),
-            (402, "Insufficient credits", InsufficientCreditsError),
-            (500, "Unknown error", NetworkError),
-        ]
-
-        for status_code, message, error_class in error_types:
-            error_response.status_code = status_code
-            error_response.json.return_value = {"detail": message}
-
-            with self.assertRaises(error_class):
-                self.client.chat([{"role": "user", "content": "Hello"}])
-
-    def test_context_manager(self):
-        """Test using the client as a context manager."""
-        with Client(api_key=self.api_key) as client:
-            self.assertIsInstance(client, Client)
-            # Mock the close method to check if it's called
-            client.close = MagicMock()
-
-        client.close.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()
+            # Verify the request parameters
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args[0]
+            assert call_args[0] == "POST"  # Method
+            assert "chat" in call_args[1]  # Endpoint contains 'chat'

@@ -7,10 +7,10 @@
 BACKUP_DIR="/opt/indoxrouter/backups"
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
 POSTGRES_USER="indoxrouter_admin"
-POSTGRES_PASSWORD="Ejpp4gjm2i4Vgnf+abcdoeWrTlSxeSwo"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
 MONGO_USER="indoxrouter_admin"
-MONGO_PASSWORD="/vLiS2JYfb8wm52lsow+hURaI6aa+k+I"
-REDIS_PASSWORD="Ejpp4gjm2i4Vgnf+abcdoeWrTlSxeSwo"
+MONGO_PASSWORD="${MONGO_PASSWORD}"
+REDIS_PASSWORD="${REDIS_PASSWORD}"
 RETENTION_DAYS=14
 
 # Create backup directory if it doesn't exist

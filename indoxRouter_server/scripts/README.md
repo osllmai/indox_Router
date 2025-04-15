@@ -1,6 +1,73 @@
-# IndoxRouter Server Scripts
+# IndoxRouter Scripts
 
-This directory contains utility scripts for the IndoxRouter server.
+This directory contains utility scripts for the IndoxRouter server deployment and maintenance.
+
+## Deployment Scripts
+
+- `remote_deploy.sh` - Deploys IndoxRouter to a remote server using SSH
+- `deploy_integrated.sh` - Sets up IndoxRouter with integrated databases on a single server
+- `setup_nginx.sh` - Configures Nginx as a reverse proxy for IndoxRouter
+
+## Backup Scripts
+
+- `backup_databases.sh` - Creates backups of PostgreSQL, MongoDB, and Redis databases
+- `setup_backup_cron.sh` - Sets up a cron job for daily database backups
+
+## Usage
+
+### Remote Deployment
+
+To deploy IndoxRouter to a remote server:
+
+```bash
+bash scripts/remote_deploy.sh
+```
+
+This script will:
+
+1. Copy all necessary files to the remote server
+2. Set up the environment
+3. Start the application and databases
+4. Configure Nginx as a reverse proxy
+5. Set up automated database backups
+
+### Database Backups
+
+Backups are automatically configured to run daily at 2:00 AM when using the remote deployment script.
+
+To manually trigger a backup:
+
+```bash
+bash scripts/backup_databases.sh
+```
+
+To set up the backup cron job manually:
+
+```bash
+bash scripts/setup_backup_cron.sh
+```
+
+Backups are stored in the following locations:
+
+- PostgreSQL: `/opt/indoxrouter/backups/postgres/`
+- MongoDB: `/opt/indoxrouter/backups/mongodb/`
+- Redis: `/opt/indoxrouter/backups/redis/`
+
+Backup logs are written to `/opt/indoxrouter/logs/backup.log`.
+
+### Nginx Setup
+
+To configure Nginx as a reverse proxy:
+
+```bash
+bash scripts/setup_nginx.sh
+```
+
+## Notes
+
+- All scripts are designed to be run from the `indoxrouter_server` directory
+- Scripts may require root privileges on the target system
+- After deployment, configure your API keys in the `.env` file
 
 ## Available Scripts
 

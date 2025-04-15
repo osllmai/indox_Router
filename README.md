@@ -72,6 +72,47 @@ response = client.chat([
 print(response.content)
 ```
 
+## Automated Testing
+
+IndoxRouter includes automated tests for both client and server components, ensuring high code quality and reliability.
+
+### Client Tests
+
+The client component includes:
+
+- **Unit tests**: Test client functionality without requiring a live server
+- **Integration tests**: Test client-server integration (requires a running server)
+
+To run the client tests:
+
+```bash
+# Run all client tests (when server is available)
+cd indoxRouter
+python run_tests.py
+
+# Run only unit tests (no server needed)
+python run_tests.py --unit
+
+# Run integration tests with a specific server
+python run_tests.py --integration --server http://91.107.253.133:8000
+```
+
+See [IndoxRouter Client Tests](indoxRouter/tests/README.md) for more details.
+
+### Continuous Integration
+
+The project uses GitHub Actions for continuous integration:
+
+- Automatically runs unit tests on push to main branches
+- Tests across multiple Python versions (3.9, 3.10, 3.11)
+- Can be configured to run integration tests with a live server (disabled by default)
+
+To enable integration tests in GitHub Actions:
+
+1. Set up your server at `91.107.253.133` (or any other location)
+2. Configure GitHub repository secrets for server access
+3. Uncomment the integration test section in `.github/workflows/python-tests.yml`
+
 ## Database Setup
 
 IndoxRouter uses a hybrid database approach:

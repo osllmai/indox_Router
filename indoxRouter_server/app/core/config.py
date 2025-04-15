@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PERIOD_SECONDS: int = Field(default=60, env="RATE_LIMIT_PERIOD_SECONDS")
 
     # Redis settings for rate limiting
-    REDIS_HOST: str = Field(default="localhost", env="REDIS_HOST")
+    REDIS_HOST: str = Field(default="indoxrouter-redis", env="REDIS_HOST")
     REDIS_PORT: int = Field(default=6379, env="REDIS_PORT")
     REDIS_DB: int = Field(default=0, env="REDIS_DB")
     REDIS_PASSWORD: Optional[str] = Field(default=None, env="REDIS_PASSWORD")

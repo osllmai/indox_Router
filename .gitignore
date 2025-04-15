@@ -113,17 +113,26 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# IDE files
-.idea/
+# VS Code
 .vscode/
-*.swp
-*.swo
 
-# OS specific files
-.DS_Store
-Thumbs.db 
+# PyCharm
+.idea/
+
+# Docker
+.dockerignore
+
+# Output files
+output/
+
+# Credentials and security files
+CREDENTIALS.md
+secure.env
+secure_*.env
+*_credentials.txt
+*_credentials.env
+credentials.txt
+credentials.env
+.indoxrouter/
+~/.indoxrouter/
+secrets/ 

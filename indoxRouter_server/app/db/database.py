@@ -92,14 +92,14 @@ def init_mongodb():
 
         return True
     except Exception as e:
-        logger.error(f"Failed to initialize MongoDB connection: {e}")
+        logger.debug(f"Failed to initialize MongoDB connection: {e}")
         return False
 
 
 def create_mongo_indexes():
     """Create MongoDB indexes."""
     try:
-        if mongo_db:
+        if mongo_db is not None:
             # Create indexes for model_usage collection
             mongo_db.model_usage.create_index([("user_id", 1)])
             mongo_db.model_usage.create_index([("provider", 1)])
@@ -359,7 +359,7 @@ def save_conversation(user_id: int, title: str, messages: List[Dict[str, Any]]) 
     """Save a conversation to MongoDB."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for saving conversations")
+            logger.debug("MongoDB not initialized for saving conversations")
             return None
 
         conversation = {
@@ -384,7 +384,7 @@ def get_user_conversations(
     """Get user conversations from MongoDB."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for retrieving conversations")
+            logger.debug("MongoDB not initialized for retrieving conversations")
             return []
 
         conversations = list(
@@ -411,7 +411,7 @@ def get_conversation(conversation_id: str) -> Optional[Dict[str, Any]]:
     """Get a specific conversation from MongoDB by ID."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for retrieving conversation")
+            logger.debug("MongoDB not initialized for retrieving conversation")
             return None
 
         conversation = mongo_db.conversations.find_one(
@@ -437,7 +437,7 @@ def save_embedding(
     """Save an embedding to MongoDB."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for saving embeddings")
+            logger.debug("MongoDB not initialized for saving embeddings")
             return None
 
         embedding_doc = {
@@ -461,7 +461,7 @@ def get_embedding(embedding_id: str) -> Optional[Dict[str, Any]]:
     """Get a specific embedding from MongoDB by ID."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for retrieving embedding")
+            logger.debug("MongoDB not initialized for retrieving embedding")
             return None
 
         embedding = mongo_db.embeddings.find_one({"_id": ObjectId(embedding_id)})
@@ -548,7 +548,7 @@ def save_model_info(
     """Save model information to MongoDB."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for saving model info")
+            logger.debug("MongoDB not initialized for saving model info")
             return None
 
         model_doc = {
@@ -585,7 +585,7 @@ def get_models(provider: str = None) -> List[Dict[str, Any]]:
     """Get models from MongoDB, optionally filtered by provider."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for retrieving models")
+            logger.debug("MongoDB not initialized for retrieving models")
             return []
 
         query = {}
@@ -608,7 +608,7 @@ def get_model(provider: str, name: str) -> Optional[Dict[str, Any]]:
     """Get a specific model from MongoDB by provider and name."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for retrieving model")
+            logger.debug("MongoDB not initialized for retrieving model")
             return None
 
         model = mongo_db.models.find_one({"provider": provider, "name": name})
@@ -662,7 +662,7 @@ def log_model_usage(
     """
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for logging model usage")
+            logger.debug("MongoDB not initialized for logging model usage")
             return False
 
         # Create timestamp
@@ -749,7 +749,7 @@ def get_user_model_usage(
     """Get user model usage from MongoDB with optional filtering."""
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for retrieving user model usage")
+            logger.debug("MongoDB not initialized for retrieving user model usage")
             return []
 
         query = {"user_id": user_id}
@@ -992,7 +992,7 @@ def get_usage_analytics(
     """
     try:
         if mongo_db is None:
-            logger.error("MongoDB not initialized for advanced analytics")
+            logger.debug("MongoDB not initialized for advanced analytics")
             return []
 
         # Build the match filter

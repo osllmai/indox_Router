@@ -4,9 +4,68 @@
 
 # Check if domain name was provided
 if [ -z "$1" ]; then
-  echo "Error: No domain name provided"
-  echo "Usage: bash setup_nginx.sh yourdomain.com"
-  exit 1
+  echo "Setting up Nginx without SSL (IP-based access)"
+  
+  # Create Nginx configuration for IP-based access
+  echo "Creating Nginx configuration for IP-based access..."
+  cat > /etc/nginx/sites-available/indoxrouter << EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    server_name _;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    # Larger file uploads
+    client_max_body_size 10M;
+    
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Frame-Options SAMEORIGIN;
+}
+EOF
+
+  # Enable the site
+  echo "Enabling the site..."
+  ln -sf /etc/nginx/sites-available/indoxrouter /etc/nginx/sites-enabled/
+  rm -f /etc/nginx/sites-enabled/default
+  
+  # Test Nginx configuration
+  echo "Testing Nginx configuration..."
+  nginx -t
+  
+  if [ $? -ne 0 ]; then
+    echo "Nginx configuration test failed. Please check the configuration."
+    exit 1
+  fi
+  
+  # Restart Nginx
+  echo "Restarting Nginx..."
+  systemctl restart nginx
+  
+  echo ""
+  echo "Nginx setup complete!"
+  echo "===================="
+  echo ""
+  echo "Your IndoxRouter server is now accessible at:"
+  echo "http://91.107.153.195"
+  echo ""
+  echo "To add SSL protection later, run: bash setup_nginx.sh yourdomain.com"
+  echo ""
+  exit 0
 fi
 
 DOMAIN=$1
@@ -58,6 +117,7 @@ EOF
 # Enable the site
 echo "Enabling the site..."
 ln -sf /etc/nginx/sites-available/indoxrouter /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
 
 # Test Nginx configuration
 echo "Testing Nginx configuration..."

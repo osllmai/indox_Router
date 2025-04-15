@@ -5,7 +5,7 @@ Use this checklist to ensure a smooth deployment of IndoxRouter to your producti
 ## Server Preparation
 
 - [ ] Verify server specifications (CPU, RAM, disk space)
-- [ ] Ensure SSH access to the server (IP: 91.107.253.133, User: root)
+- [ ] Ensure SSH access to the server (IP: 91.107.153.195, User: root)
 - [ ] Install Docker and Docker Compose on the server
 - [ ] Configure firewall to allow necessary ports (SSH, HTTP/HTTPS)
 - [ ] Set up monitoring tools (optional)
@@ -16,6 +16,8 @@ Use this checklist to ensure a smooth deployment of IndoxRouter to your producti
 - [ ] Verify database schema includes users and API keys tables
 - [ ] Test database connection from the server
 - [ ] Ensure database user has appropriate permissions
+- [ ] Verify database backup script works correctly
+- [ ] Confirm backup cron job is properly installed
 
 ## Environment Setup
 
@@ -54,8 +56,9 @@ Use this checklist to ensure a smooth deployment of IndoxRouter to your producti
 
 - [ ] Set up log monitoring
 - [ ] Configure resource usage alerts
-- [ ] Create backup strategy
-- [ ] Document update procedures
+- [ ] Verify backup directories exist at `/opt/indoxrouter/backups`
+- [ ] Test database backup script manually
+- [ ] Document database restore procedures
 - [ ] Set up automatic updates (optional)
 
 ## Final Verification
@@ -64,3 +67,4 @@ Use this checklist to ensure a smooth deployment of IndoxRouter to your producti
 - [ ] Test with real API keys from your website
 - [ ] Monitor server performance under load
 - [ ] Document any issues and their solutions
+- [ ] Confirm backup logs are being written to `/opt/indoxrouter/logs/backup.log`

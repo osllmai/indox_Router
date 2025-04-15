@@ -44,13 +44,14 @@ mkdir -p ./logs
 mkdir -p ./data/postgres
 mkdir -p ./data/mongodb
 mkdir -p ./data/redis
-chmod 755 -R ./logs ./data
+chmod -R 755 ./logs ./data
 
 # Set up firewall
 echo "Configuring firewall..."
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
+ufw allow 8000/tcp
 ufw --force enable
 
 # Create a secure secret key
@@ -67,7 +68,7 @@ echo ""
 echo "IndoxRouter deployed successfully!"
 echo "=================================="
 echo ""
-echo "API Server: http://91.107.253.133:8000"
+echo "API Server: http://91.107.153.195:8000"
 echo ""
 echo "To check the status, run: docker-compose ps"
 echo "To view logs, run: docker-compose logs -f"
