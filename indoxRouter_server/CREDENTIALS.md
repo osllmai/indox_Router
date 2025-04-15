@@ -33,7 +33,7 @@
 
 ## Application Secrets
 
-- **SECRET_KEY**: `1ddd977e43c006e6c02a28e18d13fa9a4530762a36d6d579ac5004cc18a4bd90`
+- **SECRET_KEY**: `a8f2aaa37373a0202c5b44e251ea83dc21afaf8716f52c80ff870bcc21d9f771`
 
 ## API Provider Keys
 
