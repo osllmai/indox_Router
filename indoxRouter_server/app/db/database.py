@@ -80,6 +80,16 @@ def init_mongodb():
     """Initialize the MongoDB connection."""
     global mongo_client, mongo_db
     try:
+        # Log the MongoDB URI being used (with password removed for security)
+        uri = settings.MONGODB_URI
+        if uri and ":" in uri and "@" in uri:
+            # Mask the password in the log
+            masked_uri = uri.split(":")
+            masked_uri[2] = "****" + masked_uri[2].split("@", 1)[1]
+            logger.info(f"Connecting to MongoDB with URI: {':'.join(masked_uri)}")
+        else:
+            logger.warning(f"MongoDB URI not properly formatted: {uri}")
+
         mongo_client = MongoClient(settings.MONGODB_URI)
         mongo_db = mongo_client[settings.MONGODB_DATABASE]
 
@@ -92,7 +102,11 @@ def init_mongodb():
 
         return True
     except Exception as e:
-        logger.debug(f"Failed to initialize MongoDB connection: {e}")
+        logger.error(f"Failed to initialize MongoDB connection: {e}")
+        logger.error(
+            f"MongoDB connection details - Host: {settings.MONGO_HOST}, DB: {settings.MONGODB_DATABASE}"
+        )
+        logger.debug(traceback.format_exc())
         return False
 
 

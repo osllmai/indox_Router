@@ -1,60 +1,42 @@
 #!/bin/bash
+set -euo pipefail
 
-# IndoxRouter Server - Database Backup Script
-# This script creates backups of PostgreSQL, MongoDB, and Redis databases
-
-# Configuration
 BACKUP_DIR="/opt/indoxrouter/backups"
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-POSTGRES_USER="indoxrouter_admin"
+POSTGRES_USER="${POSTGRES_USER}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
-MONGO_USER="indoxrouter_admin"
-MONGO_PASSWORD="${MONGO_PASSWORD}"
+MONGO_USER="${MONGO_APP_USER}"
+MONGO_PASSWORD="${MONGO_APP_PASSWORD}"
 REDIS_PASSWORD="${REDIS_PASSWORD}"
 RETENTION_DAYS=14
+LOG_FILE="/opt/indoxrouter/logs/backup.log"
 
-# Create backup directory if it doesn't exist
-mkdir -p $BACKUP_DIR
-mkdir -p $BACKUP_DIR/postgres
-mkdir -p $BACKUP_DIR/mongodb
-mkdir -p $BACKUP_DIR/redis
+handle_error() {
+  local exit_code=$1
+  local error_message=$2
+  echo "ERROR: $error_message (exit code: $exit_code)" | tee -a "$LOG_FILE"
+  exit "$exit_code"
+}
 
-echo "Starting IndoxRouter database backups at $(date)"
+mkdir -p "$BACKUP_DIR"/{postgres,mongodb,redis}
+mkdir -p "$(dirname "$LOG_FILE")"
 
-# Backup PostgreSQL
-echo "Backing up PostgreSQL database..."
-docker exec indoxrouter-postgres pg_dump -U $POSTGRES_USER -d indoxrouter | gzip > $BACKUP_DIR/postgres/indoxrouter_postgres_$DATE.sql.gz
-if [ $? -eq 0 ]; then
-    echo "PostgreSQL backup completed successfully"
-else
-    echo "PostgreSQL backup failed"
-fi
+echo "Starting backups at $(date)" | tee -a "$LOG_FILE"
 
-# Backup MongoDB
-echo "Backing up MongoDB database..."
-docker exec indoxrouter-mongodb mongodump --username $MONGO_USER --password $MONGO_PASSWORD --db indoxrouter --authenticationDatabase admin --archive | gzip > $BACKUP_DIR/mongodb/indoxrouter_mongodb_$DATE.archive.gz
-if [ $? -eq 0 ]; then
-    echo "MongoDB backup completed successfully"
-else
-    echo "MongoDB backup failed"
-fi
+# PostgreSQL Backup
+docker exec indoxrouter-postgres pg_dump -U ${POSTGRES_USER} -d indoxrouter | gzip > "$BACKUP_DIR/postgres/indoxrouter_postgres_$DATE.sql.gz" || handle_error 1 "PostgreSQL backup failed"
 
-# Backup Redis
-echo "Backing up Redis database..."
-docker exec indoxrouter-redis redis-cli -a $REDIS_PASSWORD --rdb /data/redis_backup.rdb
-docker cp indoxrouter-redis:/data/redis_backup.rdb $BACKUP_DIR/redis/indoxrouter_redis_$DATE.rdb
-if [ $? -eq 0 ]; then
-    echo "Redis backup completed successfully"
-else
-    echo "Redis backup failed"
-fi
+# MongoDB Backup
+docker exec indoxrouter-mongodb mongodump -u appuser -p "$MONGO_APP_PASSWORD" \
+  --authenticationDatabase admin --db indoxrouter --archive | gzip > "$BACKUP_DIR/mongodb/indoxrouter_mongodb_$DATE.archive.gz" || handle_error 2 "MongoDB backup failed"
 
-# Clean up old backups
-echo "Cleaning up backups older than $RETENTION_DAYS days..."
-find $BACKUP_DIR/postgres -name "indoxrouter_postgres_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
-find $BACKUP_DIR/mongodb -name "indoxrouter_mongodb_*.archive.gz" -type f -mtime +$RETENTION_DAYS -delete
-find $BACKUP_DIR/redis -name "indoxrouter_redis_*.rdb" -type f -mtime +$RETENTION_DAYS -delete
+# Redis Backup
+docker exec indoxrouter-redis redis-cli --no-auth-warning -a "$REDIS_PASSWORD" SAVE || handle_error 3 "Redis SAVE failed"
+docker cp indoxrouter-redis:/data/dump.rdb "$BACKUP_DIR/redis/indoxrouter_redis_$DATE.rdb" || handle_error 4 "Redis copy failed"
 
-echo "Backup process completed at $(date)"
-echo "Backups are stored in $BACKUP_DIR"
-echo "========================================" 
+find "$BACKUP_DIR/postgres" -name "*.sql.gz" -mtime +$RETENTION_DAYS -delete
+find "$BACKUP_DIR/mongodb" -name "*.archive.gz" -mtime +$RETENTION_DAYS -delete
+find "$BACKUP_DIR/redis" -name "*.rdb" -mtime +$RETENTION_DAYS -delete
+
+echo "Backups completed at $(date)" | tee -a "$LOG_FILE"
+exit 0

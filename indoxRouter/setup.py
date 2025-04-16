@@ -9,14 +9,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="indoxrouter",
-    version="0.2.1",
+    version="0.1.6",
     author="indoxRouter Team",
     author_email="ashkan.eskandari.dev@gmail.com",
     description="A unified client for various AI providers",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/indoxrouter/indoxrouter",
-    packages=find_packages(exclude=["tests", "tests.*", "examples", "examples.*"]),
+    packages=["indoxrouter"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

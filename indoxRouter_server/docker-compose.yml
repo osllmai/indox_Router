@@ -1,4 +1,4 @@
-version: "3"
+version: "3.8"
 
 services:
   indoxrouter-server:
@@ -11,130 +11,105 @@ services:
       - PORT=8000
       - DEBUG=false
       - SECRET_KEY=${SECRET_KEY}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - COHERE_API_KEY=${COHERE_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
-      - DEFAULT_PROVIDER=${DEFAULT_PROVIDER:-openai}
-      - DEFAULT_CHAT_MODEL=${DEFAULT_CHAT_MODEL:-gpt-4o-mini}
-      - DEFAULT_COMPLETION_MODEL=${DEFAULT_COMPLETION_MODEL:-gpt-4o-mini}
-      - DEFAULT_EMBEDDING_MODEL=${DEFAULT_EMBEDDING_MODEL:-text-embedding-3-small}
-      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
-      - RATE_LIMIT_PERIOD_SECONDS=${RATE_LIMIT_PERIOD_SECONDS:-60}
-      # Database connections for Docker container environment (container-to-container)
+      - DEFAULT_PROVIDER=${DEFAULT_PROVIDER}
+      - DEFAULT_CHAT_MODEL=${DEFAULT_CHAT_MODEL}
+      - DEFAULT_COMPLETION_MODEL=${DEFAULT_COMPLETION_MODEL}
+      - DEFAULT_EMBEDDING_MODEL=${DEFAULT_EMBEDDING_MODEL}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS}
+      - RATE_LIMIT_PERIOD_SECONDS=${RATE_LIMIT_PERIOD_SECONDS}
+      # Database connection settings
       - POSTGRES_HOST=indoxrouter-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=indoxrouter_admin
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASE_URL=postgresql://indoxrouter_admin:${POSTGRES_PASSWORD}@indoxrouter-postgres:5432/indoxrouter
+      - POSTGRES_DB=indoxrouter
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@indoxrouter-postgres:5432/indoxrouter
+      # MongoDB connection settings
       - MONGO_HOST=indoxrouter-mongodb
       - MONGO_PORT=27017
-      - MONGO_USER=indoxrouter_admin
-      - MONGO_PASSWORD=${MONGO_PASSWORD}
-      - MONGODB_URI=mongodb://indoxrouter_admin:${MONGO_PASSWORD}@indoxrouter-mongodb:27017/indoxrouter?authSource=admin
+      - MONGO_USER=${MONGO_APP_USER}
+      - MONGO_PASSWORD=${MONGO_APP_PASSWORD}
       - MONGODB_DATABASE=indoxrouter
+      - MONGODB_URI=mongodb://${MONGO_APP_USER}:${MONGO_APP_PASSWORD}@indoxrouter-mongodb:27017/indoxrouter?authSource=admin&authMechanism=SCRAM-SHA-256
+      # Redis settings
       - REDIS_HOST=indoxrouter-redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      # Additional config
-      - INDOXROUTER_LOCAL_MODE=${INDOXROUTER_LOCAL_MODE:-true}
-      - INDOXROUTER_PRODUCTION_MODE=${INDOXROUTER_PRODUCTION_MODE:-true}
-      - ENABLE_RESPONSE_CACHE=${ENABLE_RESPONSE_CACHE:-true}
-      - CACHE_TTL_DAYS=${CACHE_TTL_DAYS:-7}
-      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      # App settings
+      - INDOXROUTER_PRODUCTION_MODE=true
+      - ENABLE_RESPONSE_CACHE=true
+      - CACHE_TTL_DAYS=${CACHE_TTL_DAYS}
     volumes:
-      - ./.env:/app/.env
-      - ./app:/app/app
-      - ./logs:/app/logs
-      - ./data:/app/data
+      - app-logs:/app/logs
     depends_on:
-      indoxrouter-postgres:
-        condition: service_healthy
-      indoxrouter-mongodb:
-        condition: service_healthy
-      indoxrouter-redis:
-        condition: service_healthy
-    restart: unless-stopped
+      - postgres
+      - mongodb
+      - redis
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
       start_period: 30s
     networks:
-      - indoxrouter-network
+      - indox-network
+    restart: unless-stopped
 
-  indoxrouter-postgres:
-    image: postgres:15
+  postgres:
+    image: postgres:15-alpine
     container_name: indoxrouter-postgres
     environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_USER=indoxrouter_admin
       - POSTGRES_DB=indoxrouter
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST_AUTH_METHOD=md5
+      - POSTGRES_INITDB_ARGS=--auth-host=md5
+    command: postgres -c listen_addresses='*'
     volumes:
-      - indoxrouter_postgres_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:15432:5432" # Only expose to localhost for security
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U indoxrouter_admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
+      - postgres-data:/var/lib/postgresql/data
     networks:
-      - indoxrouter-network
+      - indox-network
+    restart: unless-stopped
 
-  indoxrouter-mongodb:
+  mongodb:
     image: mongo:6
     container_name: indoxrouter-mongodb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=indoxrouter_admin
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - MONGO_INITDB_DATABASE=indoxrouter
+      - MONGO_APP_USER=${MONGO_APP_USER}
+      - MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD}
     volumes:
-      - indoxrouter_mongodb_data:/data/db
-    ports:
-      - "127.0.0.1:27018:27017" # Only expose to localhost for security
-    command: mongod --quiet --logpath /dev/null --auth
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://indoxrouter_admin:${MONGO_PASSWORD}@localhost:27017/admin --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
-    restart: unless-stopped
+      - mongo-data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: mongod --auth
     networks:
-      - indoxrouter-network
+      - indox-network
+    restart: unless-stopped
 
-  indoxrouter-redis:
-    image: redis:7
+  redis:
+    image: redis:7-alpine
     container_name: indoxrouter-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    ports:
-      - "127.0.0.1:6380:6379" # Only expose to localhost for security
+    command: redis-server --requirepass ${REDIS_PASSWORD} --bind 0.0.0.0
     volumes:
-      - indoxrouter_redis_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
+      - redis-data:/data
     networks:
-      - indoxrouter-network
+      - indox-network
+    restart: unless-stopped
 
 volumes:
-  indoxrouter_postgres_data:
-    driver: local
-  indoxrouter_mongodb_data:
-    driver: local
-  indoxrouter_redis_data:
-    driver: local
+  postgres-data:
+  mongo-data:
+  redis-data:
+  app-logs:
 
 networks:
-  indoxrouter-network:
+  indox-network:
     driver: bridge

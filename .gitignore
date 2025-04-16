@@ -136,3 +136,4 @@ credentials.env
 .indoxrouter/
 ~/.indoxrouter/
 secrets/ 
+commands.md

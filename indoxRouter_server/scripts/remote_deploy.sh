@@ -1,403 +1,456 @@
 #!/bin/bash
+# IndoxRouter Remote Deployment Script
 
-# IndoxRouter Server - Remote Deployment Script
-# This script deploys IndoxRouter to a remote server at 91.107.153.195
-
-# Server credentials
 SERVER_IP="91.107.153.195"
 SERVER_USER="root"
 REMOTE_DIR="/opt/indoxrouter"
+LOG_FILE="/tmp/indox_deploy.log"
 
-# Prompt for passwords if not set in environment - with appropriate warnings
-if [ -z "$SERVER_PASSWORD" ]; then
-  echo "⚠️ WARNING: SERVER_PASSWORD is not set in the environment."
-  read -sp "Enter server password (leave empty to prompt for it during SSH): " SERVER_PASSWORD
-  echo
-fi
-
-echo "IndoxRouter Server - Remote Deployment Script"
-echo "============================================="
-echo "Target server: $SERVER_IP"
-echo "Remote directory: $REMOTE_DIR"
-echo
-
-# Security check for credentials
-echo "Checking security credentials..."
-NEED_CREDENTIALS=false
-
-if [ -z "$SECRET_KEY" ]; then
-  echo "⚠️ WARNING: SECRET_KEY is not set in the environment."
-  NEED_CREDENTIALS=true
-fi
-
-if [ -z "$POSTGRES_PASSWORD" ]; then
-  echo "⚠️ WARNING: POSTGRES_PASSWORD is not set in the environment."
-  NEED_CREDENTIALS=true
-fi
-
-if [ -z "$MONGO_PASSWORD" ]; then
-  echo "⚠️ WARNING: MONGO_PASSWORD is not set in the environment."
-  NEED_CREDENTIALS=true
-fi
-
-if [ -z "$REDIS_PASSWORD" ]; then
-  echo "⚠️ WARNING: REDIS_PASSWORD is not set in the environment."
-  NEED_CREDENTIALS=true
-fi
-
-# If any credentials are missing, ask what to do
-if [ "$NEED_CREDENTIALS" = true ]; then
-  echo
-  echo "Some security credentials are missing. You have these options:"
-  echo "1. Generate secure random credentials (recommended for new deployments)"
-  echo "2. Enter credentials manually"
-  echo "3. Abort deployment to set them in your environment"
-  echo
-  read -p "Enter your choice (1/2/3): " CRED_CHOICE
+# Credential validation
+validate_credentials() {
+  required_vars=(
+    SECRET_KEY
+    POSTGRES_PASSWORD
+    MONGO_INITDB_ROOT_PASSWORD
+    MONGO_APP_PASSWORD
+    REDIS_PASSWORD
+  )
   
-  case $CRED_CHOICE in
-    1)
-      echo "Generating secure random credentials..."
-      if [ -z "$SECRET_KEY" ]; then
-        SECRET_KEY=$(openssl rand -hex 32)
-        echo "✓ Generated SECRET_KEY"
-      fi
-      
-      if [ -z "$POSTGRES_PASSWORD" ]; then
-        POSTGRES_PASSWORD=$(openssl rand -base64 24)
-        echo "✓ Generated POSTGRES_PASSWORD"
-      fi
-      
-      if [ -z "$MONGO_PASSWORD" ]; then
-        MONGO_PASSWORD=$(openssl rand -base64 24)
-        echo "✓ Generated MONGO_PASSWORD"
-      fi
-      
-      if [ -z "$REDIS_PASSWORD" ]; then
-        REDIS_PASSWORD=$(openssl rand -base64 24)
-        echo "✓ Generated REDIS_PASSWORD"
-      fi
-      ;;
-      
-    2)
-      if [ -z "$SECRET_KEY" ]; then
-        read -p "Enter SECRET_KEY (or leave empty to generate): " SECRET_KEY
-        if [ -z "$SECRET_KEY" ]; then
-          SECRET_KEY=$(openssl rand -hex 32)
-          echo "✓ Generated SECRET_KEY"
-        fi
-      fi
-      
-      if [ -z "$POSTGRES_PASSWORD" ]; then
-        read -sp "Enter POSTGRES_PASSWORD (or leave empty to generate): " POSTGRES_PASSWORD
-        echo
-        if [ -z "$POSTGRES_PASSWORD" ]; then
-          POSTGRES_PASSWORD=$(openssl rand -base64 24)
-          echo "✓ Generated POSTGRES_PASSWORD"
-        fi
-      fi
-      
-      if [ -z "$MONGO_PASSWORD" ]; then
-        read -sp "Enter MONGO_PASSWORD (or leave empty to generate): " MONGO_PASSWORD
-        echo
-        if [ -z "$MONGO_PASSWORD" ]; then
-          MONGO_PASSWORD=$(openssl rand -base64 24)
-          echo "✓ Generated MONGO_PASSWORD"
-        fi
-      fi
-      
-      if [ -z "$REDIS_PASSWORD" ]; then
-        read -sp "Enter REDIS_PASSWORD (or leave empty to generate): " REDIS_PASSWORD
-        echo
-        if [ -z "$REDIS_PASSWORD" ]; then
-          REDIS_PASSWORD=$(openssl rand -base64 24)
-          echo "✓ Generated REDIS_PASSWORD"
-        fi
-      fi
-      ;;
-      
-    3)
-      echo "Deployment aborted. Please set the following environment variables:"
-      [ -z "$SECRET_KEY" ] && echo "- SECRET_KEY"
-      [ -z "$POSTGRES_PASSWORD" ] && echo "- POSTGRES_PASSWORD"
-      [ -z "$MONGO_PASSWORD" ] && echo "- MONGO_PASSWORD" 
-      [ -z "$REDIS_PASSWORD" ] && echo "- REDIS_PASSWORD"
-      exit 1
-      ;;
-      
-    *)
-      echo "Invalid choice. Aborting deployment."
-      exit 1
-      ;;
-  esac
-  
-  # Show a summary of the credentials that will be used
-  echo
-  echo "The following credentials will be used for deployment:"
-  echo "- SECRET_KEY: ${SECRET_KEY:0:5}... (${#SECRET_KEY} characters)"
-  echo "- POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:0:3}... (${#POSTGRES_PASSWORD} characters)"
-  echo "- MONGO_PASSWORD: ${MONGO_PASSWORD:0:3}... (${#MONGO_PASSWORD} characters)"
-  echo "- REDIS_PASSWORD: ${REDIS_PASSWORD:0:3}... (${#REDIS_PASSWORD} characters)"
-  echo
-  
-  read -p "Do you want to continue with these credentials? (y/n): " CONFIRM
-  if [[ ! $CONFIRM =~ ^[Yy]$ ]]; then
-    echo "Deployment aborted."
+  missing=()
+  for var in "${required_vars[@]}"; do
+    [ -z "${!var}" ] && missing+=("$var")
+  done
+
+  if [ ${#missing[@]} -gt 0 ]; then
+    echo "❌ Missing credentials:"
+    printf '  - %s\n' "${missing[@]}"
+    echo "🛑 Aborting deployment"
     exit 1
   fi
-fi
+}
 
-# Use SSH keys instead of sshpass
-USE_SSH_KEYS=true
+# Generate credentials
+generate_credentials() {
+  # Core application
+  export SECRET_KEY=${SECRET_KEY:-$(openssl rand -hex 32)}
+  
+  # PostgreSQL
+  export POSTGRES_USER=${POSTGRES_USER:-indoxrouter_app}
+  export POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-$(openssl rand -base64 24)}
+  export POSTGRES_DB=${POSTGRES_DB:-indoxrouter}
+  export POSTGRES_HOST=${POSTGRES_HOST:-indoxrouter-postgres}
+  export POSTGRES_PORT=${POSTGRES_PORT:-5432}
 
-# Check if ssh-copy-id has been run
-if [ "$USE_SSH_KEYS" = false ]; then
-  # Check if sshpass is installed
-  if ! command -v sshpass &> /dev/null; then
-    echo "sshpass is not installed. Please install it for password-based SSH."
-    echo "On Ubuntu/Debian: sudo apt-get install sshpass"
-    echo "On macOS with Homebrew: brew install hudochenkov/sshpass/sshpass"
-    echo
-    echo "Alternatively, you can manually copy your SSH key to the server:"
-    echo "ssh-copy-id $SERVER_USER@$SERVER_IP"
-    echo
-    echo "Or set USE_SSH_KEYS=true in this script to use SSH keys instead."
-    exit 1
+  # MongoDB
+  export MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-mongo_root_admin}
+  export MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-$(openssl rand -base64 32)}
+  export MONGO_APP_USER=${MONGO_APP_USER:-appuser}
+  export MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD:-$(openssl rand -base64 32)}
+  export MONGO_HOST=${MONGO_HOST:-indoxrouter-mongodb}
+  export MONGO_PORT=${MONGO_PORT:-27017}
+  export MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-indoxrouter}
+
+  # Redis
+  export REDIS_HOST=${REDIS_HOST:-indoxrouter-redis}
+  export REDIS_PORT=${REDIS_PORT:-6379}
+  export REDIS_PASSWORD=${REDIS_PASSWORD:-$(openssl rand -base64 24)}
+
+  # Other defaults
+  export ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+  export CACHE_TTL_DAYS=${CACHE_TTL_DAYS:-7}
+  export RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+  export RATE_LIMIT_PERIOD_SECONDS=${RATE_LIMIT_PERIOD_SECONDS:-60}
+}
+
+# Test SSH connectivity
+test_ssh_connectivity() {
+  echo "🔄 Testing connection to $SERVER_IP..."
+  if ! ssh -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=accept-new $SERVER_USER@$SERVER_IP "echo 2>&1" >/dev/null; then
+    echo "❌ Cannot connect to $SERVER_IP"
+    echo "Please check:"
+    echo "  1. Server is running and accessible"
+    echo "  2. SSH key authentication is set up (or you have password access)"
+    echo "  3. Firewall allows SSH connections from your location"
+    echo ""
+    echo "Try connecting manually: ssh $SERVER_USER@$SERVER_IP"
+    return 1
   fi
+  echo "✅ SSH connection successful"
+  return 0
+}
+
+# Deployment package
+create_package() {
+  TEMP_DIR=$(mktemp -d)
+  echo "Created temporary directory: $TEMP_DIR"
+  mkdir -p $TEMP_DIR/indoxrouter
+  
+  # Copy local files instead of git cloning - but exclude unnecessary directories
+  echo "Copying local files to deployment package..."
+  echo "Source directory: $(dirname "$(dirname "$0")")"
+  
+  SRC_DIR="$(dirname "$(dirname "$0")")"
+  echo "Excluding large/unnecessary directories (venv, __pycache__, etc.)"
+  
+  # First create directory structure (without files) to ensure all needed dirs exist
+  find "$SRC_DIR" -type d -not -path "*/\.*" -not -path "*/venv*" -not -path "*/__pycache__*" | xargs -I{} mkdir -p "$TEMP_DIR/indoxrouter/{}"
+  
+  # Then copy files, excluding specific directories
+  find "$SRC_DIR" -type f -not -path "*/\.*" -not -path "*/venv*" -not -path "*/__pycache__*" -not -path "*/node_modules*" | xargs -I{} cp {} "$TEMP_DIR/indoxrouter/{}"
+  
+  echo "Files copied to package directory (excluding venv, __pycache__, etc.)"
+  
+  # Remove sensitive files
+  echo "Removing sensitive files from deployment package..."
+  rm -f $TEMP_DIR/indoxrouter/CREDENTIALS.md
+  rm -f $TEMP_DIR/indoxrouter/.env.local
+  echo "Sensitive files removed."
+  
+  # Copy the local .env file instead of creating a new one
+  echo "Copying local .env file to deployment package..."
+  if [ -f "$(dirname "$(dirname "$0")")/.env" ]; then
+    cp "$(dirname "$(dirname "$0")")/.env" $TEMP_DIR/indoxrouter/.env
+    echo "Local .env file copied successfully."
+  else
+    echo "Warning: No local .env file found. The application may not function correctly without it."
+  fi
+
+  # Show what files are in the package
+  echo "Files in deployment package:"
+  find $TEMP_DIR -type f | sort | head -n 20
+
+  # Create deployment script
+  cat > $TEMP_DIR/deploy.sh << 'EOF'
+#!/bin/bash
+set -e
+
+# Include credentials
+if [ -f .env ]; then
+  echo "Loading environment variables from .env"
+  source .env
 fi
 
-# Create a temporary deployment directory
-TEMP_DIR=$(mktemp -d)
-echo "Creating temporary deployment directory: $TEMP_DIR"
+# Verify environment
+[ -z "$SECRET_KEY" ] && { echo "❌ SECRET_KEY missing"; exit 1; }
+[ -z "$POSTGRES_PASSWORD" ] && { echo "❌ POSTGRES_PASSWORD missing"; exit 1; }
+[ -z "$MONGO_INITDB_ROOT_PASSWORD" ] && { echo "❌ MONGO_INITDB_ROOT_PASSWORD missing"; exit 1; }
+[ -z "$MONGO_APP_PASSWORD" ] && { echo "❌ MONGO_APP_PASSWORD missing"; exit 1; }
+[ -z "$REDIS_PASSWORD" ] && { echo "❌ REDIS_PASSWORD missing"; exit 1; }
 
-# Copy necessary files
-echo "Copying deployment files..."
-mkdir -p $TEMP_DIR/indoxrouter_server
-cp -r app $TEMP_DIR/indoxrouter_server/
-cp -r scripts $TEMP_DIR/indoxrouter_server/
-cp docker-compose.yml $TEMP_DIR/indoxrouter_server/
-cp Dockerfile $TEMP_DIR/indoxrouter_server/
-cp requirements.txt $TEMP_DIR/indoxrouter_server/
-cp production.env $TEMP_DIR/indoxrouter_server/
-cp DEPLOYMENT.md $TEMP_DIR/indoxrouter_server/ 2>/dev/null || echo "No DEPLOYMENT.md found"
-cp DATABASE_SETUP.md $TEMP_DIR/indoxrouter_server/ 2>/dev/null || echo "No DATABASE_SETUP.md found"
-cp main.py $TEMP_DIR/indoxrouter_server/
-cp -r migrations $TEMP_DIR/indoxrouter_server/ 2>/dev/null || echo "No migrations directory found"
+echo "✓ All required credentials found"
 
-# Create .env file for credentials but don't include it in the repository
-cat > $TEMP_DIR/credentials.env << EOF
-# Generated credentials file - DO NOT COMMIT TO REPOSITORY
-# Generated on: $(date)
-SECRET_KEY=$SECRET_KEY
-POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-MONGO_PASSWORD=$MONGO_PASSWORD
-REDIS_PASSWORD=$REDIS_PASSWORD
-SERVER_PASSWORD=$SERVER_PASSWORD
+# Install dependencies
+echo "📦 Installing dependencies..."
+apt-get update -qq
+apt-get install -y -qq docker.io docker-compose
+
+# Deploy application
+echo "🚢 Starting services with Docker Compose..."
+cd /opt/indoxrouter
+
+# Ensure .env file exists and has correct permissions
+chmod 600 .env 2>/dev/null || echo "Note: Could not set permissions on .env file"
+
+# Verify docker-compose.yml exists
+if [ ! -f "docker-compose.yml" ]; then
+  echo "❌ docker-compose.yml not found!"
+  echo "Current directory: $(pwd)"
+  echo "Files in directory:"
+  ls -la
+  exit 1
+fi
+echo "Found docker-compose.yml"
+
+docker-compose down 2>/dev/null || true
+docker-compose --env-file .env up -d --build
+
+# Verify deployment
+echo "🔍 Verifying deployment..."
+sleep 10
+docker-compose ps | grep "Up" || { echo "❌ Container failed to start"; exit 1; }
+
+echo "✅ Deployment complete!"
+echo "🌐 Your IndoxRouter is now available at: http://91.107.153.195"
 EOF
 
-# Set permissions on credentials file
-chmod 600 $TEMP_DIR/credentials.env
+  chmod +x $TEMP_DIR/deploy.sh
+}
 
-# Create deployment script
-cat > $TEMP_DIR/deploy.sh << 'EOF'
-#!/bin/bash
+# Main execution
+echo "🚀 Starting IndoxRouter Deployment"
+echo "================================="
 
-# Source credentials
-if [ -f credentials.env ]; then
-  source credentials.env
-  echo "Loaded credentials from environment file"
+# Credential handling
+if [ "$1" == "--generate" ]; then
+  generate_credentials
+  echo "Generated credentials:"
+  echo "SECRET_KEY=${SECRET_KEY:0:10}..."
+  echo "POSTGRES_USER=$POSTGRES_USER"
+  echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:0:5}..."
+  echo "MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME"
+  echo "MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:0:5}..."
+  echo "MONGO_APP_USER=$MONGO_APP_USER"
+  echo "MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD:0:5}..."
+  echo "REDIS_PASSWORD=${REDIS_PASSWORD:0:5}..."
 else
-  echo "ERROR: credentials.env file not found!"
+  validate_credentials
+fi
+
+# Test SSH connectivity before proceeding
+if ! test_ssh_connectivity; then
+  echo "🛑 Aborting deployment due to connection issues."
   exit 1
 fi
 
-# Create application directory
-mkdir -p /opt/indoxrouter
-cp -r indoxrouter_server/* /opt/indoxrouter/
-cd /opt/indoxrouter
+# Create deployment package
+echo "📦 Preparing deployment package..."
+create_package
 
-# Create necessary directories
-mkdir -p logs
-mkdir -p data/postgres
-mkdir -p data/mongodb
-mkdir -p data/redis
-mkdir -p backups/postgres
-mkdir -p backups/mongodb
-mkdir -p backups/redis
-chmod -R 755 logs data backups
+# Ensure target directories exist before transfer
+echo "Ensuring target directories exist on server..."
+# Check if /opt exists and create it if it doesn't
+ssh $SERVER_USER@$SERVER_IP "if [ ! -d /opt ]; then mkdir -p /opt; echo 'Created /opt directory'; fi"
+# Now make sure our target directory exists
+ssh $SERVER_USER@$SERVER_IP "mkdir -p $REMOTE_DIR"
 
-# Set up environment with secure credentials
-cp production.env .env
+# Transfer files
+echo "📡 Transferring to $SERVER_IP..."
+echo "This may take a few minutes depending on your connection speed..."
 
-# Replace placeholders with actual values
-sed -i "s|\${SECRET_KEY}|$SECRET_KEY|g" .env
-sed -i "s|\${POSTGRES_PASSWORD}|$POSTGRES_PASSWORD|g" .env
-sed -i "s|\${MONGO_PASSWORD}|$MONGO_PASSWORD|g" .env
-sed -i "s|\${REDIS_PASSWORD}|$REDIS_PASSWORD|g" .env
+# Use tar to avoid character encoding issues during transfer
+echo "Creating archive for transfer to avoid encoding issues..."
+(cd $TEMP_DIR && tar -cf package.tar *)
+if [ ! -f "$TEMP_DIR/package.tar" ]; then
+  echo "❌ Failed to create deployment package archive"
+  rm -rf $TEMP_DIR
+  exit 1
+fi
+echo "Archive created. Size: $(du -h $TEMP_DIR/package.tar | cut -f1)"
+echo "Transferring package..."
 
-# Update docker-compose.yml with credentials
-sed -i "s|SECRET_KEY:-.*}|SECRET_KEY:-$SECRET_KEY}|g" docker-compose.yml
-sed -i "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|g" docker-compose.yml
-sed -i "s|DATABASE_URL=postgresql://.*@|DATABASE_URL=postgresql://indoxrouter_admin:$POSTGRES_PASSWORD@|g" docker-compose.yml
-sed -i "s|MONGO_INITDB_ROOT_PASSWORD=.*|MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD|g" docker-compose.yml
-sed -i "s|MONGODB_URI=mongodb://.*@|MONGODB_URI=mongodb://indoxrouter_admin:$MONGO_PASSWORD@|g" docker-compose.yml
-sed -i "s|redis-server --requirepass .*|redis-server --requirepass $REDIS_PASSWORD|g" docker-compose.yml
-sed -i "s|\[\"CMD\", \"redis-cli\", \"-a\", \".*\", \"ping\"\]|[\"CMD\", \"redis-cli\", \"-a\", \"$REDIS_PASSWORD\", \"ping\"]|g" docker-compose.yml
-
-# Update backup script with credentials
-sed -i "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=\"$POSTGRES_PASSWORD\"|g" scripts/backup_databases.sh
-sed -i "s|MONGO_PASSWORD=.*|MONGO_PASSWORD=\"$MONGO_PASSWORD\"|g" scripts/backup_databases.sh
-sed -i "s|REDIS_PASSWORD=.*|REDIS_PASSWORD=\"$REDIS_PASSWORD\"|g" scripts/backup_databases.sh
-
-# Save credentials locally (protected file)
-cat > /opt/indoxrouter/CREDENTIALS.md << EOC
-# IndoxRouter Server Credentials
-
-**IMPORTANT: Keep this file secure and do not commit it to version control!**
-
-## Server Details
-
-- **IP Address**: 91.107.153.195
-- **SSH Access**: \`ssh root@91.107.153.195\`
-
-## Database Credentials
-
-### PostgreSQL
-
-- **User**: \`indoxrouter_admin\`
-- **Password**: \`$POSTGRES_PASSWORD\`
-- **Database**: \`indoxrouter\`
-- **Port**: \`5432\` (inside Docker), \`15432\` (host mapping)
-- **Connection URL**: \`postgresql://indoxrouter_admin:$POSTGRES_PASSWORD@indoxrouter-postgres:5432/indoxrouter\`
-
-### MongoDB
-
-- **User**: \`indoxrouter_admin\`
-- **Password**: \`$MONGO_PASSWORD\`
-- **Database**: \`indoxrouter\`
-- **Port**: \`27017\` (inside Docker), \`27018\` (host mapping)
-- **Connection URL**: \`mongodb://indoxrouter_admin:$MONGO_PASSWORD@indoxrouter-mongodb:27017/indoxrouter?authSource=admin\`
-
-### Redis
-
-- **Password**: \`$REDIS_PASSWORD\`
-- **Port**: \`6379\` (inside Docker), \`6380\` (host mapping)
-
-## Application Secrets
-
-- **SECRET_KEY**: \`$SECRET_KEY\`
-
-## Database Backups
-
-- **Backup Directory**: \`/opt/indoxrouter/backups\`
-- **Schedule**: Daily at 2:00 AM
-- **Retention**: 14 days (older backups are automatically deleted)
-- **Backup Formats**:
-  - PostgreSQL: SQL dump (gzipped)
-  - MongoDB: Archive format (gzipped)
-  - Redis: RDB files
-- **Manual Backup**: Run \`bash /opt/indoxrouter/scripts/backup_databases.sh\` to create a manual backup
-- **Logs**: Backup logs are stored in \`/opt/indoxrouter/logs/backup.log\`
-EOC
-
-# Make the credentials file readable only by root
-chmod 600 /opt/indoxrouter/CREDENTIALS.md
-
-# Run the integrated deployment script
-chmod +x scripts/deploy_integrated.sh
-./scripts/deploy_integrated.sh
-
-# Set up Nginx (without domain)
-chmod +x scripts/setup_nginx.sh
-./scripts/setup_nginx.sh
-
-# Set up database backups
-chmod +x scripts/backup_databases.sh
-chmod +x scripts/setup_backup_cron.sh
-./scripts/setup_backup_cron.sh
-
-# Clean up sensitive data
-echo "Cleaning up sensitive deployment data..."
-rm -f /root/credentials.env
-echo "Secure cleanup complete."
-EOF
-
-# Make deployment script executable
-chmod +x $TEMP_DIR/deploy.sh
-
-# Final confirmation before deployment
-echo
-echo "Ready to deploy IndoxRouter to server: $SERVER_IP"
-echo "All necessary files have been prepared."
-echo
-read -p "Do you want to proceed with the deployment? (y/n): " FINAL_CONFIRM
-if [[ ! $FINAL_CONFIRM =~ ^[Yy]$ ]]; then
-  echo "Deployment aborted."
+# Transfer the tar file instead of individual files
+echo "Starting SCP transfer to $SERVER_IP:$REMOTE_DIR/package.tar"
+if ! scp -o ConnectTimeout=30 $TEMP_DIR/package.tar $SERVER_USER@$SERVER_IP:$REMOTE_DIR/package.tar; then
+  echo "❌ File transfer failed!"
+  echo "Check your network connection or server status."
   rm -rf $TEMP_DIR
   exit 1
 fi
 
-# Transfer files to the server
-echo "Transferring files to $SERVER_IP..."
-if [ "$USE_SSH_KEYS" = true ]; then
-  scp -o StrictHostKeyChecking=no -r $TEMP_DIR/* $SERVER_USER@$SERVER_IP:/root/
+echo "✅ Files transferred successfully!"
+echo "📦 Extracting package on the server..."
+
+# Extract the tar file on the server
+ssh $SERVER_USER@$SERVER_IP "cd $REMOTE_DIR && tar -xf package.tar && rm package.tar"
+
+# Check the directory structure on the server
+echo "Checking directory structure on server..."
+ssh $SERVER_USER@$SERVER_IP "ls -la $REMOTE_DIR"
+
+# Move files if needed (if they're in a subdirectory)
+echo "Ensuring files are in the correct location..."
+ssh $SERVER_USER@$SERVER_IP "
+if [ -d \"$REMOTE_DIR/indoxrouter\" ]; then
+  echo 'Moving files from indoxrouter subdirectory...'
+  mv $REMOTE_DIR/indoxrouter/* $REMOTE_DIR/
+  rm -rf $REMOTE_DIR/indoxrouter
+fi
+"
+
+# Verify docker-compose.yml exists
+echo "Verifying docker-compose.yml exists..."
+ssh $SERVER_USER@$SERVER_IP "
+if [ ! -f \"$REMOTE_DIR/docker-compose.yml\" ]; then
+  echo '❌ docker-compose.yml not found!'
+  echo 'Available files:'
+  ls -la $REMOTE_DIR
+  exit 1
 else
-  sshpass -p "$SERVER_PASSWORD" scp -o StrictHostKeyChecking=no -r $TEMP_DIR/* $SERVER_USER@$SERVER_IP:/root/
+  echo '✅ docker-compose.yml found'
+fi
+"
+
+# Ensure Docker Compose file exists by creating it directly on the server
+echo "Ensuring docker-compose.yml exists on server..."
+ssh $SERVER_USER@$SERVER_IP "cat > $REMOTE_DIR/docker-compose.yml << 'EOF'
+version: \"3.8\"
+
+services:
+  indoxrouter-server:
+    build: .
+    container_name: indoxrouter-server
+    ports:
+      - \"8000:8000\"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+      - SECRET_KEY=\${SECRET_KEY}
+      - POSTGRES_USER=\${POSTGRES_USER}
+      - POSTGRES_PASSWORD=\${POSTGRES_PASSWORD}
+      - MONGO_ROOT_USER=\${MONGO_ROOT_USER}
+      - MONGO_ROOT_PASSWORD=\${MONGO_ROOT_PASSWORD}
+      - MONGO_APP_USER=\${MONGO_APP_USER}
+      - MONGO_APP_PASSWORD=\${MONGO_APP_PASSWORD}
+      - REDIS_PASSWORD=\${REDIS_PASSWORD}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: indoxrouter-postgres
+    environment:
+      - POSTGRES_DB=indoxrouter
+      - POSTGRES_USER=\${POSTGRES_USER}
+      - POSTGRES_PASSWORD=\${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6
+    container_name: indoxrouter-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=\${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=\${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=indoxrouter
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: indoxrouter-redis
+    command: redis-server --requirepass \${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  mongo-data:
+  redis-data:
+EOF"
+
+# Ensure Dockerfile exists
+echo "Ensuring Dockerfile exists on server..."
+ssh $SERVER_USER@$SERVER_IP "cat > $REMOTE_DIR/Dockerfile << 'EOF'
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["python", "main.py"]
+EOF"
+
+# Ensure requirements.txt exists
+echo "Ensuring requirements.txt exists on server..."
+ssh $SERVER_USER@$SERVER_IP "cat > $REMOTE_DIR/requirements.txt << 'EOF'
+# Web Framework
+fastapi>=0.95.0
+uvicorn>=0.22.0,<0.30.0
+starlette>=0.27.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Authentication
+python-jose>=3.3.0
+passlib>=1.7.4
+python-multipart>=0.0.6
+bcrypt>=4.0.1
+
+# HTTP Client
+httpx>=0.24.0
+requests>=2.31.0
+aiohttp>=3.8.0
+
+# AI Providers
+openai>=1.0.0
+mistralai>=1.6.0
+mistral-common==1.5.4
+tiktoken>=0.5.0
+
+# Utility
+python-dotenv>=1.0.0
+tenacity>=8.0.0
+cryptography>=40.0.0
+
+# Databases
+psycopg2-binary>=2.9.9
+pymongo[srv]>=4.6.1
+dnspython>=2.4.0
+redis>=5.0.0,<=5.2.0
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Deployment tools
+gunicorn>=21.0.0
+EOF"
+
+# Create a startup script
+echo "Creating startup script on server..."
+ssh $SERVER_USER@$SERVER_IP "cat > $REMOTE_DIR/start.sh << 'EOF'
+#!/bin/bash
+set -e
+
+# Load environment variables
+source .env
+
+# Pull the latest images
+docker-compose pull
+
+# Start the services
+docker-compose up -d
+
+echo "Application started successfully!"
+echo "You can access the server at http://\$SERVER_IP"
+EOF"
+
+ssh $SERVER_USER@$SERVER_IP "chmod +x $REMOTE_DIR/start.sh"
+
+# Create a stop script
+echo "Creating stop script on server..."
+ssh $SERVER_USER@$SERVER_IP "cat > $REMOTE_DIR/stop.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Stopping application..."
+docker-compose down
+
+echo "Application stopped successfully!"
+EOF"
+
+ssh $SERVER_USER@$SERVER_IP "chmod +x $REMOTE_DIR/stop.sh"
+
+# Main deployment execution
+if ! ssh -o ConnectTimeout=30 $SERVER_USER@$SERVER_IP "
+  cd $REMOTE_DIR && 
+  chmod +x deploy.sh && 
+  source .env &&
+  ./deploy.sh
+"; then
+  echo "❌ Remote execution failed!"
+  echo "Try connecting to the server manually to diagnose the issue:"
+  echo "  ssh $SERVER_USER@$SERVER_IP"
+  rm -rf $TEMP_DIR
+  exit 1
 fi
 
-# Execute deployment script
-echo "Executing deployment script on remote server..."
-if [ "$USE_SSH_KEYS" = true ]; then
-  ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "bash /root/deploy.sh"
-else
-  sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "bash /root/deploy.sh"
-fi
-
-# Clean up temporary directory
-echo "Cleaning up local temporary files..."
+# Cleanup
 rm -rf $TEMP_DIR
-
-echo
-echo "Deployment completed!"
-echo "====================="
-echo
-echo "To check the status of your deployment:"
-if [ "$USE_SSH_KEYS" = true ]; then
-  echo "ssh $SERVER_USER@$SERVER_IP 'cd $REMOTE_DIR && docker-compose ps'"
-else
-  echo "sshpass -p \"$SERVER_PASSWORD\" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP 'cd $REMOTE_DIR && docker-compose ps'"
-fi
-echo
-echo "To view the logs:"
-if [ "$USE_SSH_KEYS" = true ]; then
-  echo "ssh $SERVER_USER@$SERVER_IP 'cd $REMOTE_DIR && docker-compose logs -f'"
-else
-  echo "sshpass -p \"$SERVER_PASSWORD\" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP 'cd $REMOTE_DIR && docker-compose logs -f'"
-fi
-echo
-echo "Your IndoxRouter server should be accessible at:"
-echo "http://$SERVER_IP"
-echo
-echo "Important:"
-echo "1. Make sure to update your API keys in /opt/indoxrouter/.env"
-echo "2. For better security, set up a domain name and SSL"
-echo "3. All credentials are saved in /opt/indoxrouter/CREDENTIALS.md - keep this file secure!"
-echo "4. Database backups will run daily at 2:00 AM and be stored in /opt/indoxrouter/backups"
-echo
-
-# Also save credentials locally for reference (but don't push to git)
-mkdir -p ~/.indoxrouter
-cat > ~/.indoxrouter/credentials.txt << EOF
-# IndoxRouter Deployment Credentials (${SERVER_IP})
-# Created: $(date)
-# IMPORTANT: Keep this file secure and do not share it!
-
-SECRET_KEY=${SECRET_KEY}
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-MONGO_PASSWORD=${MONGO_PASSWORD}
-REDIS_PASSWORD=${REDIS_PASSWORD}
-SERVER_PASSWORD=${SERVER_PASSWORD}
-EOF
-
-chmod 600 ~/.indoxrouter/credentials.txt
-echo "Credentials saved locally to ~/.indoxrouter/credentials.txt for future reference" 
+echo "✅ Deployment completed successfully!"
+echo "🔗 Access: http://$SERVER_IP"

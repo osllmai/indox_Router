@@ -1,82 +1,70 @@
 #!/bin/bash
-
 # IndoxRouter Server - Integrated Deployment Script
-# This script deploys IndoxRouter with integrated databases on a single server
 
-echo "IndoxRouter Server - Integrated Deployment Script"
-echo "================================================"
+echo "IndoxRouter Server - Integrated Deployment"
+echo "========================================="
 
-# Check if running as root
+# Check root
 if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root"
+  echo "❗ Please run as root"
   exit 1
 fi
 
-# Update system packages
-echo "Updating system packages..."
-apt-get update && apt-get upgrade -y
+# System updates
+echo "🔄 Updating system packages..."
+apt-get update -qq && apt-get upgrade -y -qq
 
-# Install Docker and dependencies
-echo "Installing Docker and dependencies..."
-apt-get install -y docker.io docker-compose git curl ufw
+# Install dependencies
+echo "🔧 Installing dependencies..."
+apt-get install -y -qq \
+  docker.io \
+  docker-compose \
+  curl \
+  ufw \
+  git \
+  openssl
 
-# Enable and start Docker service
-systemctl enable docker
-systemctl start docker
+# Docker setup
+echo "🐳 Configuring Docker..."
+systemctl enable --now docker
+usermod -aG docker $SUDO_USER
 
-# Create application directory
-echo "Creating application directory..."
-mkdir -p /opt/indoxrouter
-cd /opt/indoxrouter
-
-# Clone the repository (replace with your actual repository)
-echo "Cloning the repository..."
-git clone https://github.com/yourusername/indoxrouter.git .
-cd indoxrouter_server
-
-# Copy production environment file
-echo "Setting up environment file..."
-cp production.env .env
-
-# Create data directories with proper permissions
-echo "Creating data directories..."
-mkdir -p ./logs
-mkdir -p ./data/postgres
-mkdir -p ./data/mongodb
-mkdir -p ./data/redis
-chmod -R 755 ./logs ./data
-
-# Set up firewall
-echo "Configuring firewall..."
+# Application directory setup
+echo "📁 Creating application structure..."
+APP_DIR="/opt/indoxrouter"
+mkdir -p $APP_DIR/{data,logs,backups}
+mkdir -p $APP_DIR/data/{postgres,mongodb,redis}
+chmod -R 755 $APP_DIR
+chown -R $SUDO_USER:$SUDO_USER $APP_DIR
+chown -R indoxbackup:indoxbackup $APP_DIR
+# Firewall configuration
+echo "🔥 Configuring firewall..."
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
-ufw allow 8000/tcp
 ufw --force enable
 
-# Create a secure secret key
-echo "Generating secure secret key..."
-SECRET_KEY=$(openssl rand -hex 32)
-sed -i "s/change_this_to_a_secure_secret_in_production/$SECRET_KEY/" .env
+# # Clone repository
+# echo "📦 Cloning application code..."
+# git clone https://github.com/yourusername/indoxrouter.git $APP_DIR
+cd $APP_DIR
 
-# Start the services
-echo "Starting IndoxRouter services..."
-docker-compose up -d
+# Build services
+echo "🏗️  Building containers..."
+docker-compose --env-file .env up -d --build
 
-# Print status information
+# Verification
 echo ""
-echo "IndoxRouter deployed successfully!"
-echo "=================================="
+echo "✅ Deployment complete!"
+echo "======================"
 echo ""
-echo "API Server: http://91.107.153.195:8000"
+echo "Application URL: http://$(hostname -I | awk '{print $1}')"
 echo ""
-echo "To check the status, run: docker-compose ps"
-echo "To view logs, run: docker-compose logs -f"
+echo "Management commands:"
+echo "  docker-compose ps      # Check service status"
+echo "  docker-compose logs    # View service logs"
 echo ""
 echo "Next steps:"
-echo "1. Set up a domain name"
-echo "2. Configure Nginx as a reverse proxy"
-echo "3. Set up SSL with Let's Encrypt"
-echo ""
-echo "Run this command to set up Nginx + SSL:"
-echo "bash scripts/setup_nginx.sh yourdomain.com" 
+echo "1. Run setup_nginx.sh to configure reverse proxy"
+echo "2. Set up monitoring with setup_monitoring.sh"
+echo "3. Review backup configuration in scripts/"

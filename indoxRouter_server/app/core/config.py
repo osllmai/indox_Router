@@ -39,10 +39,19 @@ class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
     DB_MIN_CONNECTIONS: int = Field(default=1, env="DB_MIN_CONNECTIONS")
     DB_MAX_CONNECTIONS: int = Field(default=10, env="DB_MAX_CONNECTIONS")
+    POSTGRES_HOST: str = Field(env="POSTGRES_HOST")
+    POSTGRES_PORT: int = Field(env="POSTGRES_PORT")
+    POSTGRES_USER: str = Field(env="POSTGRES_USER")
+    POSTGRES_PASSWORD: Optional[str] = Field(env="POSTGRES_PASSWORD")
+    POSTGRES_DB: str = Field(env="POSTGRES_DB")
 
     # MongoDB settings
-    MONGODB_URI: Optional[str] = Field(default=None, env="MONGODB_URI")
-    MONGODB_DATABASE: str = Field(default="indoxrouter", env="MONGODB_DATABASE")
+    MONGODB_URI: Optional[str] = Field(env="MONGODB_URI")
+    MONGODB_DATABASE: str = Field(env="MONGODB_DATABASE")
+    MONGO_HOST: str = Field(env="MONGO_HOST")
+    MONGO_PORT: int = Field(env="MONGO_PORT")
+    MONGO_USER: str = Field(env="MONGO_USER")
+    MONGO_PASSWORD: Optional[str] = Field(default=None, env="MONGO_PASSWORD")
 
     # Provider API keys
     OPENAI_API_KEY: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
@@ -68,7 +77,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PERIOD_SECONDS: int = Field(default=60, env="RATE_LIMIT_PERIOD_SECONDS")
 
     # Redis settings for rate limiting
-    REDIS_HOST: str = Field(default="indoxrouter-redis", env="REDIS_HOST")
+    REDIS_HOST: str = Field(env="REDIS_HOST")
     REDIS_PORT: int = Field(default=6379, env="REDIS_PORT")
     REDIS_DB: int = Field(default=0, env="REDIS_DB")
     REDIS_PASSWORD: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
@@ -81,7 +90,7 @@ class Settings(BaseSettings):
     LOCAL_MODE: bool = Field(default=False, env="INDOXROUTER_LOCAL_MODE")
 
     # Production mode - when true, uses production settings
-    PRODUCTION_MODE: bool = Field(default=False, env="INDOXROUTER_PRODUCTION_MODE")
+    PRODUCTION_MODE: bool = Field(default=True, env="INDOXROUTER_PRODUCTION_MODE")
 
     model_config = {
         "env_file": ".env",
@@ -131,6 +140,22 @@ class Settings(BaseSettings):
                 self.IP_BLOCKLIST = [
                     ip.strip() for ip in self.IP_BLOCKLIST.split(",") if ip.strip()
                 ]
+
+        # Construct DATABASE_URL if not provided but component parts are available
+        if (
+            not self.DATABASE_URL
+            and self.POSTGRES_USER
+            and self.POSTGRES_PASSWORD
+            and self.POSTGRES_HOST
+        ):
+            self.DATABASE_URL = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
+        # Construct MONGODB_URI if not provided but component parts are available
+        if not self.MONGODB_URI and self.MONGO_HOST:
+            auth_part = ""
+            if self.MONGO_USER and self.MONGO_PASSWORD:
+                auth_part = f"{self.MONGO_USER}:{self.MONGO_PASSWORD}@"
+            self.MONGODB_URI = f"mongodb://{auth_part}{self.MONGO_HOST}:{self.MONGO_PORT}/{self.MONGODB_DATABASE}"
 
 
 settings = Settings()

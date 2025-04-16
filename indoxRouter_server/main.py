@@ -95,18 +95,26 @@ async def startup():
     if patch_bcrypt():
         print("Successfully applied bcrypt compatibility patch")
 
+    # Debug output to trace environment variables
+    print(
+        f"INDOXROUTER_PRODUCTION_MODE env: {os.environ.get('INDOXROUTER_PRODUCTION_MODE')}"
+    )
+    print(f"settings.PRODUCTION_MODE: {settings.PRODUCTION_MODE}")
+
     # Check if we're in production mode
     if settings.PRODUCTION_MODE:
         print("Starting in PRODUCTION mode")
         # Production database settings
         if not settings.DATABASE_URL:
-            production_db_url = "postgresql://postgres:postgrespassword@indoxrouter-postgres:5432/indoxrouter"
-            print(f"Using production database: {production_db_url}")
+            # Use environment variables from settings
+            production_db_url = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+            print(f"Using production database connection")
             settings.DATABASE_URL = production_db_url
 
         if not settings.MONGODB_URI:
-            production_mongo_uri = "mongodb://indoxrouter-mongodb:27017/indoxrouter"
-            print(f"Using production MongoDB: {production_mongo_uri}")
+            # Use environment variables from settings
+            production_mongo_uri = f"mongodb://{settings.MONGO_USER}:{settings.MONGO_PASSWORD}@{settings.MONGO_HOST}:{settings.MONGO_PORT}/{settings.MONGODB_DATABASE}?authSource=admin"
+            print(f"Using production MongoDB connection")
             settings.MONGODB_URI = production_mongo_uri
 
         # Ensure Local Mode is enabled to use integrated databases
