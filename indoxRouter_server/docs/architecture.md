@@ -60,19 +60,48 @@ The provider system is responsible for integrating with third-party AI model pro
 
 ### Database Layer
 
-Two databases are used:
+IndoxRouter implements a dual database architecture that leverages the strengths of both relational and document databases:
 
 - **PostgreSQL**: Handles relational data including:
-  - User accounts
-  - API keys
+
+  - User accounts and authentication
+  - API keys and permissions
   - Billing transactions
   - Aggregated usage statistics
+  - Data that requires ACID compliance and referential integrity
+
 - **MongoDB**: Handles document storage including:
   - Detailed usage logs
+  - Conversation history
+  - Vector embeddings
   - Model information
   - Provider configurations
   - Response caching
-  - Conversations
+  - Data that benefits from schema flexibility and horizontal scaling
+
+#### Database Interaction Flow
+
+1. **Authentication**: When a user makes a request, the system authenticates against PostgreSQL
+2. **Request Processing**: The core application logic processes the request
+3. **External API Call**: The provider makes calls to external AI services
+4. **Usage Logging**:
+   - Detailed logs are written to MongoDB (non-blocking)
+   - Aggregated statistics are updated in PostgreSQL
+5. **Response Caching**: If enabled, responses are cached in MongoDB for future requests
+
+#### Connection Management
+
+Database connections are managed through connection pools that:
+
+- Maintain a set of reusable connections
+- Automatically handle reconnection
+- Optimize for concurrent requests
+
+The database layer is implemented with clear separation of concerns, making it possible to:
+
+- Replace either database technology if needed
+- Scale each database independently
+- Isolate failures between database systems
 
 ## Data Flow
 

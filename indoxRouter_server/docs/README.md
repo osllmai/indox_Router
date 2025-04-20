@@ -30,20 +30,6 @@ IndoxRouter adds several key features on top of raw provider APIs:
 - [Deployment](deployment.md)
 - [Contributing](contributing.md)
 
-## Quick Start
-
-1. Clone the repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. Start the MongoDB and PostgreSQL databases:
-   ```
-   ./run_local_db.sh
-   ```
-4. Configure your `.env` file with provider API keys
-5. Run the server:
-   ```
-   python main.py
-   ```
-
 ## Tech Stack
 
 - **FastAPI**: Web framework

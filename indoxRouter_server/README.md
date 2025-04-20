@@ -141,6 +141,18 @@ curl -X POST "http://localhost:8000/api/v1/chat/completions" \
 
 ## Architecture
 
+### Database Architecture
+
+IndoxRouter uses a dual-database architecture:
+
+- **PostgreSQL**: Handles authentication, user accounts, API keys, billing records, and other structured data that requires relational integrity
+- **MongoDB**: Stores dynamic content like conversations, model usage details, embeddings, and cache data that benefits from document-based storage
+
+This separation allows each database to focus on its strengths:
+
+- PostgreSQL provides ACID compliance and strong consistency for critical user data
+- MongoDB offers flexibility and scalability for rapidly changing document data
+
 ### Resources Module
 
 The Resources module is a core component of IndoxRouter that handles the interaction with various AI providers. It provides a unified interface for making requests to different AI providers and models.

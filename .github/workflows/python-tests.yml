@@ -2,9 +2,9 @@ name: Python Tests
 
 on:
   push:
-    branches: ["master", "main", "development"]
+    branches: ["master"]
   pull_request:
-    branches: ["master", "main", "development"]
+    branches: ["master"]
   workflow_dispatch: # Allow manual triggering
 
 jobs:

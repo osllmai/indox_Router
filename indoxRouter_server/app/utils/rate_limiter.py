@@ -12,25 +12,12 @@ logger = logging.getLogger(__name__)
 
 # Default rate limits per user tier
 DEFAULT_RATE_LIMITS = {
-    "free": {
-        "requests_per_minute": 10,
-        "tokens_per_hour": 10000
-    },
-    "basic": {
-        "requests_per_minute": 30,
-        "tokens_per_hour": 50000
-    },
-    "premium": {
-        "requests_per_minute": 100,
-        "tokens_per_hour": 200000
-    },
-    "enterprise": {
-        "requests_per_minute": 500,
-        "tokens_per_hour": 1000000
-    }
+    "free": {"requests_per_minute": 10, "tokens_per_hour": 10000},
+    "basic": {"requests_per_minute": 30, "tokens_per_hour": 50000},
+    "premium": {"requests_per_minute": 100, "tokens_per_hour": 200000},
+    "enterprise": {"requests_per_minute": 500, "tokens_per_hour": 1000000},
 }
 
-# Initialize Redis client if rate limiting is enabled
 redis_client = None
 
 if settings.RATE_LIMIT_ENABLED:
@@ -40,7 +27,7 @@ if settings.RATE_LIMIT_ENABLED:
             port=settings.REDIS_PORT,
             db=settings.REDIS_DB,
             password=settings.REDIS_PASSWORD if settings.REDIS_PASSWORD else None,
-            decode_responses=True
+            decode_responses=True,
         )
         # Test connection
         redis_client.ping()
@@ -51,9 +38,7 @@ if settings.RATE_LIMIT_ENABLED:
 
 
 def check_rate_limit(
-    user_id: int,
-    user_tier: str = "free",
-    tokens: int = 0
+    user_id: int, user_tier: str = "free", tokens: int = 0
 ) -> Tuple[bool, Dict[str, Any]]:
     """
     Check if a user has exceeded their rate limits.
@@ -78,20 +63,20 @@ def check_rate_limit(
 
     # Get rate limits for the user's tier
     tier_limits = DEFAULT_RATE_LIMITS.get(user_tier, DEFAULT_RATE_LIMITS["free"])
-    
+
     # Keys for Redis
     requests_key = f"rate:requests:{user_id}:{minute_window}"
     tokens_key = f"rate:tokens:{user_id}:{hour_window}"
-    
+
     # Get current usage
     pipe = redis_client.pipeline()
     pipe.get(requests_key)
     pipe.get(tokens_key)
     results = pipe.execute()
-    
+
     current_requests = int(results[0]) if results[0] else 0
     current_tokens = int(results[1]) if results[1] else 0
-    
+
     # Check if limits are exceeded
     if current_requests >= tier_limits["requests_per_minute"]:
         return False, {
@@ -99,49 +84,46 @@ def check_rate_limit(
             "reason": "Requests per minute exceeded",
             "limit": tier_limits["requests_per_minute"],
             "remaining": 0,
-            "reset_after": 60 - (current_time % 60)  # Seconds until next minute
+            "reset_after": 60 - (current_time % 60),  # Seconds until next minute
         }
-    
+
     if current_tokens + tokens >= tier_limits["tokens_per_hour"]:
         return False, {
             "allowed": False,
             "reason": "Tokens per hour exceeded",
             "limit": tier_limits["tokens_per_hour"],
             "remaining": max(0, tier_limits["tokens_per_hour"] - current_tokens),
-            "reset_after": 3600 - (current_time % 3600)  # Seconds until next hour
+            "reset_after": 3600 - (current_time % 3600),  # Seconds until next hour
         }
-    
+
     # Update usage counters
     pipe = redis_client.pipeline()
     pipe.incr(requests_key, 1)
     pipe.expire(requests_key, 60)  # Expire after 1 minute
-    
+
     if tokens > 0:
         pipe.incr(tokens_key, tokens)
         pipe.expire(tokens_key, 3600)  # Expire after 1 hour
-    
+
     pipe.execute()
-    
+
     # Return success with rate limit information
     return True, {
         "allowed": True,
         "requests": {
             "limit": tier_limits["requests_per_minute"],
             "remaining": tier_limits["requests_per_minute"] - current_requests - 1,
-            "reset_after": 60 - (current_time % 60)
+            "reset_after": 60 - (current_time % 60),
         },
         "tokens": {
             "limit": tier_limits["tokens_per_hour"],
             "remaining": tier_limits["tokens_per_hour"] - current_tokens - tokens,
-            "reset_after": 3600 - (current_time % 3600)
-        }
+            "reset_after": 3600 - (current_time % 3600),
+        },
     }
 
 
-def get_rate_limit_headers(
-    user_id: int,
-    user_tier: str = "free"
-) -> Dict[str, str]:
+def get_rate_limit_headers(user_id: int, user_tier: str = "free") -> Dict[str, str]:
     """
     Get rate limit headers for the response.
 
@@ -154,27 +136,27 @@ def get_rate_limit_headers(
     """
     if not settings.RATE_LIMIT_ENABLED or not redis_client:
         return {}
-    
+
     current_time = int(time.time())
     minute_window = current_time - (current_time % 60)
-    
+
     # Get rate limits for the user's tier
     tier_limits = DEFAULT_RATE_LIMITS.get(user_tier, DEFAULT_RATE_LIMITS["free"])
-    
+
     # Key for Redis
     requests_key = f"rate:requests:{user_id}:{minute_window}"
-    
+
     # Get current usage
     current_requests = int(redis_client.get(requests_key) or 0)
-    
+
     # Calculate remaining requests
     remaining = max(0, tier_limits["requests_per_minute"] - current_requests)
-    
+
     # Calculate reset time
     reset_time = minute_window + 60
-    
+
     return {
         "X-RateLimit-Limit": str(tier_limits["requests_per_minute"]),
         "X-RateLimit-Remaining": str(remaining),
-        "X-RateLimit-Reset": str(reset_time)
-    } 
+        "X-RateLimit-Reset": str(reset_time),
+    }

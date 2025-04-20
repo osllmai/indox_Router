@@ -1,6 +1,27 @@
 # Database Schema
 
-IndoxRouter uses a dual-database approach with PostgreSQL for relational data and MongoDB for document data.
+IndoxRouter uses a dual-database approach:
+
+- **PostgreSQL**: Used for relational data, including authentication, user accounts, and other static data
+- **MongoDB**: Used for document storage of dynamic data like conversations, model usage, and embeddings
+
+## Database Roles and Responsibilities
+
+### PostgreSQL
+
+- User authentication and account management
+- API key storage and validation
+- Billing and transaction records
+- Structured, relational data
+- Usage statistics and aggregated analytics
+
+### MongoDB
+
+- Conversation history storage
+- Model usage details and logs
+- Vector embeddings
+- Cache storage
+- Non-relational, document-based data that requires flexibility and scale
 
 ## PostgreSQL Schema
 
@@ -17,6 +38,8 @@ Stores user account information.
 | id            | SERIAL       | Primary key                     |
 | username      | VARCHAR(255) | Unique username                 |
 | email         | VARCHAR(255) | Unique email address            |
+| first_name    | VARCHAR(255) | User's first name               |
+| last_name     | VARCHAR(255) | User's last name                |
 | password      | VARCHAR(255) | Hashed password                 |
 | credits       | DECIMAL      | Available credits for API usage |
 | is_active     | BOOLEAN      | Account status                  |

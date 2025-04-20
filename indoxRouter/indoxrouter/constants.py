@@ -5,9 +5,7 @@ Constants for the IndoxRouter client.
 # API settings
 DEFAULT_API_VERSION = "v1"
 # DEFAULT_BASE_URL = "http://91.107.253.133:8000"  # Production server IP
-DEFAULT_BASE_URL = "http://91.107.153.195:8000"  # Production server
-# DEFAULT_BASE_URL = "http://localhost:8000"  # Local development server
-# DEFAULT_BASE_URL = "http://indoxrouter-server:8000"  # Docker internal network
+DEFAULT_BASE_URL = "http://localhost:8000"  # Local development server
 DEFAULT_TIMEOUT = 60
 
 # Default models

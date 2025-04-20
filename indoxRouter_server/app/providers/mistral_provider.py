@@ -8,9 +8,6 @@ from typing import Dict, List, Any, Optional, Union, AsyncGenerator, Generator
 import mistralai
 from mistralai import Mistral
 from mistralai.models import UserMessage, AssistantMessage, SystemMessage
-
-from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
-
 from app.providers.base_provider import BaseProvider
 from app.constants import MISTRAL_EMBEDDING_MODEL
 
@@ -68,10 +65,20 @@ class MistralProvider(BaseProvider):
                 self.model_capabilities[model_id] = capabilities
 
                 if "contextWindows" in model and "Tokens" in model["contextWindows"]:
-                    context_str = model["contextWindows"].split(" ")[0]
+                    context_str = model["contextWindows"]
                     if "k" in context_str:
-                        context_size = int(float(context_str.replace("k", "")) * 1000)
-                        self.context_window_sizes[model_id] = context_size
+                        # Handle formats like "128k (Pricey) Tokens"
+                        try:
+                            # First extract the part before any parentheses
+                            size_part = context_str.split("(")[0].strip()
+                            # Then extract the number before 'k'
+                            context_size = int(float(size_part.replace("k", "")) * 1000)
+                            self.context_window_sizes[model_id] = context_size
+                        except Exception as e:
+                            print(
+                                f"Warning: Failed to parse context window '{context_str}': {str(e)}"
+                            )
+                            # Fall back to default sizes
         except Exception as e:
             self.model_capabilities = {
                 "mistral-tiny": ["chat", "completion"],

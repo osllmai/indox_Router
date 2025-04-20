@@ -28,6 +28,7 @@ except Exception as e:
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routers import (
     auth,
@@ -38,6 +39,7 @@ from app.api.routers import (
     model,
     analytics,
     user,
+    admin,
 )
 from app.core.config import settings
 from app.db.database import init_db
@@ -66,6 +68,14 @@ app.add_middleware(SecurityMiddleware)
 # Add rate limit middleware
 app.add_middleware(RateLimitMiddleware)
 
+# Mount static files for admin panel
+admin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin")
+if os.path.exists(admin_dir):
+    app.mount("/admin", StaticFiles(directory=admin_dir, html=True), name="admin")
+    print(f"Admin panel static files mounted at /admin")
+else:
+    print(f"Admin panel directory not found at {admin_dir}")
+
 # Include routers
 print("Registering API routers...")
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
@@ -84,6 +94,8 @@ app.include_router(analytics.router, prefix="/api/v1", tags=["Analytics"])
 print("Registered analytics router")
 app.include_router(user.router, prefix="/api/v1", tags=["User"])
 print("Registered user router")
+app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
+print("Registered admin router")
 
 
 @app.on_event("startup")

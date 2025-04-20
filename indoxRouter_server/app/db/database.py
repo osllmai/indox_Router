@@ -221,7 +221,7 @@ def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
                     """
-                    SELECT id, username, email, is_active, credits, account_tier, 
+                    SELECT id, username, email, first_name, last_name, is_active, credits, account_tier, 
                            created_at, last_login_at
                     FROM users
                     WHERE id = %s
@@ -234,6 +234,181 @@ def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
             release_pg_connection(conn)
     except Exception as e:
         logger.error(f"Error getting user by ID: {e}")
+        return None
+
+
+def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Get a user by username from PostgreSQL."""
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, username, email, first_name, last_name, password, is_active, credits, account_tier, 
+                           created_at, last_login_at
+                    FROM users
+                    WHERE username = %s
+                    """,
+                    (username,),
+                )
+                user = cur.fetchone()
+                return dict(user) if user else None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting user by username: {e}")
+        return None
+
+
+def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Get a user by email from PostgreSQL."""
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, username, email, first_name, last_name, password, is_active, credits, account_tier, 
+                           created_at, last_login_at
+                    FROM users
+                    WHERE email = %s
+                    """,
+                    (email,),
+                )
+                user = cur.fetchone()
+                return dict(user) if user else None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting user by email: {e}")
+        return None
+
+
+def create_user(
+    username: str,
+    email: str,
+    hashed_password: str,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Create a new user in PostgreSQL."""
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Check if username or email already exists
+                cur.execute(
+                    """
+                    SELECT id FROM users WHERE username = %s OR email = %s
+                    """,
+                    (username, email),
+                )
+                if cur.fetchone():
+                    return None  # User already exists
+
+                # Insert new user
+                cur.execute(
+                    """
+                    INSERT INTO users (username, email, password, first_name, last_name, credits, is_active, account_tier)
+                    VALUES (%s, %s, %s, %s, %s, 0, TRUE, 'free')
+                    RETURNING id, username, email, first_name, last_name, is_active, credits, account_tier, created_at
+                    """,
+                    (username, email, hashed_password, first_name, last_name),
+                )
+                conn.commit()
+                new_user = cur.fetchone()
+                return dict(new_user) if new_user else None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error creating user: {e}")
+        return None
+
+
+def update_last_login(user_id: int) -> bool:
+    """Update the last login timestamp for a user."""
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET last_login_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (user_id,),
+                )
+                conn.commit()
+                return True
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error updating last login: {e}")
+        return False
+
+
+def create_or_update_google_user(
+    email: str, google_id: str, name: str
+) -> Optional[Dict[str, Any]]:
+    """Create or update a user authenticated with Google."""
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Check if user with this email exists
+                cur.execute(
+                    """
+                    SELECT id, username, email, is_active, credits, account_tier, created_at
+                    FROM users 
+                    WHERE email = %s
+                    """,
+                    (email,),
+                )
+                user = cur.fetchone()
+
+                if user:
+                    # User exists, update google_id if needed
+                    cur.execute(
+                        """
+                        UPDATE users
+                        SET google_id = %s, last_login_at = NOW()
+                        WHERE id = %s
+                        """,
+                        (google_id, user["id"]),
+                    )
+                    conn.commit()
+                    return dict(user)
+
+                # Create new user
+                username = email.split("@")[0]
+                # Make sure username is unique
+                cur.execute(
+                    """
+                    SELECT COUNT(*) as count FROM users WHERE username LIKE %s
+                    """,
+                    (f"{username}%",),
+                )
+                count = cur.fetchone()["count"]
+                if count > 0:
+                    username = f"{username}{count}"
+
+                cur.execute(
+                    """
+                    INSERT INTO users (username, email, google_id, credits, is_active, account_tier)
+                    VALUES (%s, %s, %s, 0, TRUE, 'free')
+                    RETURNING id, username, email, is_active, credits, account_tier, created_at
+                    """,
+                    (username, email, google_id),
+                )
+                conn.commit()
+                new_user = cur.fetchone()
+                return dict(new_user) if new_user else None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error creating/updating Google user: {e}")
         return None
 
 
@@ -1318,3 +1493,653 @@ def get_user_usage_stats(
             "models": {},
             "daily_usage": [],
         }
+
+
+def create_api_key(user_id: int, name: str = "API Key") -> Optional[Dict[str, Any]]:
+    """
+    Create a new API key for a user with one month expiration.
+
+    Args:
+        user_id: The user ID.
+        name: A name/description for the API key.
+
+    Returns:
+        Dictionary containing the API key info if successful, None otherwise.
+    """
+    try:
+        # Generate a new API key with prefix "indox-"
+        import secrets
+        import string
+        import uuid
+
+        # Generate a random string for the key
+        random_part = "".join(
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(32)
+        )
+        api_key = f"indox-{random_part}"
+
+        # Set expiration to one month from now
+        expires_at = datetime.now() + timedelta(days=30)
+
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    INSERT INTO api_keys
+                    (user_id, api_key, name, is_active, created_at, expires_at)
+                    VALUES (%s, %s, %s, TRUE, NOW(), %s)
+                    RETURNING id, api_key, name, created_at, expires_at
+                    """,
+                    (user_id, api_key, name, expires_at),
+                )
+
+                conn.commit()
+                api_key_data = cur.fetchone()
+
+                if api_key_data:
+                    return dict(api_key_data)
+                return None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error creating API key: {e}")
+        return None
+
+
+def get_user_api_keys(user_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all API keys for a user.
+
+    Args:
+        user_id: The user ID.
+
+    Returns:
+        List of API keys.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, api_key, name, is_active, created_at, 
+                           expires_at, last_used_at
+                    FROM api_keys
+                    WHERE user_id = %s
+                    ORDER BY created_at DESC
+                    """,
+                    (user_id,),
+                )
+
+                keys = cur.fetchall()
+                return [dict(key) for key in keys] if keys else []
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting API keys: {e}")
+        return []
+
+
+def revoke_api_key(user_id: int, api_key_id: int) -> bool:
+    """
+    Revoke an API key.
+
+    Args:
+        user_id: The user ID.
+        api_key_id: The API key ID.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                # Verify the API key belongs to the user
+                cur.execute(
+                    """
+                    SELECT id
+                    FROM api_keys
+                    WHERE id = %s AND user_id = %s
+                    """,
+                    (api_key_id, user_id),
+                )
+
+                if not cur.fetchone():
+                    # Key doesn't exist or doesn't belong to the user
+                    return False
+
+                cur.execute(
+                    """
+                    UPDATE api_keys
+                    SET is_active = FALSE
+                    WHERE id = %s
+                    """,
+                    (api_key_id,),
+                )
+
+                conn.commit()
+                return True
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error revoking API key: {e}")
+        return False
+
+
+def add_user_credits(
+    user_id: int,
+    amount: float,
+    payment_method: str = "credit_card",
+    transaction_id: str = None,
+    reference_id: str = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Add credits to a user's account and record the transaction.
+
+    Args:
+        user_id: The user ID.
+        amount: The amount of credits to add.
+        payment_method: The payment method used.
+        transaction_id: Optional external transaction ID.
+        reference_id: Optional reference ID.
+
+    Returns:
+        Dictionary containing the transaction info if successful, None otherwise.
+    """
+    try:
+        if amount < 10:
+            logger.error(f"Credit amount must be at least 10, got {amount}")
+            return None
+
+        # Generate a transaction ID if not provided
+        if not transaction_id:
+            import uuid
+
+            transaction_id = f"txn_{uuid.uuid4().hex[:16]}"
+
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Start transaction
+                conn.autocommit = False
+
+                # Update user credits
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET credits = credits + %s, updated_at = NOW()
+                    WHERE id = %s
+                    RETURNING id, username, email, credits
+                    """,
+                    (amount, user_id),
+                )
+
+                user = cur.fetchone()
+                if not user:
+                    conn.rollback()
+                    return None
+
+                # Record the transaction
+                cur.execute(
+                    """
+                    INSERT INTO billing_transactions
+                    (user_id, transaction_id, amount, currency, transaction_type, status, payment_method, description, reference_id)
+                    VALUES (%s, %s, %s, 'USD', 'credit_purchase', 'completed', %s, %s, %s)
+                    RETURNING id, transaction_id, amount, created_at
+                    """,
+                    (
+                        user_id,
+                        transaction_id,
+                        amount,
+                        payment_method,
+                        f"Purchase of {amount} credits",
+                        reference_id,
+                    ),
+                )
+
+                transaction = cur.fetchone()
+
+                # Commit the transaction
+                conn.commit()
+
+                # Combine user and transaction info
+                result = {
+                    "user_id": user["id"],
+                    "username": user["username"],
+                    "email": user["email"],
+                    "credits_added": amount,
+                    "total_credits": user["credits"],
+                    "transaction_id": transaction["transaction_id"],
+                    "created_at": transaction["created_at"],
+                }
+
+                return result
+        finally:
+            conn.autocommit = True
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error adding credits to user: {e}")
+        return None
+
+
+def get_user_transactions(
+    user_id: int, limit: int = 20, offset: int = 0
+) -> List[Dict[str, Any]]:
+    """
+    Get user billing transactions.
+
+    Args:
+        user_id: The user ID.
+        limit: The maximum number of transactions to return.
+        offset: The offset for pagination.
+
+    Returns:
+        List of transactions.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT 
+                        id, transaction_id, amount, currency, transaction_type, 
+                        status, payment_method, description, created_at
+                    FROM billing_transactions
+                    WHERE user_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s OFFSET %s
+                    """,
+                    (user_id, limit, offset),
+                )
+
+                transactions = cur.fetchall()
+                return [dict(tx) for tx in transactions] if transactions else []
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting user transactions: {e}")
+        return []
+
+
+def get_all_users(
+    skip: int = 0, limit: int = 100, search: str = None
+) -> List[Dict[str, Any]]:
+    """
+    Get all users with pagination and optional search.
+
+    Args:
+        skip: Number of users to skip
+        limit: Maximum number of users to return
+        search: Optional search term for username or email
+
+    Returns:
+        List of user objects
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = """
+                    SELECT id, username, email, first_name, last_name, 
+                           is_active, credits, account_tier, created_at, last_login_at
+                    FROM users
+                """
+                params = []
+
+                # Add search condition if provided
+                if search:
+                    query += " WHERE username ILIKE %s OR email ILIKE %s"
+                    search_pattern = f"%{search}%"
+                    params.extend([search_pattern, search_pattern])
+
+                    # Add search on first/last name if they exist
+                    query += " OR first_name ILIKE %s OR last_name ILIKE %s"
+                    params.extend([search_pattern, search_pattern])
+
+                # Add pagination
+                query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+                params.extend([limit, skip])
+
+                cur.execute(query, params)
+                users = cur.fetchall()
+                return [dict(user) for user in users] if users else []
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting all users: {e}")
+        return []
+
+
+def update_user_data(
+    user_id: int, update_data: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
+    """
+    Update user data.
+
+    Args:
+        user_id: The user ID
+        update_data: Dictionary with fields to update
+
+    Returns:
+        Updated user data if successful, None otherwise
+    """
+    try:
+        if not update_data:
+            return None
+
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Build SET clause dynamically based on update_data
+                set_clauses = []
+                params = []
+
+                for key, value in update_data.items():
+                    set_clauses.append(f"{key} = %s")
+                    params.append(value)
+
+                # Always update the updated_at timestamp
+                set_clauses.append("updated_at = NOW()")
+
+                # Finalize query
+                query = f"""
+                    UPDATE users 
+                    SET {', '.join(set_clauses)}
+                    WHERE id = %s
+                    RETURNING id, username, email, first_name, last_name,
+                              is_active, credits, account_tier, created_at, updated_at, last_login_at
+                """
+                params.append(user_id)
+
+                cur.execute(query, params)
+                conn.commit()
+                updated_user = cur.fetchone()
+                return dict(updated_user) if updated_user else None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error updating user data: {e}")
+        return None
+
+
+def delete_user(user_id: int) -> bool:
+    """
+    Delete a user.
+
+    Args:
+        user_id: The user ID
+
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                # Check if user exists
+                cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+                if not cur.fetchone():
+                    return False
+
+                # Delete user (cascade will handle related records due to foreign keys)
+                cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+                conn.commit()
+
+                return True
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error deleting user: {e}")
+        return False
+
+
+def get_system_stats() -> Dict[str, Any]:
+    """
+    Get system-wide statistics.
+
+    Returns:
+        Dictionary with system statistics
+    """
+    try:
+        stats = {
+            "users": {
+                "total": 0,
+                "active": 0,
+                "new_last_30_days": 0,
+            },
+            "api_keys": {
+                "total": 0,
+                "active": 0,
+            },
+            "usage": {
+                "total_requests": 0,
+                "total_tokens": 0,
+                "total_cost": 0,
+                "requests_today": 0,
+                "tokens_today": 0,
+                "cost_today": 0,
+            },
+            "providers": {},
+            "models": {},
+        }
+
+        # PostgreSQL statistics
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # User statistics
+                cur.execute(
+                    """
+                    SELECT
+                        COUNT(*) as total_users,
+                        SUM(CASE WHEN is_active THEN 1 ELSE 0 END) as active_users,
+                        SUM(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 ELSE 0 END) as new_users
+                    FROM users
+                """
+                )
+                user_stats = cur.fetchone()
+
+                if user_stats:
+                    stats["users"]["total"] = user_stats["total_users"]
+                    stats["users"]["active"] = user_stats["active_users"]
+                    stats["users"]["new_last_30_days"] = user_stats["new_users"]
+
+                # API key statistics
+                cur.execute(
+                    """
+                    SELECT
+                        COUNT(*) as total_keys,
+                        SUM(CASE WHEN is_active AND (expires_at IS NULL OR expires_at > NOW()) THEN 1 ELSE 0 END) as active_keys
+                    FROM api_keys
+                """
+                )
+                key_stats = cur.fetchone()
+
+                if key_stats:
+                    stats["api_keys"]["total"] = key_stats["total_keys"]
+                    stats["api_keys"]["active"] = key_stats["active_keys"]
+
+                # Total usage statistics
+                cur.execute(
+                    """
+                    SELECT
+                        SUM(total_requests) as total_requests,
+                        SUM(total_tokens) as total_tokens,
+                        SUM(total_cost) as total_cost
+                    FROM usage_daily_summary
+                """
+                )
+                usage_stats = cur.fetchone()
+
+                if usage_stats:
+                    stats["usage"]["total_requests"] = (
+                        usage_stats["total_requests"] or 0
+                    )
+                    stats["usage"]["total_tokens"] = usage_stats["total_tokens"] or 0
+                    stats["usage"]["total_cost"] = float(usage_stats["total_cost"] or 0)
+
+                # Today's usage statistics
+                cur.execute(
+                    """
+                    SELECT
+                        SUM(total_requests) as requests_today,
+                        SUM(total_tokens) as tokens_today,
+                        SUM(total_cost) as cost_today
+                    FROM usage_daily_summary
+                    WHERE date = CURRENT_DATE
+                """
+                )
+                today_stats = cur.fetchone()
+
+                if today_stats:
+                    stats["usage"]["requests_today"] = (
+                        today_stats["requests_today"] or 0
+                    )
+                    stats["usage"]["tokens_today"] = today_stats["tokens_today"] or 0
+                    stats["usage"]["cost_today"] = float(today_stats["cost_today"] or 0)
+        finally:
+            release_pg_connection(conn)
+
+        # MongoDB statistics (if available)
+        if mongo_db is not None:
+            # Provider statistics
+            provider_stats = list(
+                mongo_db.model_usage.aggregate(
+                    [
+                        {
+                            "$group": {
+                                "_id": "$provider",
+                                "requests": {"$sum": 1},
+                                "tokens": {"$sum": "$tokens_total"},
+                                "cost": {"$sum": "$cost"},
+                            }
+                        }
+                    ]
+                )
+            )
+
+            for item in provider_stats:
+                provider = item["_id"] or "unknown"
+                stats["providers"][provider] = {
+                    "requests": item["requests"],
+                    "tokens": item["tokens"],
+                    "cost": item["cost"],
+                }
+
+            # Model statistics
+            model_stats = list(
+                mongo_db.model_usage.aggregate(
+                    [
+                        {
+                            "$group": {
+                                "_id": {"provider": "$provider", "model": "$model"},
+                                "requests": {"$sum": 1},
+                                "tokens": {"$sum": "$tokens_total"},
+                                "cost": {"$sum": "$cost"},
+                            }
+                        },
+                        {"$sort": {"requests": -1}},
+                        {"$limit": 10},
+                    ]
+                )
+            )
+
+            for item in model_stats:
+                provider = item["_id"]["provider"] or "unknown"
+                model = item["_id"]["model"] or "unknown"
+                model_key = f"{provider}/{model}"
+
+                stats["models"][model_key] = {
+                    "provider": provider,
+                    "model": model,
+                    "requests": item["requests"],
+                    "tokens": item["tokens"],
+                    "cost": item["cost"],
+                }
+
+        return stats
+    except Exception as e:
+        logger.error(f"Error getting system stats: {e}")
+        return {
+            "users": {"total": 0, "active": 0, "new_last_30_days": 0},
+            "api_keys": {"total": 0, "active": 0},
+            "usage": {
+                "total_requests": 0,
+                "total_tokens": 0,
+                "total_cost": 0,
+                "requests_today": 0,
+                "tokens_today": 0,
+                "cost_today": 0,
+            },
+            "providers": {},
+            "models": {},
+        }
+
+
+def get_all_api_keys(
+    limit: int = 100, offset: int = 0, search: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """
+    Get all API keys with associated user information.
+
+    Args:
+        limit: Maximum number of API keys to return
+        offset: Offset to start from
+        search: Optional search term to filter by username
+
+    Returns:
+        List of API keys with user information
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = """
+                    SELECT k.id, k.api_key, k.name, k.is_active, k.created_at, k.expires_at, k.last_used_at,
+                           u.id as user_id, u.username, u.email
+                    FROM api_keys k
+                    JOIN users u ON k.user_id = u.id
+                """
+
+                params = []
+
+                if search:
+                    query += " WHERE u.username ILIKE %s OR u.email ILIKE %s"
+                    search_term = f"%{search}%"
+                    params.extend([search_term, search_term])
+
+                query += " ORDER BY k.created_at DESC LIMIT %s OFFSET %s"
+                params.extend([limit, offset])
+
+                cur.execute(query, params)
+                api_keys = cur.fetchall()
+
+                # Format the response
+                result = []
+                for key in api_keys:
+                    result.append(
+                        {
+                            "id": key["id"],
+                            "key": key["api_key"],  # Full key for admin view
+                            "name": key["name"],
+                            "active": key["is_active"],
+                            "created_at": key["created_at"],
+                            "expires_at": key["expires_at"],
+                            "last_used_at": key["last_used_at"],
+                            "user": {
+                                "id": key["user_id"],
+                                "username": key["username"],
+                                "email": key["email"],
+                            },
+                        }
+                    )
+
+                return result
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting all API keys: {e}")
+        return []

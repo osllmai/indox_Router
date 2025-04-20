@@ -86,8 +86,47 @@ class Token(BaseModel):
     """Token response model."""
 
     access_token: str
-    token_type: str = "bearer"
+    token_type: str
     expires_in: int
+
+
+class UserCreate(BaseModel):
+    """User registration model."""
+
+    username: str
+    email: str
+    password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    """User response model."""
+
+    id: int
+    username: str
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    is_active: bool
+    credits: float
+    account_tier: str
+    created_at: datetime
+
+
+class GoogleAuthRequest(BaseModel):
+    """Google authentication request model."""
+
+    token: str  # Google ID token
+
+
+class AuthResponse(BaseModel):
+    """Authentication response model."""
+
+    access_token: str
+    token_type: str
+    expires_in: int
+    user: UserResponse
 
 
 class PricingInfo(BaseModel):
@@ -201,3 +240,64 @@ class UsageResponse(BaseModel):
     providers: Dict[str, UsageStats]
     models: Dict[str, Dict[str, Any]]
     daily_usage: List[DailyUsage]
+
+
+class ApiKeyCreate(BaseModel):
+    """API key creation request model."""
+
+    name: str = "API Key"
+
+
+class ApiKeyResponse(BaseModel):
+    """API key response model."""
+
+    id: int
+    api_key: str
+    name: str
+    created_at: datetime
+    expires_at: datetime
+
+
+class ApiKeyList(BaseModel):
+    """API key list response model."""
+
+    keys: List[ApiKeyResponse]
+
+
+class CreditPurchase(BaseModel):
+    """Credit purchase request model."""
+
+    amount: float
+    payment_method: str = "credit_card"
+    reference_id: Optional[str] = None
+
+
+class TransactionResponse(BaseModel):
+    """Transaction response model."""
+
+    transaction_id: str
+    amount: float
+    credits_added: float
+    total_credits: float
+    created_at: datetime
+
+
+class TransactionItem(BaseModel):
+    """Transaction item model for listing transactions."""
+
+    id: int
+    transaction_id: str
+    amount: float
+    currency: str
+    transaction_type: str
+    status: str
+    payment_method: str
+    description: Optional[str]
+    created_at: datetime
+
+
+class TransactionList(BaseModel):
+    """Transaction list response model."""
+
+    transactions: List[TransactionItem]
+    total_count: int

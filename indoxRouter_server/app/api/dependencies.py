@@ -11,11 +11,13 @@ from datetime import datetime, timedelta
 
 from app.core.config import settings
 from app.utils.rate_limiter import check_rate_limit, get_rate_limit_headers
-from app.db.database import get_user_by_id, verify_api_key
+from app.db.database import get_user_by_id, verify_api_key, get_user_by_username
 from app.exceptions import RateLimitError
 
 # API key header
 api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
+# OAuth2 password bearer scheme for token authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
 
 
 async def get_current_user(
@@ -143,3 +145,67 @@ def get_provider_api_key(provider: str) -> Optional[str]:
         return settings.DEEPSEEK_API_KEY
     else:
         return None
+
+
+async def get_current_user_from_token(
+    token: str = Depends(oauth2_scheme),
+) -> Dict[str, Any]:
+    """
+    Validate JWT token and get the current user.
+
+    Args:
+        token: The JWT token from the Authorization header.
+
+    Returns:
+        The user information if authenticated.
+
+    Raises:
+        HTTPException: If authentication fails.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user_id: str = payload.get("sub")
+
+        if user_id is None:
+            raise credentials_exception
+
+        # Get the user from the database
+        user = get_user_by_id(int(user_id))
+
+        if user is None or not user.get("is_active", False):
+            raise credentials_exception
+
+        return user
+
+    except JWTError:
+        raise credentials_exception
+
+
+async def get_admin_user(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Check if the current user has admin privileges.
+    Raises an HTTPException if the user is not an admin.
+
+    Args:
+        current_user: The current authenticated user
+
+    Returns:
+        The current user information if they are an admin
+    """
+    # This could be extended to check a more complex permissions system
+    # For now, we'll just check if the user is in the 'admin' tier
+    if current_user.get("account_tier") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions. Admin privileges required.",
+        )
+    return current_user

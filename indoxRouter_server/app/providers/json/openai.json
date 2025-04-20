@@ -199,7 +199,7 @@
   },
   {
     "number": "12",
-    "modelName": null,
+    "modelName": "gpt-4-vision-preview",
     "name": "GPT-4 Turbo Vision",
     "type": "Text",
     "inputPricePer1KTokens": 0.0,

@@ -129,10 +129,17 @@ def load_provider_data():
                                 if "contextWindows" in model:
                                     context_str = model.get("contextWindows", "")
                                     if context_str is not None:  # Check for None
-                                        if "k Tokens" in context_str:
-                                            # Extract the number (e.g., "128k Tokens" -> 128000)
+                                        if "k " in context_str:
+                                            # Handle formats like "128k (Pricey) Tokens" by extracting just the number part
                                             try:
-                                                size = float(context_str.split("k")[0])
+                                                # First extract the part before any parentheses
+                                                size_part = context_str.split("(")[
+                                                    0
+                                                ].strip()
+                                                # Then extract the number before 'k'
+                                                size = float(
+                                                    size_part.split("k")[0].strip()
+                                                )
                                                 model["max_tokens"] = int(size * 1000)
                                             except (ValueError, TypeError) as e:
                                                 print(
@@ -142,7 +149,14 @@ def load_provider_data():
                                         elif "Tokens" in context_str:
                                             # Handle case without 'k' but with Tokens
                                             try:
-                                                size = float(context_str.split(" ")[0])
+                                                # Extract the part before any parentheses
+                                                size_part = context_str.split("(")[
+                                                    0
+                                                ].strip()
+                                                # Then extract the number
+                                                size = float(
+                                                    size_part.split(" ")[0].strip()
+                                                )
                                                 model["max_tokens"] = int(size)
                                             except (ValueError, TypeError) as e:
                                                 print(
