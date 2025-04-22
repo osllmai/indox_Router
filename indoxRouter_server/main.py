@@ -76,6 +76,7 @@ if os.path.exists(admin_dir):
 else:
     print(f"Admin panel directory not found at {admin_dir}")
 
+
 # Include routers
 print("Registering API routers...")
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])

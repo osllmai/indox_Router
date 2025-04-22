@@ -35,13 +35,11 @@ class MistralProvider(BaseProvider):
             self._available_models = available_models
 
             if model_name not in available_models:
-                print(f"WARNING: Model '{model_name}' not found in available models.")
                 similar_models = [m for m in available_models if model_name in m]
                 if similar_models:
                     if len(similar_models) > 0:
                         self.model_name = similar_models[0]
         except Exception as e:
-            print(f"Error getting available models: {str(e)}")
             self._available_models = []
 
         try:

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IndoxRouter Admin</title>
+    <link rel="stylesheet" href="styles.css?v=1.1" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="admin-container">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1>IndoxRouter</h1>
+          <p>Admin Panel</p>
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li class="nav-item active" data-page="dashboard">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </li>
+            <li class="nav-item" data-page="users">
+              <i class="fas fa-users"></i> Users
+            </li>
+            <li class="nav-item" data-page="api-keys">
+              <i class="fas fa-key"></i> API Keys
+            </li>
+            <li class="nav-item" data-page="usage">
+              <i class="fas fa-chart-line"></i> Usage Analytics
+            </li>
+            <li class="nav-item" data-page="models">
+              <i class="fas fa-robot"></i> Models
+            </li>
+            <li class="nav-item" data-page="endpoint-tester">
+              <i class="fas fa-vial"></i> Endpoint Tester
+            </li>
+          </ul>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="content-header">
+          <div class="header-left">
+            <button id="sidebar-toggle" class="sidebar-toggle">
+              <i class="fas fa-bars"></i>
+            </button>
+            <h2 id="page-title">Dashboard</h2>
+          </div>
+          <div class="header-right">
+            <div class="user-info">
+              <span id="user-name">Admin User</span>
+              <img
+                id="user-avatar"
+                src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+                alt="User Avatar"
+              />
+            </div>
+          </div>
+        </header>
+
+        <div class="content-body">
+          <!-- Pages will be dynamically loaded here -->
+          <div id="dashboard-page" class="page active">
+            <!-- Dashboard content -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <div class="stat-content">
+                  <h3>Total Users</h3>
+                  <p id="total-users">Loading...</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="fas fa-user-check stat-icon"></i>
+                <div class="stat-content">
+                  <h3>Active Users</h3>
+                  <p id="active-users">Loading...</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="fas fa-key stat-icon"></i>
+                <div class="stat-content">
+                  <h3>Active API Keys</h3>
+                  <p id="active-keys">Loading...</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="fas fa-exchange-alt stat-icon"></i>
+                <div class="stat-content">
+                  <h3>Total Requests</h3>
+                  <p id="total-requests">Loading...</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="fas fa-coins stat-icon"></i>
+                <div class="stat-content">
+                  <h3>Total Cost</h3>
+                  <p id="total-cost">Loading...</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="fas fa-file-alt stat-icon"></i>
+                <div class="stat-content">
+                  <h3>Total Tokens</h3>
+                  <p id="total-tokens">Loading...</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-charts">
+              <div class="chart-card">
+                <h3>Provider Usage</h3>
+                <div id="provider-chart" class="chart-container">
+                  <p class="loading">Loading chart...</p>
+                </div>
+              </div>
+              <div class="chart-card">
+                <h3>Model Usage</h3>
+                <div id="model-chart" class="chart-container">
+                  <p class="loading">Loading chart...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="users-page" class="page">
+            <!-- Users page content -->
+            <div class="page-actions">
+              <div class="search-container">
+                <input
+                  type="text"
+                  id="user-search"
+                  placeholder="Search users..."
+                />
+                <button id="user-search-btn">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+              <button
+                id="add-user-btn"
+                class="primary-btn"
+                style="background-color: #27ae60; font-weight: bold"
+              >
+                <i class="fas fa-plus"></i> ADD NEW USER
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table id="users-table" class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Credits</th>
+                    <th>Tier</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="9" class="loading-row">Loading users...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination">
+              <button id="prev-page" disabled>
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <span id="page-info">Page 1</span>
+              <button id="next-page">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="api-keys-page" class="page">
+            <!-- API Keys page content will be loaded dynamically -->
+            <div class="page-actions">
+              <div class="search-container">
+                <input
+                  type="text"
+                  id="api-key-search"
+                  placeholder="Search by username..."
+                />
+                <button id="api-key-search-btn">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+              <button
+                id="add-global-api-key-btn"
+                class="primary-btn"
+                style="background-color: #27ae60; font-weight: bold"
+              >
+                <i class="fas fa-plus"></i> ADD NEW API KEY
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table id="api-keys-table" class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Name</th>
+                    <th>API Key</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Expires</th>
+                    <th>Last Used</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="9" class="loading-row">Loading API keys...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="usage-page" class="page">
+            <!-- Usage page content -->
+            <div class="filters-container">
+              <div class="filter-group">
+                <label for="date-range">Time Period:</label>
+                <select id="date-range">
+                  <option value="7">Last 7 days</option>
+                  <option value="30" selected>Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                  <option value="custom">Custom range</option>
+                </select>
+              </div>
+
+              <div class="filter-group custom-date-range" style="display: none">
+                <label for="start-date">From:</label>
+                <input type="date" id="start-date" />
+                <label for="end-date">To:</label>
+                <input type="date" id="end-date" />
+              </div>
+
+              <div class="filter-group">
+                <label for="group-by">Group by:</label>
+                <select id="group-by">
+                  <option value="date">Date</option>
+                  <option value="provider">Provider</option>
+                  <option value="model">Model</option>
+                  <option value="endpoint">Endpoint</option>
+                </select>
+              </div>
+
+              <button id="apply-filters" class="primary-btn">
+                Apply Filters
+              </button>
+            </div>
+
+            <div class="usage-charts">
+              <div class="chart-card full-width">
+                <h3>Usage Over Time</h3>
+                <div id="usage-time-chart" class="chart-container">
+                  <p class="loading">Loading chart...</p>
+                </div>
+              </div>
+
+              <div class="chart-card">
+                <h3>Requests by Provider</h3>
+                <div id="provider-requests-chart" class="chart-container">
+                  <p class="loading">Loading chart...</p>
+                </div>
+              </div>
+
+              <div class="chart-card">
+                <h3>Tokens by Provider</h3>
+                <div id="provider-tokens-chart" class="chart-container">
+                  <p class="loading">Loading chart...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="models-page" class="page">
+            <!-- Models page content -->
+            <div class="models-grid">
+              <div class="model-card">
+                <div class="model-card-header">
+                  <h3>GPT-4o</h3>
+                  <span class="model-provider">OpenAI</span>
+                </div>
+                <div class="model-card-stats">
+                  <div class="model-stat">
+                    <span class="stat-label">Requests</span>
+                    <span class="stat-value">1,234</span>
+                  </div>
+                  <div class="model-stat">
+                    <span class="stat-label">Tokens</span>
+                    <span class="stat-value">5.67M</span>
+                  </div>
+                  <div class="model-stat">
+                    <span class="stat-label">Cost</span>
+                    <span class="stat-value">$78.90</span>
+                  </div>
+                </div>
+                <div class="model-card-footer">
+                  <button class="model-action-btn">View Details</button>
+                </div>
+              </div>
+
+              <!-- More model cards will be loaded dynamically -->
+            </div>
+          </div>
+
+          <div id="endpoint-tester-page" class="page">
+            <!-- Endpoint tester page content -->
+            <div class="endpoint-tester-container">
+              <div class="endpoint-selection">
+                <label for="endpoint-select">Endpoint:</label>
+                <select id="endpoint-select">
+                  <option value="chat">Chat Completions</option>
+                  <option value="completions">Completions</option>
+                  <option value="embeddings">Embeddings</option>
+                  <option value="images">Image Generation</option>
+                </select>
+              </div>
+
+              <div class="endpoint-config">
+                <div class="form-group">
+                  <label for="model-select">Model:</label>
+                  <select id="model-select">
+                    <option value="gpt-4o">gpt-4o</option>
+                    <option value="gpt-4o-mini">gpt-4o-mini</option>
+                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                  </select>
+                </div>
+
+                <div class="form-group chat-form">
+                  <label for="system-message">System Message:</label>
+                  <textarea id="system-message" rows="2">
+You are a helpful AI assistant.</textarea
+                  >
+
+                  <label for="user-message">User Message:</label>
+                  <textarea id="user-message" rows="4">
+Hello, how are you today?</textarea
+                  >
+                </div>
+
+                <div class="form-group completions-form" style="display: none">
+                  <label for="prompt">Prompt:</label>
+                  <textarea id="prompt" rows="4">
+Explain quantum computing in simple terms</textarea
+                  >
+                </div>
+
+                <div class="form-group embeddings-form" style="display: none">
+                  <label for="embedding-text">Text to Embed:</label>
+                  <textarea id="embedding-text" rows="4">
+This is a sample text to generate embeddings for.</textarea
+                  >
+                </div>
+
+                <div class="form-group images-form" style="display: none">
+                  <label for="image-prompt">Image Prompt:</label>
+                  <textarea id="image-prompt" rows="4">
+A photorealistic image of a futuristic city with flying cars.</textarea
+                  >
+
+                  <label for="image-size">Size:</label>
+                  <select id="image-size">
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="512x512">512x512</option>
+                    <option value="256x256">256x256</option>
+                  </select>
+                </div>
+
+                <div class="advanced-options">
+                  <details>
+                    <summary>Advanced Options</summary>
+                    <div class="form-group">
+                      <label for="temperature">Temperature:</label>
+                      <input
+                        type="range"
+                        id="temperature"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value="0.7"
+                      />
+                      <span id="temperature-value">0.7</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="max-tokens">Max Tokens:</label>
+                      <input
+                        type="number"
+                        id="max-tokens"
+                        value="1000"
+                        min="1"
+                        max="8000"
+                      />
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              <div class="endpoint-actions">
+                <button id="test-endpoint" class="primary-btn">
+                  Test Endpoint
+                </button>
+                <button id="copy-request" class="secondary-btn">
+                  Copy as cURL
+                </button>
+              </div>
+
+              <div class="response-container">
+                <div class="response-header">
+                  <h3>Response</h3>
+                  <div class="response-meta">
+                    <span id="response-time"></span>
+                    <span id="response-tokens"></span>
+                  </div>
+                </div>
+                <pre
+                  id="response-content"
+                ><code>Response will appear here...</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- User edit modal -->
+    <div id="user-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Edit User</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="user-form">
+            <input type="hidden" id="user-id" />
+            <div class="form-group">
+              <label for="username">Username:</label>
+              <input type="text" id="username" required />
+            </div>
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input type="email" id="email" required />
+            </div>
+            <div class="form-group" id="password-group">
+              <label for="password">Password:</label>
+              <input type="password" id="password" required />
+            </div>
+            <div class="form-group">
+              <label for="first-name">First Name:</label>
+              <input type="text" id="first-name" />
+            </div>
+            <div class="form-group">
+              <label for="last-name">Last Name:</label>
+              <input type="text" id="last-name" />
+            </div>
+            <div class="form-group">
+              <label for="account-tier">Account Tier:</label>
+              <select id="account-tier">
+                <option value="free">Free</option>
+                <option value="basic">Basic</option>
+                <option value="premium">Premium</option>
+                <option value="enterprise">Enterprise</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="is-active">Status:</label>
+              <select id="is-active">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+            <div class="form-group" id="initial-credits-group">
+              <label for="initial-credits">Initial Credits:</label>
+              <input
+                type="number"
+                id="initial-credits"
+                min="0"
+                step="0.01"
+                value="0"
+              />
+            </div>
+            <div
+              class="form-group"
+              id="existing-credits-group"
+              style="display: none"
+            >
+              <label for="credits">Current Credits:</label>
+              <input type="number" id="credits" min="0" step="0.01" readonly />
+            </div>
+            <div
+              class="form-group"
+              id="add-credits-group"
+              style="display: none"
+            >
+              <label for="add-credits">Add Credits:</label>
+              <input
+                type="number"
+                id="add-credits"
+                min="0"
+                step="0.01"
+                value="0"
+              />
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button id="save-user" class="primary-btn">Add User</button>
+          <button class="cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/admin/main.js?v=1.1"></script>
+
+    <!-- Direct Add User Script -->
+    <script>
+      // Direct script for Add User functionality
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("Direct script loaded");
+
+        // Handle Add User button click
+        const addUserBtn = document.getElementById("add-user-btn");
+        if (addUserBtn) {
+          addUserBtn.addEventListener("click", function () {
+            console.log("Add User button clicked directly");
+
+            // Reset the form
+            const userForm = document.getElementById("user-form");
+            userForm.reset();
+
+            // Show the modal
+            const userModal = document.getElementById("user-modal");
+            userModal.classList.add("active");
+
+            // Set the title
+            document.getElementById("modal-title").textContent = "Add New User";
+
+            // Make sure the Add User button is visible
+            document.getElementById("save-user").textContent = "Add User";
+          });
+        }
+
+        // Handle Save/Add User button click
+        const saveUserBtn = document.getElementById("save-user");
+        if (saveUserBtn) {
+          saveUserBtn.addEventListener("click", function () {
+            console.log("Save User button clicked directly");
+
+            // Get form data
+            const userData = {
+              username: document.getElementById("username").value,
+              email: document.getElementById("email").value,
+              password: document.getElementById("password").value,
+              first_name: document.getElementById("first-name").value,
+              last_name: document.getElementById("last-name").value,
+              account_tier: document.getElementById("account-tier").value,
+              is_active: document.getElementById("is-active").value === "true",
+              initial_credits:
+                parseFloat(document.getElementById("initial-credits").value) ||
+                0,
+            };
+
+            console.log("User data:", userData);
+
+            // Create the user
+            fetch("/api/v1/admin/users/create", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem(
+                  "admin_api_key"
+                )}`,
+              },
+              body: JSON.stringify(userData),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                console.log("User created:", data);
+                alert("User created successfully!");
+                window.location.reload(); // Reload the page to show the new user
+              })
+              .catch((error) => {
+                console.error("Error creating user:", error);
+                alert("Error creating user. Check console for details.");
+              });
+          });
+        }
+
+        // Handle Cancel and Close buttons
+        const closeButtons = document.querySelectorAll(
+          ".close-modal, .cancel-btn"
+        );
+        closeButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            document.getElementById("user-modal").classList.remove("active");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

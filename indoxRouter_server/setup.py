@@ -54,6 +54,7 @@ setup(
         "cryptography>=40.0.0",
         "psycopg2-binary>=2.9.9",
         "pymongo[srv]>=4.6.1",
+        "sqladmin[full]>=0.20.1",
         "dnspython>=2.4.0",
         "redis>=5.0.0,<=5.2.0",
     ],

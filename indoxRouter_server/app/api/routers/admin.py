@@ -69,28 +69,54 @@ async def admin_login(
             detail="Invalid credentials",
         )
 
-    # Here you would normally verify the password hash,
-    # but since we don't have access to the original password hash creation,
-    # you would need to implement this based on how your passwords are stored
+    logger.debug(f"Attempting login for user: {username}")
 
-    # For demonstration purposes, create a special API key for admin panel use
-    api_key_data = create_api_key(user["id"], name="Admin Panel Access")
+    # Verify the password hash
+    password_verified = pwd_context.verify(password, user["password"])
+    logger.debug(
+        f"Password verification result for user {username}: {password_verified}"
+    )
+    if not password_verified:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
 
-    if not api_key_data:
+    # Check if an API key already exists for the admin
+    existing_keys = get_user_api_keys(user["id"])
+    admin_key = next(
+        (key for key in existing_keys if key["name"] == "Admin Panel Access"), None
+    )
+
+    if not admin_key:
+        # Create a special API key for admin panel use if it doesn't exist
+        admin_key = create_api_key(user["id"], name="Admin Panel Access")
+
+    if not admin_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create admin token",
         )
 
-    return {
-        "success": True,
-        "token": api_key_data["api_key"],
-        "user": {
-            "name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
-            or username,
-            "avatar": f"https://www.gravatar.com/avatar/{secrets.token_hex(16)}?d=mp&f=y",
-        },
-    }
+    response = JSONResponse(
+        content={
+            "success": True,
+            "token": admin_key["api_key"],
+            "user": {
+                "name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
+                or username,
+                "avatar": f"https://www.gravatar.com/avatar/{secrets.token_hex(16)}?d=mp&f=y",
+            },
+        }
+    )
+    response.set_cookie(
+        key="admin_api_key",
+        value=admin_key["api_key"],
+        httponly=True,
+        secure=True,  # Ensure this is set to True in production
+        samesite="Strict",
+    )
+    return response
 
 
 @router.get("/users", response_model=List[UserResponse])
@@ -377,7 +403,7 @@ async def get_models(
     Only accessible to admin users.
     """
     try:
-        from app.providers.factory import get_all_providers
+        # from app.providers.factory import get_all_providers
         import json
         import os
         from app.core.config import settings

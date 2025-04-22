@@ -80,8 +80,6 @@ def get_provider(provider_id: str, api_key: str, model: str) -> BaseProvider:
     Raises:
         ProviderNotFoundError: If the provider is not found.
     """
-    # Normalize provider_id to lowercase
-    print(f"DEBUG: get_provider called with provider_id={provider_id}, model={model}")
     provider_id = provider_id.lower()
 
     # Check if the provider is in the list of available providers

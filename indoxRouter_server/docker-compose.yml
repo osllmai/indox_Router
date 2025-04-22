@@ -46,6 +46,7 @@ services:
       - ENABLE_RESPONSE_CACHE=true
       - CACHE_TTL_DAYS=${CACHE_TTL_DAYS}
     volumes:
+      - ./indoxrouter_server:/app/indoxrouter_server # Mount local code Remove this line if you are using a remote server
       - app-logs:/app/logs
     depends_on:
       postgres:
@@ -63,6 +64,18 @@ services:
     networks:
       - indox-network
     restart: unless-stopped
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: indoxrouter-admin
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    networks:
+      - indox-network
+    depends_on:
+      - indoxrouter-server
 
   postgres:
     image: postgres:15-alpine
@@ -121,10 +134,10 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./admin:/usr/share/nginx/html/admin
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - indoxrouter-server
+      - admin
     networks:
       - indox-network
     restart: unless-stopped

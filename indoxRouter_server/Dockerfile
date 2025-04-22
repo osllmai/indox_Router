@@ -32,4 +32,5 @@ ENV PYTHONPATH=/app \
     PORT=8000 \
     DEBUG=false
 
-CMD ["python", "-c", "from app.patches.bcrypt_patch import patch_bcrypt; patch_bcrypt(); import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000, proxy_headers=True)"]
+CMD ["python", "-c", "from app.patches.bcrypt_patch import patch_bcrypt; patch_bcrypt(); import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000, proxy_headers=True)", "--reload"]
+
