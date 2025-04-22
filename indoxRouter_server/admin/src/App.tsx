@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,12 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
+import CreateUser from "./pages/CreateUser";
+import ApiKeys from "./pages/ApiKeys";
+import Models from "./pages/Models";
+import Analytics from "./pages/Analytics";
+import Transactions from "./pages/Transactions";
+import EndpointTester from "./pages/EndpointTester";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/layout/AdminLayout";
 
@@ -18,7 +23,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -33,19 +42,28 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      
+
       {/* Protected routes */}
-      <Route element={
-        <ProtectedRoute>
-          <AdminLayout />
-        </ProtectedRoute>
-      }>
+      <Route
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
+        <Route path="/users/create" element={<CreateUser />} />
+        <Route path="/api-keys" element={<ApiKeys />} />
+        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/models" element={<Models />} />
+        <Route path="/settings" element={<div>Settings Page</div>} />
+        <Route path="/endpoint-tester" element={<EndpointTester />} />
         {/* Add other admin routes here */}
         <Route path="*" element={<NotFound />} />
       </Route>
-      
+
       {/* Redirect root to dashboard if logged in, otherwise to login */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
@@ -54,7 +72,7 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <BrowserRouter basename="/admin">
       <TooltipProvider>
         <AuthProvider>
           <AppRoutes />

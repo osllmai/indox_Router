@@ -1,18 +1,18 @@
-
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { 
-  Users, 
-  LayoutDashboard, 
-  Key, 
-  BarChart2, 
-  Settings, 
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import {
+  Users,
+  LayoutDashboard,
+  Key,
+  BarChart2,
+  Settings,
   LogOut,
   Database,
-  FileText
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+  FileText,
+  Terminal,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -21,19 +21,20 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const location = useLocation();
   const { logout, user } = useAuth();
-  
+
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Users', path: '/users', icon: Users },
-    { name: 'API Keys', path: '/api-keys', icon: Key },
-    { name: 'Transactions', path: '/transactions', icon: Database },
-    { name: 'Analytics', path: '/analytics', icon: BarChart2 },
-    { name: 'Models', path: '/models', icon: FileText },
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Users", path: "/users", icon: Users },
+    { name: "API Keys", path: "/api-keys", icon: Key },
+    { name: "Transactions", path: "/transactions", icon: Database },
+    { name: "Analytics", path: "/analytics", icon: BarChart2 },
+    { name: "Models", path: "/models", icon: FileText },
+    { name: "Endpoint Tester", path: "/endpoint-tester", icon: Terminal },
+    { name: "Settings", path: "/settings", icon: Settings },
   ];
 
   return (
-    <aside 
+    <aside
       className={cn(
         "fixed inset-y-0 left-0 z-50 bg-admin-primary text-white transition-all duration-300 flex flex-col",
         collapsed ? "w-20" : "w-64"
@@ -70,11 +71,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         <div className="flex items-center mb-4">
           {!collapsed && user && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user.name}</p>
+              <p className="text-sm font-medium text-white truncate">
+                {user.name}
+              </p>
               <p className="text-xs text-gray-400">Admin</p>
             </div>
           )}
-          <button 
+          <button
             onClick={logout}
             className={cn(
               "flex items-center text-gray-300 hover:text-white",

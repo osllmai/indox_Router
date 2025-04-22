@@ -1,34 +1,44 @@
-# Dockerfile for the admin panel
-
-# Stage 1: build the application
-FROM node:18-alpine AS builder
+FROM node:18-alpine as builder
 WORKDIR /app
-
-# Install Git to allow commit info capture and other tooling
-RUN apk add --no-cache git
 
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy the rest of the source code
+# Copy source code and configuration files
 COPY . .
 
-# Allow passing the API base URL at build time
+# Set environment variable for API base URL
 ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Build the production bundle
-RUN npm run build
+# Build the app with verbose output
+RUN npm run build && \
+    echo "=== Build Output ===" && \
+    ls -la dist/ && \
+    echo "=== Contents of dist/index.html ===" && \
+    cat dist/index.html
 
-# Stage 2: serve the built files with Nginx
+# Use Nginx to serve the built files
 FROM nginx:alpine
 
-# Copy build output to Nginx's public directory
+# Copy custom Nginx config for SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80 for incoming traffic
-EXPOSE 80
+# Debug: List contents of nginx html directory
+RUN echo "=== Contents of nginx html directory ===" && \
+    ls -la /usr/share/nginx/html && \
+    echo "=== Contents of index.html ===" && \
+    cat /usr/share/nginx/html/index.html
 
-# Run Nginx in the foreground
-CMD ["nginx", "-g", "daemon off;"]
+# Create a custom mime.types file
+RUN echo "types {" > /etc/nginx/mime.types && \
+    echo "    application/javascript    js;" >> /etc/nginx/mime.types && \
+    echo "    text/css                  css;" >> /etc/nginx/mime.types && \
+    echo "}" >> /etc/nginx/mime.types
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"] 

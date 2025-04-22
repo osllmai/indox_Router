@@ -1628,6 +1628,53 @@ def revoke_api_key(user_id: int, api_key_id: int) -> bool:
         return False
 
 
+def enable_api_key(user_id: int, api_key_id: int) -> bool:
+    """
+    Enable a previously revoked API key.
+
+    Args:
+        user_id: The user ID.
+        api_key_id: The API key ID.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                # Verify the API key belongs to the user
+                cur.execute(
+                    """
+                    SELECT id
+                    FROM api_keys
+                    WHERE id = %s AND user_id = %s
+                    """,
+                    (api_key_id, user_id),
+                )
+
+                if not cur.fetchone():
+                    # Key doesn't exist or doesn't belong to the user
+                    return False
+
+                cur.execute(
+                    """
+                    UPDATE api_keys
+                    SET is_active = TRUE
+                    WHERE id = %s
+                    """,
+                    (api_key_id,),
+                )
+
+                conn.commit()
+                return True
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error enabling API key: {e}")
+        return False
+
+
 def add_user_credits(
     user_id: int,
     amount: float,
@@ -1725,42 +1772,44 @@ def add_user_credits(
 
 
 def get_user_transactions(
-    user_id: int, limit: int = 20, offset: int = 0
+    user_id: Optional[int], limit: int = 20, offset: int = 0
 ) -> List[Dict[str, Any]]:
     """
-    Get user billing transactions.
-
-    Args:
-        user_id: The user ID.
-        limit: The maximum number of transactions to return.
-        offset: The offset for pagination.
-
-    Returns:
-        List of transactions.
+    Get transactions for a user or all users if user_id is None.
     """
     try:
         conn = get_pg_connection()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute(
-                    """
-                    SELECT 
-                        id, transaction_id, amount, currency, transaction_type, 
-                        status, payment_method, description, created_at
-                    FROM billing_transactions
-                    WHERE user_id = %s
-                    ORDER BY created_at DESC
-                    LIMIT %s OFFSET %s
-                    """,
-                    (user_id, limit, offset),
-                )
-
+                if user_id is not None:
+                    cur.execute(
+                        """
+                        SELECT t.*, u.username, u.email
+                        FROM billing_transactions t
+                        JOIN users u ON t.user_id = u.id
+                        WHERE t.user_id = %s
+                        ORDER BY t.created_at DESC
+                        LIMIT %s OFFSET %s
+                        """,
+                        (user_id, limit, offset),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        SELECT t.*, u.username, u.email
+                        FROM billing_transactions t
+                        JOIN users u ON t.user_id = u.id
+                        ORDER BY t.created_at DESC
+                        LIMIT %s OFFSET %s
+                        """,
+                        (limit, offset),
+                    )
                 transactions = cur.fetchall()
-                return [dict(tx) for tx in transactions] if transactions else []
+                return [dict(t) for t in transactions]
         finally:
             release_pg_connection(conn)
     except Exception as e:
-        logger.error(f"Error getting user transactions: {e}")
+        logger.error(f"Error getting transactions: {e}")
         return []
 
 
@@ -2099,7 +2148,8 @@ def get_all_api_keys(
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 query = """
                     SELECT k.id, k.api_key, k.name, k.is_active, k.created_at, k.expires_at, k.last_used_at,
-                           u.id as user_id, u.username, u.email
+                           u.id as user_id, u.username, u.email,
+                           (SELECT COUNT(*) FROM api_requests WHERE api_key_id = k.id) as request_count
                     FROM api_keys k
                     JOIN users u ON k.user_id = u.id
                 """
@@ -2129,6 +2179,7 @@ def get_all_api_keys(
                             "created_at": key["created_at"],
                             "expires_at": key["expires_at"],
                             "last_used_at": key["last_used_at"],
+                            "request_count": key["request_count"],
                             "user": {
                                 "id": key["user_id"],
                                 "username": key["username"],
@@ -2143,3 +2194,34 @@ def get_all_api_keys(
     except Exception as e:
         logger.error(f"Error getting all API keys: {e}")
         return []
+
+
+def get_api_key_request_count(api_key_id: int) -> int:
+    """
+    Get the number of requests made with a specific API key.
+
+    Args:
+        api_key_id: The API key ID.
+
+    Returns:
+        The number of requests made with the API key.
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT COUNT(*) as request_count
+                    FROM api_requests
+                    WHERE api_key_id = %s
+                    """,
+                    (api_key_id,),
+                )
+                result = cur.fetchone()
+                return result[0] if result else 0
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting API key request count: {e}")
+        return 0

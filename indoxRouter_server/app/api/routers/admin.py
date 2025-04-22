@@ -31,6 +31,7 @@ from app.db.database import (
     add_user_credits,
     get_user_api_keys,
     revoke_api_key,
+    enable_api_key,
     get_user_transactions,
     get_user_usage_stats,
     get_usage_analytics,
@@ -57,6 +58,11 @@ async def admin_login(
     Returns a token that can be used to authenticate admin API requests.
     """
     user = get_user_by_username(username)
+    logger.debug(f"Login attempt for user: {username}")
+    logger.debug(f"User found: {user is not None}")
+    if user:
+        logger.debug(f"User account tier: {user.get('account_tier')}")
+        logger.debug(f"User is active: {user.get('is_active')}")
 
     # Check if user exists, is active, and has admin tier
     if (
@@ -64,19 +70,23 @@ async def admin_login(
         or not user.get("is_active", False)
         or user.get("account_tier") != "admin"
     ):
+        logger.warning(
+            f"Login failed for user {username}: Invalid credentials or insufficient privileges"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
 
-    logger.debug(f"Attempting login for user: {username}")
+    logger.debug(f"Attempting password verification for user: {username}")
+    logger.debug(f"Stored password hash: {user['password']}")
 
     # Verify the password hash
     password_verified = pwd_context.verify(password, user["password"])
-    logger.debug(
-        f"Password verification result for user {username}: {password_verified}"
-    )
+    logger.debug(f"Password verification result: {password_verified}")
+
     if not password_verified:
+        logger.warning(f"Password verification failed for user: {username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -89,15 +99,18 @@ async def admin_login(
     )
 
     if not admin_key:
+        logger.debug(f"Creating new admin API key for user: {username}")
         # Create a special API key for admin panel use if it doesn't exist
         admin_key = create_api_key(user["id"], name="Admin Panel Access")
 
     if not admin_key:
+        logger.error(f"Failed to create admin API key for user: {username}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create admin token",
         )
 
+    logger.info(f"Successful login for admin user: {username}")
     response = JSONResponse(
         content={
             "success": True,
@@ -295,6 +308,26 @@ async def revoke_key(
         )
 
     return {"status": "success", "message": f"API key {key_id} revoked"}
+
+
+@router.post("/users/{user_id}/api-keys/{key_id}/enable")
+async def enable_key(
+    user_id: int = Path(..., description="The user ID"),
+    key_id: int = Path(..., description="The API key ID"),
+    current_user: Dict = Depends(get_admin_user),
+):
+    """
+    Enable a previously revoked API key.
+    Only accessible to admin users.
+    """
+    success = enable_api_key(user_id, key_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User or API key not found",
+        )
+
+    return {"status": "success", "message": f"API key {key_id} enabled"}
 
 
 @router.get("/users/{user_id}/transactions")
@@ -619,3 +652,18 @@ async def create_user_api_key(
             detail="User not found or failed to create API key",
         )
     return api_key_data
+
+
+@router.get("/transactions")
+async def get_all_transactions(
+    limit: int = Query(100, description="Maximum number of transactions"),
+    offset: int = Query(0, description="Offset for pagination"),
+    search: Optional[str] = Query(None, description="Search term"),
+    current_user: Dict = Depends(get_admin_user),
+):
+    """
+    Get all transactions across all users.
+    Only accessible to admin users.
+    """
+    transactions = get_user_transactions(None, limit=limit, offset=offset)
+    return {"transactions": transactions, "count": len(transactions)}

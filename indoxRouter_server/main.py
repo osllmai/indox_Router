@@ -68,15 +68,6 @@ app.add_middleware(SecurityMiddleware)
 # Add rate limit middleware
 app.add_middleware(RateLimitMiddleware)
 
-# Mount static files for admin panel
-admin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin")
-if os.path.exists(admin_dir):
-    app.mount("/admin", StaticFiles(directory=admin_dir, html=True), name="admin")
-    print(f"Admin panel static files mounted at /admin")
-else:
-    print(f"Admin panel directory not found at {admin_dir}")
-
-
 # Include routers
 print("Registering API routers...")
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
