@@ -1,12 +1,18 @@
-
-import React, { useState, useEffect } from 'react';
-import { getUsers, deleteUser, updateUser } from '@/services/api';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { 
+import React, { useState, useEffect } from "react";
+import { getUsers, deleteUser, updateUser } from "@/services/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -15,25 +21,25 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { 
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { User, Edit, Trash, MoreHorizontal, Plus, Search } from 'lucide-react';
-import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+} from "@/components/ui/dropdown-menu";
+import { User, Edit, Trash, MoreHorizontal, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 interface User {
   id: number;
@@ -50,32 +56,37 @@ interface User {
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(1, 10);
   }, []);
 
-  const fetchUsers = async (search?: string) => {
-    setLoading(true);
+  const fetchUsers = async (page: number = 1, limit: number = 10) => {
     try {
-      const data = await getUsers(0, 100, search);
-      setUsers(data);
+      setLoading(true);
+      const skip = (page - 1) * limit;
+      const data = await getUsers(skip, limit);
+      console.log("API Response:", data);
+
+      // Check if the response is already an array or has a data property
+      const usersData = Array.isArray(data) ? data : data.data || [];
+      setUsers(usersData);
+      setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
-      toast.error('Failed to load users');
-    } finally {
+      console.error("Error fetching users:", error);
+      toast("Failed to load users");
       setLoading(false);
     }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchUsers(searchTerm);
+    fetchUsers(1, 10);
   };
 
   const handleEditClick = (user: User) => {
@@ -98,15 +109,17 @@ const Users = () => {
         last_name: editUser.last_name,
         email: editUser.email,
         is_active: editUser.is_active,
-        account_tier: editUser.account_tier
+        account_tier: editUser.account_tier,
       });
-      
-      setUsers(users.map(user => user.id === editUser.id ? editUser : user));
+
+      setUsers(
+        users.map((user) => (user.id === editUser.id ? editUser : user))
+      );
       setIsEditDialogOpen(false);
-      toast.success('User updated successfully');
+      toast("User updated successfully", { type: "success" });
     } catch (error) {
-      console.error('Failed to update user:', error);
-      toast.error('Failed to update user');
+      console.error("Failed to update user:", error);
+      toast("Failed to update user", { type: "error" });
     }
   };
 
@@ -115,11 +128,11 @@ const Users = () => {
 
     try {
       await deleteUser(deleteUserId);
-      setUsers(users.filter(user => user.id !== deleteUserId));
-      toast.success('User deleted successfully');
+      setUsers(users.filter((user) => user.id !== deleteUserId));
+      toast("User deleted successfully", { type: "success" });
     } catch (error) {
-      console.error('Failed to delete user:', error);
-      toast.error('Failed to delete user');
+      console.error("Failed to delete user:", error);
+      toast("Failed to delete user", { type: "error" });
     } finally {
       setIsDeleteDialogOpen(false);
       setDeleteUserId(null);
@@ -128,11 +141,11 @@ const Users = () => {
 
   const getAccountTierBadge = (tier: string) => {
     switch (tier) {
-      case 'admin':
+      case "admin":
         return <Badge className="bg-purple-500">Admin</Badge>;
-      case 'premium':
+      case "premium":
         return <Badge className="bg-amber-500">Premium</Badge>;
-      case 'standard':
+      case "standard":
         return <Badge className="bg-blue-500">Standard</Badge>;
       default:
         return <Badge variant="outline">Free</Badge>;
@@ -141,8 +154,8 @@ const Users = () => {
 
   return (
     <div>
-      <PageHeader 
-        title="User Management" 
+      <PageHeader
+        title="User Management"
         description="View and manage user accounts"
         actions={
           <Button asChild className="bg-admin-primary hover:bg-slate-800">
@@ -165,7 +178,9 @@ const Users = () => {
                 className="pl-10"
               />
             </div>
-            <Button type="submit" variant="outline">Search</Button>
+            <Button type="submit" variant="outline">
+              Search
+            </Button>
           </form>
         </div>
 
@@ -187,11 +202,15 @@ const Users = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-4">Loading users...</TableCell>
+                  <TableCell colSpan={9} className="text-center py-4">
+                    Loading users...
+                  </TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-4">No users found</TableCell>
+                  <TableCell colSpan={9} className="text-center py-4">
+                    No users found
+                  </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
@@ -199,21 +218,29 @@ const Users = () => {
                     <TableCell className="font-medium">{user.id}</TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>
-                      {user.first_name && user.last_name 
-                        ? `${user.first_name} ${user.last_name}`
-                        : <span className="text-gray-400">Not set</span>}
+                      {user.first_name && user.last_name ? (
+                        `${user.first_name} ${user.last_name}`
+                      ) : (
+                        <span className="text-gray-400">Not set</span>
+                      )}
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       {user.is_active ? (
                         <Badge className="bg-green-500">Active</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-red-500">Inactive</Badge>
+                        <Badge variant="outline" className="text-red-500">
+                          Inactive
+                        </Badge>
                       )}
                     </TableCell>
-                    <TableCell>{getAccountTierBadge(user.account_tier)}</TableCell>
+                    <TableCell>
+                      {getAccountTierBadge(user.account_tier)}
+                    </TableCell>
                     <TableCell>${user.credits.toFixed(2)}</TableCell>
-                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -222,11 +249,13 @@ const Users = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                          <DropdownMenuItem
+                            onClick={() => handleEditClick(user)}
+                          >
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-red-600" 
+                          <DropdownMenuItem
+                            className="text-red-600"
                             onClick={() => handleDeleteClick(user.id)}
                           >
                             <Trash className="mr-2 h-4 w-4" /> Delete
@@ -247,58 +276,92 @@ const Users = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Make changes to user information below.</DialogDescription>
+            <DialogDescription>
+              Make changes to user information below.
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleEditSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="firstName" className="text-right">First Name</Label>
+                <Label htmlFor="firstName" className="text-right">
+                  First Name
+                </Label>
                 <Input
                   id="firstName"
-                  value={editUser?.first_name || ''}
-                  onChange={(e) => setEditUser(prev => prev ? {...prev, first_name: e.target.value} : null)}
+                  value={editUser?.first_name || ""}
+                  onChange={(e) =>
+                    setEditUser((prev) =>
+                      prev ? { ...prev, first_name: e.target.value } : null
+                    )
+                  }
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="lastName" className="text-right">Last Name</Label>
+                <Label htmlFor="lastName" className="text-right">
+                  Last Name
+                </Label>
                 <Input
                   id="lastName"
-                  value={editUser?.last_name || ''}
-                  onChange={(e) => setEditUser(prev => prev ? {...prev, last_name: e.target.value} : null)}
+                  value={editUser?.last_name || ""}
+                  onChange={(e) =>
+                    setEditUser((prev) =>
+                      prev ? { ...prev, last_name: e.target.value } : null
+                    )
+                  }
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">Email</Label>
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  value={editUser?.email || ''}
-                  onChange={(e) => setEditUser(prev => prev ? {...prev, email: e.target.value} : null)}
+                  value={editUser?.email || ""}
+                  onChange={(e) =>
+                    setEditUser((prev) =>
+                      prev ? { ...prev, email: e.target.value } : null
+                    )
+                  }
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">Status</Label>
+                <Label htmlFor="status" className="text-right">
+                  Status
+                </Label>
                 <div className="col-span-3 flex items-center space-x-2">
                   <input
                     type="checkbox"
                     id="status"
                     checked={editUser?.is_active || false}
-                    onChange={(e) => setEditUser(prev => prev ? {...prev, is_active: e.target.checked} : null)}
+                    onChange={(e) =>
+                      setEditUser((prev) =>
+                        prev ? { ...prev, is_active: e.target.checked } : null
+                      )
+                    }
                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                   />
-                  <Label htmlFor="status" className="font-normal">Active</Label>
+                  <Label htmlFor="status" className="font-normal">
+                    Active
+                  </Label>
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="accountTier" className="text-right">Account Tier</Label>
+                <Label htmlFor="accountTier" className="text-right">
+                  Account Tier
+                </Label>
                 <select
                   id="accountTier"
-                  value={editUser?.account_tier || 'free'}
-                  onChange={(e) => setEditUser(prev => prev ? {...prev, account_tier: e.target.value} : null)}
+                  value={editUser?.account_tier || "free"}
+                  onChange={(e) =>
+                    setEditUser((prev) =>
+                      prev ? { ...prev, account_tier: e.target.value } : null
+                    )
+                  }
                   className="col-span-3 bg-transparent h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option value="free">Free</option>
@@ -309,25 +372,42 @@ const Users = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-admin-primary hover:bg-slate-800">Save Changes</Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-admin-primary hover:bg-slate-800"
+              >
+                Save Changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       {/* Delete User Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account and all associated data.
+              This action cannot be undone. This will permanently delete the
+              user account and all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={handleDeleteConfirm}>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600"
+              onClick={handleDeleteConfirm}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

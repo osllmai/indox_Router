@@ -86,7 +86,7 @@ app.include_router(analytics.router, prefix="/api/v1", tags=["Analytics"])
 print("Registered analytics router")
 app.include_router(user.router, prefix="/api/v1", tags=["User"])
 print("Registered user router")
-app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 print("Registered admin router")
 
 

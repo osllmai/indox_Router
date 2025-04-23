@@ -1,16 +1,13 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import CreateUser from "./pages/CreateUser";
 import ApiKeys from "./pages/ApiKeys";
-import Models from "./pages/Models";
-import Analytics from "./pages/Analytics";
 import Transactions from "./pages/Transactions";
 import EndpointTester from "./pages/EndpointTester";
 import NotFound from "./pages/NotFound";
@@ -43,6 +40,9 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
 
+      {/* Explicitly handle the /admin route to redirect to dashboard */}
+      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+
       {/* Protected routes */}
       <Route
         element={
@@ -56,8 +56,6 @@ const AppRoutes = () => {
         <Route path="/users/create" element={<CreateUser />} />
         <Route path="/api-keys" element={<ApiKeys />} />
         <Route path="/transactions" element={<Transactions />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/models" element={<Models />} />
         <Route path="/settings" element={<div>Settings Page</div>} />
         <Route path="/endpoint-tester" element={<EndpointTester />} />
         {/* Add other admin routes here */}
@@ -77,7 +75,6 @@ const App = () => (
         <AuthProvider>
           <AppRoutes />
           <Toaster />
-          <Sonner />
         </AuthProvider>
       </TooltipProvider>
     </BrowserRouter>

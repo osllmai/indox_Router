@@ -40,6 +40,7 @@ from app.db.database import (
     create_user,
     get_user_by_email,
     get_all_api_keys as db_get_all_api_keys,
+    delete_api_key,
 )
 from app.core.config import settings
 
@@ -328,6 +329,26 @@ async def enable_key(
         )
 
     return {"status": "success", "message": f"API key {key_id} enabled"}
+
+
+@router.delete("/users/{user_id}/api-keys/{key_id}")
+async def delete_key(
+    user_id: int = Path(..., description="The user ID"),
+    key_id: int = Path(..., description="The API key ID"),
+    current_user: Dict = Depends(get_admin_user),
+):
+    """
+    Permanently delete an API key.
+    Only accessible to admin users.
+    """
+    success = delete_api_key(user_id, key_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User or API key not found",
+        )
+
+    return {"status": "success", "message": f"API key {key_id} permanently deleted"}
 
 
 @router.get("/users/{user_id}/transactions")
@@ -665,5 +686,10 @@ async def get_all_transactions(
     Get all transactions across all users.
     Only accessible to admin users.
     """
-    transactions = get_user_transactions(None, limit=limit, offset=offset)
-    return {"transactions": transactions, "count": len(transactions)}
+    try:
+        transactions = get_user_transactions(None, limit=limit, offset=offset)
+        return {"transactions": transactions, "count": len(transactions)}
+    except Exception as e:
+        logger.error(f"Error getting all transactions: {e}")
+        # Return empty list instead of error to prevent frontend from breaking
+        return {"transactions": [], "count": 0}

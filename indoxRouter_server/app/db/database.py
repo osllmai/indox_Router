@@ -1675,6 +1675,78 @@ def enable_api_key(user_id: int, api_key_id: int) -> bool:
         return False
 
 
+def delete_api_key(user_id: int, api_key_id: int) -> bool:
+    """
+    Permanently delete an API key.
+
+    Args:
+        user_id: The user ID.
+        api_key_id: The API key ID.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    logger.info(
+        f"Attempting to delete API key: api_key_id={api_key_id}, user_id={user_id}"
+    )
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                # First, check if the API key exists at all
+                cur.execute(
+                    """
+                    SELECT id, user_id
+                    FROM api_keys
+                    WHERE id = %s
+                    """,
+                    (api_key_id,),
+                )
+                key_result = cur.fetchone()
+
+                if not key_result:
+                    logger.warning(f"API key not found: api_key_id={api_key_id}")
+                    return False
+
+                actual_user_id = key_result[1]
+                if int(actual_user_id) != int(user_id):
+                    logger.warning(
+                        f"API key belongs to different user: api_key_id={api_key_id}, belongs_to={actual_user_id}, requested_by={user_id}"
+                    )
+                    return False
+
+                # Proceed with deletion
+                cur.execute(
+                    """
+                    DELETE FROM api_keys
+                    WHERE id = %s
+                    RETURNING id
+                    """,
+                    (api_key_id,),
+                )
+
+                deleted = cur.fetchone()
+                conn.commit()
+
+                if deleted:
+                    logger.info(
+                        f"Successfully deleted API key: api_key_id={api_key_id}, user_id={user_id}"
+                    )
+                    return True
+                else:
+                    logger.warning(
+                        f"Failed to delete API key: api_key_id={api_key_id}, user_id={user_id}"
+                    )
+                    return False
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(
+            f"Error deleting API key: api_key_id={api_key_id}, user_id={user_id}, error={e}"
+        )
+        return False
+
+
 def add_user_credits(
     user_id: int,
     amount: float,

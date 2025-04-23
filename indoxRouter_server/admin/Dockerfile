@@ -1,12 +1,21 @@
 FROM node:18-alpine as builder
 WORKDIR /app
 
-# Install dependencies
+# Copy package files first for better caching
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy source code and configuration files
+# Copy source and config files
 COPY . .
+
+# Debug output for troubleshooting
+RUN echo "=== Listing source files ===" && \
+    ls -la src/ && \
+    ls -la src/components/ui/ && \
+    echo "=== Vite config ===" && \
+    cat vite.config.ts && \
+    echo "=== tsconfig.json ===" && \
+    cat tsconfig.json
 
 # Set environment variable for API base URL
 ARG VITE_API_BASE_URL
@@ -33,12 +42,6 @@ RUN echo "=== Contents of nginx html directory ===" && \
     ls -la /usr/share/nginx/html && \
     echo "=== Contents of index.html ===" && \
     cat /usr/share/nginx/html/index.html
-
-# Create a custom mime.types file
-RUN echo "types {" > /etc/nginx/mime.types && \
-    echo "    application/javascript    js;" >> /etc/nginx/mime.types && \
-    echo "    text/css                  css;" >> /etc/nginx/mime.types && \
-    echo "}" >> /etc/nginx/mime.types
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"] 

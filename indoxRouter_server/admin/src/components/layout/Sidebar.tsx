@@ -5,11 +5,9 @@ import {
   Users,
   LayoutDashboard,
   Key,
-  BarChart2,
   Settings,
   LogOut,
   Database,
-  FileText,
   Terminal,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,8 +25,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     { name: "Users", path: "/users", icon: Users },
     { name: "API Keys", path: "/api-keys", icon: Key },
     { name: "Transactions", path: "/transactions", icon: Database },
-    { name: "Analytics", path: "/analytics", icon: BarChart2 },
-    { name: "Models", path: "/models", icon: FileText },
     { name: "Endpoint Tester", path: "/endpoint-tester", icon: Terminal },
     { name: "Settings", path: "/settings", icon: Settings },
   ];

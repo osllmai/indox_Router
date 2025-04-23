@@ -70,10 +70,9 @@ services:
       context: ./admin
       dockerfile: Dockerfile
     container_name: indoxrouter-admin
-    expose:
-      - "80"
     environment:
       - VITE_API_BASE_URL=/api/v1
+      - NODE_ENV=production
     networks:
       - indox-network
     depends_on:

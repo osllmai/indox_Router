@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getSystemStats } from "@/services/api";
+import { getSystemStats, SystemStats } from "@/services/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,8 +20,18 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 
+interface ChartDataPoint {
+  name: string;
+  value: number;
+}
+
+interface TimeSeriesDataPoint {
+  date: string;
+  count: number;
+}
+
 const Dashboard = () => {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +45,7 @@ const Dashboard = () => {
       } catch (error) {
         console.error("Failed to fetch system stats:", error);
         setError("Failed to load dashboard data. Please try again later.");
-        toast.error("Failed to load dashboard data");
+        toast("Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
@@ -80,11 +90,44 @@ const Dashboard = () => {
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
-  const pieData =
-    stats.model_usage?.map((item: any) => ({
-      name: item.model,
-      value: item.requests,
-    })) || [];
+  // Convert model data into a format suitable for pie chart
+  const modelUsageData: ChartDataPoint[] = Object.entries(
+    stats.models || {}
+  ).map(([key, value]) => ({
+    name: key,
+    value: value.requests || 0,
+  }));
+
+  // Calculate total requests from model data if the stats.usage.total_requests is 0
+  const totalRequests =
+    stats.usage?.total_requests ||
+    Object.values(stats.models || {}).reduce(
+      (sum, model) => sum + (model.requests || 0),
+      0
+    );
+
+  // Format the user growth and request data
+  const userGrowthData: TimeSeriesDataPoint[] = [...Array(30).keys()].map(
+    (i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - i));
+      return {
+        date: date.toISOString().slice(0, 10),
+        count: Math.floor(Math.random() * 10), // Placeholder data
+      };
+    }
+  );
+
+  const requestGrowthData: TimeSeriesDataPoint[] = [...Array(30).keys()].map(
+    (i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - i));
+      return {
+        date: date.toISOString().slice(0, 10),
+        count: Math.floor(Math.random() * 100), // Placeholder data
+      };
+    }
+  );
 
   return (
     <div>
@@ -96,30 +139,26 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total Users"
-          value={stats.total_users || 0}
+          value={stats.users?.total || 0}
           icon={<Users size={24} />}
-          change={{ value: "12%", isPositive: true }}
           color="blue"
         />
         <StatCard
           title="Active Users"
-          value={stats.active_users || 0}
+          value={stats.users?.active || 0}
           icon={<Users size={24} />}
-          change={{ value: "8%", isPositive: true }}
           color="green"
         />
         <StatCard
           title="Total Requests"
-          value={new Intl.NumberFormat().format(stats.total_requests || 0)}
+          value={new Intl.NumberFormat().format(totalRequests)}
           icon={<Database size={24} />}
-          change={{ value: "23%", isPositive: true }}
           color="purple"
         />
         <StatCard
           title="Total Cost"
-          value={`$${(stats.total_cost || 0).toFixed(2)}`}
+          value={`$${(stats.usage?.total_cost || 0).toFixed(2)}`}
           icon={<BarChart2 size={24} />}
-          change={{ value: "5%", isPositive: false }}
           color="amber"
         />
       </div>
@@ -131,10 +170,10 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {stats.user_growth && stats.user_growth.length > 0 ? (
+              {userGrowthData && userGrowthData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={stats.user_growth}
+                    data={userGrowthData}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -166,10 +205,10 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {stats.request_growth && stats.request_growth.length > 0 ? (
+              {requestGrowthData && requestGrowthData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={stats.request_growth}
+                    data={requestGrowthData}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -200,11 +239,11 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80 flex items-center justify-center">
-              {pieData.length > 0 ? (
+              {modelUsageData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={pieData}
+                      data={modelUsageData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -215,7 +254,7 @@ const Dashboard = () => {
                         `${name}: ${(percent * 100).toFixed(0)}%`
                       }
                     >
-                      {pieData.map((entry: any, index: number) => (
+                      {modelUsageData.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -240,28 +279,38 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.model_usage && stats.model_usage.length > 0 ? (
-                stats.model_usage.map((model: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className="w-3 h-3 rounded-full mr-3"
-                        style={{
-                          backgroundColor: COLORS[index % COLORS.length],
-                        }}
-                      ></div>
-                      <span className="font-medium">{model.model}</span>
+              {Object.entries(stats.models || {}).length > 0 ? (
+                Object.entries(stats.models || {})
+                  .sort((a, b) => (b[1].requests || 0) - (a[1].requests || 0))
+                  .slice(0, 5)
+                  .map(([key, model], index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        <div
+                          className="w-3 h-3 rounded-full mr-2"
+                          style={{
+                            backgroundColor: COLORS[index % COLORS.length],
+                          }}
+                        ></div>
+                        <span className="text-sm font-medium">{key}</span>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm text-gray-500">
+                          {model.requests.toLocaleString()} requests
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {model.tokens.toLocaleString()} tokens
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-gray-500">
-                      {new Intl.NumberFormat().format(model.requests)} requests
-                    </div>
-                  </div>
-                ))
+                  ))
               ) : (
-                <p className="text-gray-500">No model usage data available</p>
+                <div className="text-center py-4">
+                  <p className="text-gray-500">No model usage data available</p>
+                </div>
               )}
             </div>
           </CardContent>

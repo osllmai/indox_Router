@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
-const API_BASE_URL = "http://localhost:8000"; // Change this to your FastAPI server URL
+// Use relative path for API base URL to work with nginx proxy
+const API_BASE_URL = "/api/v1";
 
 // Types based on FastAPI models
 export interface User {
@@ -60,14 +61,41 @@ export interface UsageStats {
 }
 
 export interface SystemStats {
-  total_users: number;
-  active_users: number;
-  total_requests: number;
-  total_tokens: number;
-  total_cost: number;
-  user_growth: { date: string; count: number }[];
-  request_growth: { date: string; count: number }[];
-  model_usage: { model: string; requests: number; tokens: number }[];
+  users: {
+    total: number;
+    active: number;
+    new_last_30_days: number;
+  };
+  api_keys: {
+    total: number;
+    active: number;
+  };
+  usage: {
+    total_requests: number;
+    total_tokens: number;
+    total_cost: number;
+    requests_today: number;
+    tokens_today: number;
+    cost_today: number;
+  };
+  providers: Record<
+    string,
+    {
+      requests: number;
+      tokens: number;
+      cost: number;
+    }
+  >;
+  models: Record<
+    string,
+    {
+      provider: string;
+      model: string;
+      requests: number;
+      tokens: number;
+      cost: number;
+    }
+  >;
 }
 
 export interface LoginResponse {
@@ -79,17 +107,9 @@ export interface LoginResponse {
   };
 }
 
-export interface ModelData {
-  modelName: string;
-  provider: string;
-  contextLength: number;
-  usage: {
-    requests: number;
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
-    cost: number;
-  };
+interface PaginatedResponse<T> {
+  data: T[];
+  count: number;
 }
 
 const handleResponse = async (response: Response) => {
@@ -97,30 +117,27 @@ const handleResponse = async (response: Response) => {
     const errorData = await response.json().catch(() => null);
     const errorMessage =
       errorData?.detail || `Error: ${response.status} ${response.statusText}`;
-    toast.error(errorMessage);
+    toast(errorMessage, { type: "error" });
     throw new Error(errorMessage);
   }
   return response.json();
 };
 
 // Authentication
-export const login = async (
-  username: string,
-  password: string
-): Promise<LoginResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-      credentials: "include",
-    });
-    return handleResponse(response);
-  } catch (error) {
-    console.error("Login error:", error);
-    toast.error("Failed to login. Please check your credentials.");
-    throw error;
+export const login = async (username: string, password: string) => {
+  const response = await fetch(`${API_BASE_URL}/admin/admin/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+  });
+
+  const data = await handleResponse(response);
+  if (data.token) {
+    localStorage.setItem("admin_token", data.token);
   }
+  return data;
 };
 
 // Helper function to add auth token to requests
@@ -128,7 +145,9 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem("admin_token");
 
   if (!token) {
-    toast.error("Authentication token missing. Please login again.");
+    toast("Authentication token missing. Please login again.", {
+      type: "error",
+    });
     throw new Error("Authentication token missing");
   }
 
@@ -155,11 +174,34 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
 export const apiFetch = async (
   endpoint: string,
   method: string = "GET",
-  data: any = null
+  data: Record<string, unknown> | null = null
 ) => {
+  // If the endpoint already has the correct admin/admin prefix, just use it directly
+  let processedEndpoint = endpoint;
+
+  // If the endpoint doesn't already have the double admin prefix
+  if (
+    !endpoint.startsWith("/admin/admin/") &&
+    !endpoint.startsWith("admin/admin/")
+  ) {
+    // If it starts with admin/ or /admin/, we need to make sure it has the double prefix
+    if (endpoint.startsWith("/admin/") || endpoint.startsWith("admin/")) {
+      // Convert to /admin/admin/...
+      processedEndpoint = "/admin/" + endpoint.replace(/^\/?(admin\/)/i, "");
+    } else {
+      // For other endpoints like /users/, prepend /admin/
+      processedEndpoint =
+        "/admin/" +
+        (endpoint.startsWith("/") ? endpoint.substring(1) : endpoint);
+    }
+  }
+
   const url = endpoint.startsWith("http")
     ? endpoint
-    : `${API_BASE_URL}${endpoint}`;
+    : `${API_BASE_URL}${
+        processedEndpoint.startsWith("/") ? "" : "/"
+      }${processedEndpoint}`;
+
   const options: RequestInit = {
     method,
     ...(data && { body: JSON.stringify(data) }),
@@ -169,39 +211,30 @@ export const apiFetch = async (
 
 // User Management
 export const getUsers = async (
-  limit = 100,
-  skip = 0,
-  search?: string
+  skip: number,
+  limit: number
 ): Promise<User[]> => {
-  const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/users?limit=${limit}&skip=${skip}${searchParam}`
-  );
+  return apiFetch(`admin/admin/users?skip=${skip}&limit=${limit}`);
 };
 
 // Alias for backward compatibility
 export const getAllUsers = getUsers;
 
 export const getUser = async (userId: number): Promise<User> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/${userId}`);
+  return apiFetch(`admin/admin/users/${userId}`);
 };
 
 export const updateUser = async (
   userId: number,
   data: Partial<User>
 ): Promise<{ status: string; user: User }> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/${userId}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  return apiFetch(`admin/admin/users/${userId}`, "PUT", data);
 };
 
 export const deleteUser = async (
   userId: number
 ): Promise<{ status: string; message: string }> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/${userId}`, {
-    method: "DELETE",
-  });
+  return apiFetch(`admin/admin/users/${userId}`, "DELETE");
 };
 
 export const addCredits = async (
@@ -210,13 +243,10 @@ export const addCredits = async (
   paymentMethod = "admin_grant",
   referenceId?: string
 ): Promise<Transaction> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/${userId}/credits`, {
-    method: "POST",
-    body: JSON.stringify({
-      amount,
-      payment_method: paymentMethod,
-      reference_id: referenceId,
-    }),
+  return apiFetch(`admin/admin/users/${userId}/credits`, "POST", {
+    amount,
+    payment_method: paymentMethod,
+    reference_id: referenceId,
   });
 };
 
@@ -230,10 +260,7 @@ export const createUser = async (userData: {
   is_active?: boolean;
   initial_credits?: number;
 }): Promise<{ status: string; message: string; id: number }> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/create`, {
-    method: "POST",
-    body: JSON.stringify(userData),
-  });
+  return apiFetch("admin/admin/users/create", "POST", userData);
 };
 
 // API Key Management
@@ -243,24 +270,22 @@ export const getAllApiKeys = async (
   search?: string
 ): Promise<ApiKey[]> => {
   const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/api-keys?limit=${limit}&offset=${offset}${searchParam}`
+  return apiFetch(
+    `admin/admin/api-keys?limit=${limit}&offset=${offset}${searchParam}`
   );
 };
 
 export const getUserApiKeys = async (userId: number): Promise<ApiKey[]> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/${userId}/api-keys`);
+  return apiFetch(`admin/admin/users/${userId}/api-keys`);
 };
 
 export const revokeApiKey = async (
   userId: number,
   keyId: number
 ): Promise<{ status: string; message: string }> => {
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/users/${userId}/api-keys/${keyId}/revoke`,
-    {
-      method: "POST",
-    }
+  return apiFetch(
+    `admin/admin/users/${userId}/api-keys/${keyId}/revoke`,
+    "POST"
   );
 };
 
@@ -268,22 +293,30 @@ export const enableApiKey = async (
   userId: number,
   keyId: number
 ): Promise<{ status: string; message: string }> => {
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/users/${userId}/api-keys/${keyId}/enable`,
-    {
-      method: "POST",
-    }
+  return apiFetch(
+    `admin/admin/users/${userId}/api-keys/${keyId}/enable`,
+    "POST"
   );
+};
+
+export const deleteApiKey = async (
+  userId: number,
+  keyId: number
+): Promise<{ status: string; message: string }> => {
+  return apiFetch(
+    `admin/admin/users/${userId}/api-keys/${keyId}`,
+    "DELETE"
+  ).catch((error) => {
+    console.error(`Error deleting API key: ${error.message}`);
+    throw error;
+  });
 };
 
 export const createApiKey = async (
   userId: number,
   name: string
 ): Promise<ApiKey> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/users/${userId}/api-keys`, {
-    method: "POST",
-    body: JSON.stringify({ name }),
-  });
+  return apiFetch(`admin/admin/users/${userId}/api-keys`, "POST", { name });
 };
 
 // Transactions
@@ -292,8 +325,8 @@ export const getUserTransactions = async (
   limit = 20,
   offset = 0
 ): Promise<{ transactions: Transaction[]; count: number }> => {
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/users/${userId}/transactions?limit=${limit}&offset=${offset}`
+  return apiFetch(
+    `admin/admin/users/${userId}/transactions?limit=${limit}&offset=${offset}`
   );
 };
 
@@ -304,9 +337,16 @@ export const getTransactions = async (
   search?: string
 ): Promise<{ transactions: Transaction[]; count: number }> => {
   const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/transactions?limit=${limit}&offset=${offset}${searchParam}`
-  );
+  try {
+    const result = await apiFetch(
+      `admin/admin/transactions?limit=${limit}&offset=${offset}${searchParam}`
+    );
+    return result;
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    // Return empty data to prevent UI from breaking
+    return { transactions: [], count: 0 };
+  }
 };
 
 // Usage Statistics
@@ -315,41 +355,13 @@ export const getUserUsage = async (
   startDate?: string,
   endDate?: string
 ): Promise<UsageStats> => {
-  let url = `${API_BASE_URL}/api/v1/admin/users/${userId}/usage`;
+  let url = `admin/admin/users/${userId}/usage`;
   if (startDate && endDate) {
     url += `?start_date=${startDate}&end_date=${endDate}`;
   }
-  return authFetch(url);
+  return apiFetch(url);
 };
 
 export const getSystemStats = async (): Promise<SystemStats> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/system/stats`);
-};
-
-export const getAnalytics = async (params: {
-  startDate?: string;
-  endDate?: string;
-  groupBy?: "date" | "model" | "provider" | "endpoint";
-  provider?: string;
-  model?: string;
-  endpoint?: string;
-  includeContent?: boolean;
-}): Promise<{ data: any[]; count: number; filters: any }> => {
-  const queryParams = new URLSearchParams();
-  if (params.startDate) queryParams.append("start_date", params.startDate);
-  if (params.endDate) queryParams.append("end_date", params.endDate);
-  if (params.groupBy) queryParams.append("group_by", params.groupBy);
-  if (params.provider) queryParams.append("provider", params.provider);
-  if (params.model) queryParams.append("model", params.model);
-  if (params.endpoint) queryParams.append("endpoint", params.endpoint);
-  if (params.includeContent !== undefined)
-    queryParams.append("include_content", params.includeContent.toString());
-
-  return authFetch(
-    `${API_BASE_URL}/api/v1/admin/analytics?${queryParams.toString()}`
-  );
-};
-
-export const getModels = async (): Promise<Record<string, ModelData[]>> => {
-  return authFetch(`${API_BASE_URL}/api/v1/admin/models`);
+  return apiFetch("admin/admin/system/stats");
 };
