@@ -53,6 +53,10 @@ def check_rate_limit(
             - Boolean indicating if the request should be allowed (True) or not (False)
             - Dictionary with rate limit information
     """
+    # Admin tier users are exempt from rate limiting
+    if user_tier == "admin":
+        return True, {"allowed": True, "reason": "Admin tier exempt from rate limiting"}
+
     if not settings.RATE_LIMIT_ENABLED or not redis_client:
         # If rate limiting is disabled or Redis is not available, allow all requests
         return True, {"allowed": True, "reason": "Rate limiting disabled"}

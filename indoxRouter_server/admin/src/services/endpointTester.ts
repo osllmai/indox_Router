@@ -148,6 +148,12 @@ export const callEndpointWithKey = async (
 
   if (apiKey) {
     headers["Authorization"] = `Bearer ${apiKey}`;
+  } else {
+    // Fallback to admin token if no custom API key provided
+    const adminToken = localStorage.getItem("admin_token");
+    if (adminToken) {
+      headers["Authorization"] = `Bearer ${adminToken}`;
+    }
   }
 
   try {
@@ -155,12 +161,19 @@ export const callEndpointWithKey = async (
       method,
       headers,
       body: JSON.stringify(data),
+      credentials: "include",
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      console.error(
+        `Error ${response.status}: ${response.statusText}`,
+        errorData
+      );
       throw new Error(
-        errorData?.detail || `Error ${response.status}: ${response.statusText}`
+        errorData?.detail ||
+          errorData?.message ||
+          `Error ${response.status}: ${response.statusText}`
       );
     }
 
@@ -177,33 +190,45 @@ export const sendChatRequest = async (
   apiKey?: string
 ): Promise<ChatResponse> => {
   try {
-    if (apiKey) {
-      const response = await callEndpointWithKey(
-        "/chat/completions",
-        "POST",
-        request,
-        apiKey
-      );
-      return response as ChatResponse;
-    } else {
-      const response = await fetch("/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
+    // Get admin token from localStorage
+    const adminToken = localStorage.getItem("admin_token");
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail ||
-            `Error ${response.status}: ${response.statusText}`
-        );
-      }
+    // Use provided API key or admin token
+    const authToken = apiKey || adminToken;
 
-      return response.json();
+    // Create a copy of the request to modify
+    const modifiedRequest = { ...request };
+
+    // Add provider prefix for mistral models if needed
+    if (
+      modifiedRequest.model &&
+      (modifiedRequest.model.startsWith("mistral-") ||
+        modifiedRequest.model.startsWith("open-mistral") ||
+        modifiedRequest.model.startsWith("open-mixtral") ||
+        modifiedRequest.model === "mistral-embed")
+    ) {
+      // Set the provider explicitly for Mistral models
+      modifiedRequest.provider = "mistral";
     }
+
+    const response = await fetch("/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify(modifiedRequest),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `Error ${response.status}: ${response.statusText}`
+      );
+    }
+
+    return await response.json();
   } catch (error) {
     console.error("Error in chat request:", error);
     throw error;
@@ -215,33 +240,30 @@ export const sendCompletionRequest = async (
   apiKey?: string
 ): Promise<CompletionResponse> => {
   try {
-    if (apiKey) {
-      const response = await callEndpointWithKey(
-        "/completions",
-        "POST",
-        request,
-        apiKey
+    // Get admin token from localStorage
+    const adminToken = localStorage.getItem("admin_token");
+
+    // Use provided API key or admin token
+    const authToken = apiKey || adminToken;
+
+    const response = await fetch("/api/v1/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify(request),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `Error ${response.status}: ${response.statusText}`
       );
-      return response as CompletionResponse;
-    } else {
-      const response = await fetch("/api/v1/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail ||
-            `Error ${response.status}: ${response.statusText}`
-        );
-      }
-
-      return response.json();
     }
+
+    return await response.json();
   } catch (error) {
     console.error("Error in completion request:", error);
     throw error;
@@ -253,33 +275,43 @@ export const sendEmbeddingRequest = async (
   apiKey?: string
 ): Promise<EmbeddingResponse> => {
   try {
-    if (apiKey) {
-      const response = await callEndpointWithKey(
-        "/embeddings",
-        "POST",
-        request,
-        apiKey
-      );
-      return response as EmbeddingResponse;
-    } else {
-      const response = await fetch("/api/v1/embeddings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
+    // Get admin token from localStorage
+    const adminToken = localStorage.getItem("admin_token");
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail ||
-            `Error ${response.status}: ${response.statusText}`
-        );
-      }
+    // Use provided API key or admin token
+    const authToken = apiKey || adminToken;
 
-      return response.json();
+    // Create a copy of the request to modify
+    const modifiedRequest = { ...request };
+
+    // Add provider prefix for mistral embedding models if needed
+    if (
+      modifiedRequest.model &&
+      (modifiedRequest.model === "mistral-embed" ||
+        modifiedRequest.model === "mistral-embed-v1")
+    ) {
+      // Set the provider explicitly for Mistral models
+      modifiedRequest.provider = "mistral";
     }
+
+    const response = await fetch("/api/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify(modifiedRequest),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `Error ${response.status}: ${response.statusText}`
+      );
+    }
+
+    return await response.json();
   } catch (error) {
     console.error("Error in embedding request:", error);
     throw error;
@@ -291,33 +323,30 @@ export const sendImageGenerationRequest = async (
   apiKey?: string
 ): Promise<ImageResponse> => {
   try {
-    if (apiKey) {
-      const response = await callEndpointWithKey(
-        "/images/generations",
-        "POST",
-        request,
-        apiKey
+    // Get admin token from localStorage
+    const adminToken = localStorage.getItem("admin_token");
+
+    // Use provided API key or admin token
+    const authToken = apiKey || adminToken;
+
+    const response = await fetch("/api/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify(request),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `Error ${response.status}: ${response.statusText}`
       );
-      return response as ImageResponse;
-    } else {
-      const response = await fetch("/api/v1/images/generations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail ||
-            `Error ${response.status}: ${response.statusText}`
-        );
-      }
-
-      return response.json();
     }
+
+    return await response.json();
   } catch (error) {
     console.error("Error in image generation request:", error);
     throw error;
@@ -331,7 +360,16 @@ export const generateCurlCommand = (
   apiKey?: string
 ): string => {
   const url = `${window.location.origin}/api/v1${endpoint}`;
-  const authHeader = apiKey ? `-H "Authorization: Bearer ${apiKey}" ` : "";
+
+  // If custom API key is provided, use it. Otherwise, use admin token.
+  let authToken = apiKey;
+  if (!authToken) {
+    authToken = localStorage.getItem("admin_token") || "";
+  }
+
+  const authHeader = authToken
+    ? `-H "Authorization: Bearer ${authToken}" `
+    : "";
 
   return `curl -X POST "${url}" \\
 ${authHeader}-H "Content-Type: application/json" \\

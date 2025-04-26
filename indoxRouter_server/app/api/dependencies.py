@@ -99,7 +99,11 @@ async def get_current_user(
     # Get user tier
     user_tier = user_info.get("account_tier", "free")
 
-    # Check rate limit
+    # Skip rate limiting for admin tier users
+    if user_tier == "admin":
+        return user_info
+
+    # Check rate limit for non-admin users
     allowed, rate_info = check_rate_limit(
         user_id=user_info["id"], user_tier=user_tier, tokens=estimated_tokens
     )

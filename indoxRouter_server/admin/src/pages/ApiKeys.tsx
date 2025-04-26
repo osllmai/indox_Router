@@ -60,6 +60,7 @@ import {
   enableApiKey,
   createApiKey,
   deleteApiKey,
+  extendApiKeyExpiration,
   getAllUsers,
 } from "@/services/api";
 import { ApiKey, User } from "@/services/api";
@@ -84,7 +85,7 @@ const ApiKeysPage: React.FC = () => {
   const loadApiKeys = async () => {
     try {
       setLoading(true);
-      const keys = await getAllApiKeys();
+      const keys = await getAllApiKeys(100, 0, searchTerm);
       console.log("API Keys:", keys);
 
       // Log the first key to inspect its structure
@@ -95,7 +96,23 @@ const ApiKeysPage: React.FC = () => {
         );
       }
 
-      setApiKeys(Array.isArray(keys) ? keys : []);
+      // Normalize the API keys structure to ensure both formats work
+      const normalizedKeys = keys.map((key) => {
+        // Ensure both access patterns work by storing user_id at top level too
+        return {
+          ...key,
+          // If user_id is not directly available, get it from user.id
+          user_id: key.user_id || (key.user ? key.user.id : undefined),
+          // Ensure is_active and active are both available
+          is_active: key.is_active || key.active,
+          active: key.active || key.is_active,
+          // Ensure both api_key and key are available
+          api_key: key.api_key || key.key,
+          key: key.key || key.api_key,
+        };
+      });
+
+      setApiKeys(Array.isArray(normalizedKeys) ? normalizedKeys : []);
     } catch (error) {
       console.error("Failed to load API keys:", error);
       toast("Failed to load API keys");
@@ -165,6 +182,25 @@ const ApiKeysPage: React.FC = () => {
     },
   });
 
+  // Extend API key expiration mutation
+  const extendExpirationMutation = useMutation({
+    mutationFn: ({ userId, keyId }: { userId: number; keyId: number }) =>
+      extendApiKeyExpiration(userId, keyId, 30),
+    onSuccess: (data) => {
+      loadApiKeys();
+      toast(`API key expiration extended to ${formatDate(data.expires_at)}`, {
+        type: "success",
+      });
+    },
+    onError: (error: Error) => {
+      toast(
+        `Failed to extend API key expiration: ${
+          error.message || "Unknown error"
+        }`
+      );
+    },
+  });
+
   const handleCreateApiKey = () => {
     if (!selectedUserId) {
       toast("Please select a user");
@@ -177,79 +213,103 @@ const ApiKeysPage: React.FC = () => {
   };
 
   const handleRevokeApiKey = (userId: number, keyId: number) => {
-    // Check if userId is undefined, and use the user.id property if available
-    const effectiveUserId =
-      userId || apiKeys.find((k) => k.id === keyId)?.user?.id;
+    // Get the API key details
+    const apiKey = apiKeys.find(
+      (key) => key.id === keyId && key.user_id === userId
+    );
 
-    if (!effectiveUserId) {
-      toast("Cannot revoke key: User ID is missing", { type: "error" });
+    // Add special handling for admin panel keys
+    if (apiKey && apiKey.name === "Admin Panel Access") {
+      toast(
+        "Warning: This is an Admin Panel Access key. Revoking it will prevent admin login. Create a new admin key first before revoking this one.",
+        {
+          type: "warning",
+          duration: 6000,
+        }
+      );
       return;
     }
 
-    console.log(`Revoking key: userId=${effectiveUserId}, keyId=${keyId}`);
-    revokeApiKeyMutation.mutate({ userId: effectiveUserId, keyId });
+    revokeApiKeyMutation.mutate({ userId, keyId });
   };
 
   const handleEnableApiKey = (userId: number, keyId: number) => {
-    // Check if userId is undefined, and use the user.id property if available
-    const effectiveUserId =
-      userId || apiKeys.find((k) => k.id === keyId)?.user?.id;
+    enableApiKeyMutation.mutate({ userId, keyId });
+  };
 
-    if (!effectiveUserId) {
-      toast("Cannot enable key: User ID is missing", { type: "error" });
-      return;
-    }
-
-    console.log(`Enabling key: userId=${effectiveUserId}, keyId=${keyId}`);
-    enableApiKeyMutation.mutate({ userId: effectiveUserId, keyId });
+  const handleExtendExpiration = (userId: number, keyId: number) => {
+    extendExpirationMutation.mutate({ userId, keyId });
   };
 
   const handleDeleteKey = (userId: number, keyId: number) => {
-    // Check if userId is undefined, and use the user.id property if available
-    const effectiveUserId =
-      userId || apiKeys.find((k) => k.id === keyId)?.user?.id;
+    // Get the API key details
+    const apiKey = apiKeys.find(
+      (key) => key.id === keyId && key.user_id === userId
+    );
 
-    if (!effectiveUserId) {
-      toast("Cannot delete key: User ID is missing", { type: "error" });
+    // Add special handling for admin panel keys
+    if (apiKey && apiKey.name === "Admin Panel Access") {
+      toast(
+        "Warning: This is an Admin Panel Access key. Deleting it will prevent admin login. Create a new admin key first before deleting this one.",
+        {
+          type: "warning",
+          duration: 6000,
+        }
+      );
       return;
     }
 
-    if (
-      window.confirm(
-        "Are you sure you want to delete this API key? This action cannot be undone."
-      )
-    ) {
-      console.log(`Deleting key: userId=${effectiveUserId}, keyId=${keyId}`);
-
-      deleteApiKeyMutation.mutate(
-        { userId: effectiveUserId, keyId },
-        {
-          onSuccess: () => {
-            toast("API key deleted successfully", { type: "success" });
-            loadApiKeys(); // Refresh the list
-          },
-          onError: (error: Error) => {
-            console.error("Delete API key failed:", error);
-            toast(
-              `Failed to delete API key: ${error.message || "Unknown error"}`,
-              { type: "error" }
-            );
-          },
-        }
-      );
-    }
+    setDeleteApiKeyId({ userId, keyId });
+    setIsDeleteDialogOpen(true);
   };
 
   const copyApiKey = (apiKey: string) => {
-    navigator.clipboard
-      .writeText(apiKey)
-      .then(() => {
+    if (!apiKey || apiKey === "(hidden)") {
+      toast("API key not available for copying", { type: "error" });
+      return;
+    }
+
+    try {
+      // Use modern Clipboard API with fallback
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(apiKey)
+          .then(() => {
+            toast("API key copied to clipboard", { type: "success" });
+          })
+          .catch((err) => {
+            console.error("Error copying API key:", err);
+            fallbackCopyToClipboard(apiKey);
+          });
+      } else {
+        fallbackCopyToClipboard(apiKey);
+      }
+    } catch (err) {
+      console.error("Copy failed:", err);
+      toast("Failed to copy API key", { type: "error" });
+    }
+  };
+
+  // Fallback method for older browsers
+  const fallbackCopyToClipboard = (text: string) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      if (successful) {
         toast("API key copied to clipboard", { type: "success" });
-      })
-      .catch((err) => {
-        console.error("Error copying API key:", err);
-        toast("Failed to copy API key");
-      });
+      } else {
+        toast("Failed to copy API key", { type: "error" });
+      }
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+      toast("Failed to copy API key", { type: "error" });
+    }
   };
 
   const formatDate = (dateString: string | null) => {
@@ -260,6 +320,23 @@ const ApiKeysPage: React.FC = () => {
   const maskApiKey = (apiKey: string) => {
     if (!apiKey) return "(hidden)";
     return `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`;
+  };
+
+  const isExpiringSoon = (
+    expiryDateStr: string | null | undefined
+  ): boolean => {
+    if (!expiryDateStr) return false;
+
+    const expiryDate = new Date(expiryDateStr);
+    const now = new Date();
+
+    // Calculate days remaining
+    const daysRemaining = Math.floor(
+      (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Return true if less than 7 days remaining
+    return daysRemaining >= 0 && daysRemaining < 7;
   };
 
   useEffect(() => {
@@ -285,6 +362,33 @@ const ApiKeysPage: React.FC = () => {
           </Button>
         }
       />
+
+      {/* Admin Keys Warning Banner */}
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-md">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-amber-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-amber-700">
+              <strong>Warning:</strong> Do not revoke or delete any API key
+              named "Admin Panel Access" that belongs to your account. These
+              keys are used for admin panel authentication. If you need to
+              replace one, create a new admin key first.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="bg-white rounded-lg shadow mb-8">
         <div className="p-4 border-b">
@@ -318,6 +422,7 @@ const ApiKeysPage: React.FC = () => {
                 <TableHead>Requests</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Expires</TableHead>
                 <TableHead>Last Used</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -325,13 +430,13 @@ const ApiKeysPage: React.FC = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-4">
+                  <TableCell colSpan={10} className="text-center py-4">
                     Loading API keys...
                   </TableCell>
                 </TableRow>
               ) : apiKeys.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-4">
+                  <TableCell colSpan={10} className="text-center py-4">
                     No API keys found
                   </TableCell>
                 </TableRow>
@@ -349,7 +454,9 @@ const ApiKeysPage: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            copyApiKey(apiKey.api_key || apiKey.key || "")
+                            copyApiKey(
+                              (apiKey.api_key || apiKey.key || "").toString()
+                            )
                           }
                           title="Copy API key"
                         >
@@ -376,6 +483,19 @@ const ApiKeysPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{formatDate(apiKey.created_at)}</TableCell>
                     <TableCell>
+                      <div className="flex items-center">
+                        {formatDate(apiKey.expires_at || null)}
+                        {isExpiringSoon(apiKey.expires_at) && (
+                          <Badge
+                            className="ml-2 bg-yellow-500"
+                            title="Expires soon"
+                          >
+                            Expiring Soon
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {formatDate(apiKey.last_used_at || null)}
                     </TableCell>
                     <TableCell className="text-right">
@@ -390,10 +510,7 @@ const ApiKeysPage: React.FC = () => {
                             <DropdownMenuItem
                               className="text-orange-600"
                               onClick={() => {
-                                // Check for user ID in different locations
-                                const userId =
-                                  apiKey.user_id || apiKey.user?.id;
-                                handleRevokeApiKey(userId, apiKey.id);
+                                handleRevokeApiKey(apiKey.user_id, apiKey.id);
                               }}
                             >
                               <XCircle className="mr-2 h-4 w-4" /> Revoke
@@ -402,21 +519,25 @@ const ApiKeysPage: React.FC = () => {
                             <DropdownMenuItem
                               className="text-green-600"
                               onClick={() => {
-                                // Check for user ID in different locations
-                                const userId =
-                                  apiKey.user_id || apiKey.user?.id;
-                                handleEnableApiKey(userId, apiKey.id);
+                                handleEnableApiKey(apiKey.user_id, apiKey.id);
                               }}
                             >
                               <CheckCircle className="mr-2 h-4 w-4" /> Enable
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
+                            className="text-blue-600"
+                            onClick={() => {
+                              handleExtendExpiration(apiKey.user_id, apiKey.id);
+                            }}
+                          >
+                            <RefreshCw className="mr-2 h-4 w-4" /> Extend
+                            Expiration
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
-                              // Check for user ID in different locations
-                              const userId = apiKey.user_id || apiKey.user?.id;
-                              handleDeleteKey(userId, apiKey.id);
+                              handleDeleteKey(apiKey.user_id, apiKey.id);
                             }}
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -500,6 +621,40 @@ const ApiKeysPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete API Key Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete the API key and cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 text-white hover:bg-red-600"
+              onClick={() => {
+                if (deleteApiKeyId) {
+                  deleteApiKeyMutation.mutate({
+                    userId: deleteApiKeyId.userId,
+                    keyId: deleteApiKeyId.keyId,
+                  });
+                }
+                setIsDeleteDialogOpen(false);
+                setDeleteApiKeyId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

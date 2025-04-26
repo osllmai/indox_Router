@@ -6,6 +6,15 @@ SERVER_USER="root"
 REMOTE_DIR="/opt/indoxrouter"
 LOG_FILE="/tmp/indox_deploy.log"
 
+# Load environment variables from .env file if it exists
+if [ -f ".env" ]; then
+  echo "Loading variables from .env file..."
+  export $(grep -v '^#' .env | xargs)
+elif [ -f "../.env" ]; then
+  echo "Loading variables from ../.env file..."
+  export $(grep -v '^#' ../.env | xargs)
+fi
+
 # Credential validation
 validate_credentials() {
   required_vars=(

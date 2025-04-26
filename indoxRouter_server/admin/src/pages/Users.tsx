@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getUsers, deleteUser, updateUser } from "@/services/api";
+import { getUsers, deleteUser, updateUser, addCredits } from "@/services/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Edit, Trash, MoreHorizontal, Plus, Search } from "lucide-react";
+import {
+  User,
+  Edit,
+  Trash,
+  MoreHorizontal,
+  Plus,
+  Search,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
@@ -61,6 +69,10 @@ const Users = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
+  const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [creditUserId, setCreditUserId] = useState<number | null>(null);
+  const [creditPaymentMethod, setCreditPaymentMethod] = useState("admin_grant");
 
   useEffect(() => {
     fetchUsers(1, 10);
@@ -70,12 +82,11 @@ const Users = () => {
     try {
       setLoading(true);
       const skip = (page - 1) * limit;
-      const data = await getUsers(skip, limit);
+      const data = await getUsers(skip, limit, searchTerm);
       console.log("API Response:", data);
 
-      // Check if the response is already an array or has a data property
-      const usersData = Array.isArray(data) ? data : data.data || [];
-      setUsers(usersData);
+      // The response should already be an array of users
+      setUsers(Array.isArray(data) ? data : []);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -104,19 +115,36 @@ const Users = () => {
     if (!editUser) return;
 
     try {
-      await updateUser(editUser.id, {
+      // Prepare update data (excluding credits since we have a separate Add Credits action)
+      const userData = {
         first_name: editUser.first_name,
         last_name: editUser.last_name,
         email: editUser.email,
         is_active: editUser.is_active,
         account_tier: editUser.account_tier,
-      });
+      };
 
-      setUsers(
-        users.map((user) => (user.id === editUser.id ? editUser : user))
-      );
-      setIsEditDialogOpen(false);
-      toast("User updated successfully", { type: "success" });
+      console.log("Sending update with data:", userData);
+
+      const result = await updateUser(editUser.id, userData);
+      console.log("Update result:", result);
+
+      if (result && result.status === "success") {
+        // Update the user in the local state to reflect changes
+        setUsers(
+          users.map((user) =>
+            user.id === editUser.id ? { ...user, ...userData } : user
+          )
+        );
+
+        setIsEditDialogOpen(false);
+        toast("User updated successfully", { type: "success" });
+
+        // Refresh the user list to get the most up-to-date data
+        fetchUsers(1, 10);
+      } else {
+        toast("Failed to update user", { type: "error" });
+      }
     } catch (error) {
       console.error("Failed to update user:", error);
       toast("Failed to update user", { type: "error" });
@@ -136,6 +164,66 @@ const Users = () => {
     } finally {
       setIsDeleteDialogOpen(false);
       setDeleteUserId(null);
+    }
+  };
+
+  const handleAddCreditsClick = (userId: number) => {
+    setCreditUserId(userId);
+    setCreditAmount(0);
+    setIsAddCreditsDialogOpen(true);
+  };
+
+  const handleAddCreditsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (creditUserId === null || creditAmount <= 0) {
+      toast("Amount must be greater than 0", { type: "error" });
+      return;
+    }
+
+    try {
+      console.log("Adding credits:", {
+        userId: creditUserId,
+        amount: creditAmount,
+        paymentMethod: creditPaymentMethod,
+      });
+
+      const result = await addCredits(
+        creditUserId,
+        creditAmount,
+        creditPaymentMethod
+      );
+
+      console.log("Add credits result:", result);
+
+      if (result) {
+        // Update the user's credits in the local state
+        setUsers(
+          users.map((user) =>
+            user.id === creditUserId
+              ? { ...user, credits: user.credits + creditAmount }
+              : user
+          )
+        );
+
+        setIsAddCreditsDialogOpen(false);
+        setCreditUserId(null);
+        setCreditAmount(0);
+        toast(`Successfully added $${creditAmount} credits`, {
+          type: "success",
+        });
+
+        // Refresh the users list
+        fetchUsers(1, 10);
+      }
+    } catch (error) {
+      console.error("Failed to add credits:", error);
+      let errorMessage = "Failed to add credits";
+
+      if (error instanceof Error) {
+        errorMessage += ": " + error.message;
+      }
+
+      toast(errorMessage, { type: "error" });
     }
   };
 
@@ -180,6 +268,13 @@ const Users = () => {
             </div>
             <Button type="submit" variant="outline">
               Search
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fetchUsers()}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
             </Button>
           </form>
         </div>
@@ -253,6 +348,11 @@ const Users = () => {
                             onClick={() => handleEditClick(user)}
                           >
                             <Edit className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleAddCreditsClick(user.id)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Add Credits
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
@@ -413,6 +513,70 @@ const Users = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Credits Dialog */}
+      <Dialog
+        open={isAddCreditsDialogOpen}
+        onOpenChange={setIsAddCreditsDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Credits</DialogTitle>
+            <DialogDescription>
+              Add credits to the user's account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddCreditsSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="creditAmount" className="text-right">
+                  Amount ($)
+                </Label>
+                <Input
+                  id="creditAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={creditAmount}
+                  onChange={(e) => setCreditAmount(Number(e.target.value))}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="paymentMethod" className="text-right">
+                  Payment Method
+                </Label>
+                <select
+                  id="paymentMethod"
+                  value={creditPaymentMethod}
+                  onChange={(e) => setCreditPaymentMethod(e.target.value)}
+                  className="col-span-3 bg-transparent h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="admin_grant">Admin Grant</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="crypto">Cryptocurrency</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddCreditsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-admin-primary hover:bg-slate-800"
+              >
+                Add Credits
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

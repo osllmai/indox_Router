@@ -41,6 +41,7 @@ from app.db.database import (
     get_user_by_email,
     get_all_api_keys as db_get_all_api_keys,
     delete_api_key,
+    extend_api_key_expiration,
 )
 from app.core.config import settings
 
@@ -99,7 +100,22 @@ async def admin_login(
         (key for key in existing_keys if key["name"] == "Admin Panel Access"), None
     )
 
-    if not admin_key:
+    if admin_key:
+        # If key exists but is not active, re-enable it
+        if not admin_key.get("is_active", True):
+            logger.info(f"Re-enabling disabled admin API key for {username}")
+            enable_api_key(user["id"], admin_key["id"])
+
+        # Extend the expiration date to 90 days from now
+        try:
+            from datetime import datetime, timedelta
+
+            new_expiration = datetime.now() + timedelta(days=90)
+            logger.info(f"Extending admin API key expiration for {username}")
+            extend_api_key_expiration(user["id"], admin_key["id"], new_expiration)
+        except Exception as e:
+            logger.error(f"Failed to extend admin API key expiration: {e}")
+    else:
         logger.debug(f"Creating new admin API key for user: {username}")
         # Create a special API key for admin panel use if it doesn't exist
         admin_key = create_api_key(user["id"], name="Admin Panel Access")
@@ -129,6 +145,7 @@ async def admin_login(
         httponly=True,
         secure=True,  # Ensure this is set to True in production
         samesite="Strict",
+        max_age=60 * 60 * 24 * 90,  # 90 days
     )
     return response
 
@@ -168,7 +185,7 @@ async def get_user(
 
 @router.put("/users/{user_id}")
 async def update_user(
-    user_id: int,
+    user_id: int = Path(..., description="The user ID"),
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
     email: Optional[str] = None,
@@ -194,13 +211,18 @@ async def update_user(
         update_data["account_tier"] = account_tier
 
     updated_user = update_user_data(user_id, update_data)
+
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found or update failed",
         )
 
-    return {"status": "success", "user": updated_user}
+    return {
+        "status": "success",
+        "message": "User updated successfully",
+        "user": updated_user,
+    }
 
 
 @router.delete("/users/{user_id}")
@@ -231,10 +253,10 @@ async def remove_user(
 
 @router.post("/users/{user_id}/credits", response_model=TransactionResponse)
 async def add_credits(
-    user_id: int,
-    amount: float,
-    payment_method: str = "admin_grant",
-    reference_id: Optional[str] = None,
+    user_id: int = Path(..., description="The user ID"),
+    amount: float = Body(..., description="The amount of credits to add"),
+    payment_method: str = Body("admin_grant", description="The payment method"),
+    reference_id: Optional[str] = Body(None, description="Optional reference ID"),
     current_user: Dict = Depends(get_admin_user),
 ):
     """
@@ -260,7 +282,17 @@ async def add_credits(
             detail="User not found or transaction failed",
         )
 
-    return transaction
+    # Adapt the response to match the TransactionResponse model
+    # The database returns 'credits_added' but the model expects 'amount'
+    response_data = {
+        "transaction_id": transaction["transaction_id"],
+        "amount": transaction["credits_added"],  # Rename the field to match the model
+        "credits_added": transaction["credits_added"],
+        "total_credits": transaction["total_credits"],
+        "created_at": transaction["created_at"],
+    }
+
+    return response_data
 
 
 @router.get("/api-keys", response_model=List[dict])
@@ -301,6 +333,17 @@ async def revoke_key(
     Revoke an API key.
     Only accessible to admin users.
     """
+    # Get the API key details first to check its name
+    keys = get_user_api_keys(user_id)
+    target_key = next((k for k in keys if k["id"] == key_id), None)
+
+    # Prevent revoking admin panel access keys
+    if target_key and target_key.get("name") == "Admin Panel Access":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot revoke Admin Panel Access key. Create a new admin key first.",
+        )
+
     success = revoke_api_key(user_id, key_id)
     if not success:
         raise HTTPException(
@@ -331,6 +374,38 @@ async def enable_key(
     return {"status": "success", "message": f"API key {key_id} enabled"}
 
 
+@router.post("/users/{user_id}/api-keys/{key_id}/extend")
+async def extend_key_expiration(
+    user_id: int = Path(..., description="The user ID"),
+    key_id: int = Path(..., description="The API key ID"),
+    days: int = Body(30, description="Number of days to extend the expiration"),
+    current_user: Dict = Depends(get_admin_user),
+):
+    """
+    Extend the expiration date of an API key.
+    Only accessible to admin users.
+    """
+    from datetime import datetime, timedelta
+
+    # Extend from current expiration date or from now if no expiration is set
+    new_expiration = datetime.now() + timedelta(days=days)
+
+    # Call database function to update expiration date - we need to implement this
+    success, expires_at = extend_api_key_expiration(user_id, key_id, new_expiration)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User or API key not found",
+        )
+
+    return {
+        "status": "success",
+        "message": f"API key {key_id} expiration extended to {expires_at.isoformat()}",
+        "expires_at": expires_at.isoformat(),
+    }
+
+
 @router.delete("/users/{user_id}/api-keys/{key_id}")
 async def delete_key(
     user_id: int = Path(..., description="The user ID"),
@@ -341,6 +416,17 @@ async def delete_key(
     Permanently delete an API key.
     Only accessible to admin users.
     """
+    # Get the API key details first to check its name
+    keys = get_user_api_keys(user_id)
+    target_key = next((k for k in keys if k["id"] == key_id), None)
+
+    # Prevent deleting admin panel access keys
+    if target_key and target_key.get("name") == "Admin Panel Access":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete Admin Panel Access key. Create a new admin key first.",
+        )
+
     success = delete_api_key(user_id, key_id)
     if not success:
         raise HTTPException(

@@ -567,6 +567,139 @@ def save_conversation(user_id: int, title: str, messages: List[Dict[str, Any]]) 
         return None
 
 
+def get_user_credits(user_id: int) -> Optional[float]:
+    """Get the current credits of a user."""
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT credits
+                    FROM users
+                    WHERE id = %s
+                    """,
+                    (user_id,),
+                )
+                result = cur.fetchone()
+                return result[0] if result else None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error getting user credits: {e}")
+        return None
+
+
+def add_user_credits(
+    user_id: int,
+    amount: float,
+    payment_method: str = "credit_card",
+    transaction_id: str = None,
+    reference_id: str = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Add credits to a user's account and record the transaction.
+
+    Args:
+        user_id: The user ID.
+        amount: The amount of credits to add (can be negative for admin adjustments).
+        payment_method: The payment method used.
+        transaction_id: Optional external transaction ID.
+        reference_id: Optional reference ID.
+
+    Returns:
+        Dictionary containing the transaction info if successful, None otherwise.
+    """
+    try:
+        # For regular payments (not admin adjustments), enforce minimum amount
+        if payment_method != "admin_adjustment" and amount < 10:
+            logger.error(f"Credit amount must be at least 10, got {amount}")
+            return None
+
+        # Generate a transaction ID if not provided
+        if not transaction_id:
+            import uuid
+
+            transaction_id = f"txn_{uuid.uuid4().hex[:16]}"
+
+        conn = get_pg_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Start transaction
+                conn.autocommit = False
+
+                # Update user credits
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET credits = credits + %s, updated_at = NOW()
+                    WHERE id = %s
+                    RETURNING id, username, email, credits
+                    """,
+                    (amount, user_id),
+                )
+
+                user = cur.fetchone()
+                if not user:
+                    conn.rollback()
+                    return None
+
+                # Determine transaction type and description
+                transaction_type = (
+                    "credit_adjustment"
+                    if payment_method == "admin_adjustment"
+                    else "credit_purchase"
+                )
+                description = (
+                    f"Adjustment of {amount} credits"
+                    if payment_method == "admin_adjustment"
+                    else f"Purchase of {amount} credits"
+                )
+
+                # Record the transaction
+                cur.execute(
+                    """
+                    INSERT INTO billing_transactions
+                    (user_id, transaction_id, amount, currency, transaction_type, status, payment_method, description, reference_id)
+                    VALUES (%s, %s, %s, 'USD', %s, 'completed', %s, %s, %s)
+                    RETURNING id, transaction_id, amount, created_at
+                    """,
+                    (
+                        user_id,
+                        transaction_id,
+                        amount,
+                        transaction_type,
+                        payment_method,
+                        description,
+                        reference_id,
+                    ),
+                )
+
+                transaction = cur.fetchone()
+
+                # Commit the transaction
+                conn.commit()
+
+                # Combine user and transaction info
+                result = {
+                    "user_id": user["id"],
+                    "username": user["username"],
+                    "email": user["email"],
+                    "credits_added": amount,
+                    "total_credits": user["credits"],
+                    "transaction_id": transaction["transaction_id"],
+                    "created_at": transaction["created_at"],
+                }
+
+                return result
+        finally:
+            conn.autocommit = True
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error adding credits to user: {e}")
+        return None
+
+
 def get_user_conversations(
     user_id: int, limit: int = 20, skip: int = 0
 ) -> List[Dict[str, Any]]:
@@ -1675,6 +1808,63 @@ def enable_api_key(user_id: int, api_key_id: int) -> bool:
         return False
 
 
+def extend_api_key_expiration(
+    user_id: int, api_key_id: int, new_expiration: datetime
+) -> Tuple[bool, Optional[datetime]]:
+    """
+    Extend the expiration date of an API key.
+
+    Args:
+        user_id: The user ID.
+        api_key_id: The API key ID.
+        new_expiration: The new expiration date.
+
+    Returns:
+        A tuple of (success, new_expiration_date).
+    """
+    try:
+        conn = get_pg_connection()
+        try:
+            with conn.cursor() as cur:
+                # Verify the API key belongs to the user
+                cur.execute(
+                    """
+                    SELECT id, expires_at
+                    FROM api_keys
+                    WHERE id = %s AND user_id = %s
+                    """,
+                    (api_key_id, user_id),
+                )
+
+                key_data = cur.fetchone()
+                if not key_data:
+                    # Key doesn't exist or doesn't belong to the user
+                    return False, None
+
+                # Update the expiration date
+                cur.execute(
+                    """
+                    UPDATE api_keys
+                    SET expires_at = %s
+                    WHERE id = %s
+                    RETURNING expires_at
+                    """,
+                    (new_expiration, api_key_id),
+                )
+
+                result = cur.fetchone()
+                conn.commit()
+
+                if result:
+                    return True, result[0]
+                return False, None
+        finally:
+            release_pg_connection(conn)
+    except Exception as e:
+        logger.error(f"Error extending API key expiration: {e}")
+        return False, None
+
+
 def delete_api_key(user_id: int, api_key_id: int) -> bool:
     """
     Permanently delete an API key.
@@ -1768,7 +1958,8 @@ def add_user_credits(
         Dictionary containing the transaction info if successful, None otherwise.
     """
     try:
-        if amount < 10:
+        # For regular payments (not admin adjustments), enforce minimum amount
+        if payment_method != "admin_adjustment" and amount < 10:
             logger.error(f"Credit amount must be at least 10, got {amount}")
             return None
 
@@ -1800,20 +1991,33 @@ def add_user_credits(
                     conn.rollback()
                     return None
 
+                # Determine transaction type and description
+                transaction_type = (
+                    "credit_adjustment"
+                    if payment_method == "admin_adjustment"
+                    else "credit_purchase"
+                )
+                description = (
+                    f"Adjustment of {amount} credits"
+                    if payment_method == "admin_adjustment"
+                    else f"Purchase of {amount} credits"
+                )
+
                 # Record the transaction
                 cur.execute(
                     """
                     INSERT INTO billing_transactions
                     (user_id, transaction_id, amount, currency, transaction_type, status, payment_method, description, reference_id)
-                    VALUES (%s, %s, %s, 'USD', 'credit_purchase', 'completed', %s, %s, %s)
+                    VALUES (%s, %s, %s, 'USD', %s, 'completed', %s, %s, %s)
                     RETURNING id, transaction_id, amount, created_at
                     """,
                     (
                         user_id,
                         transaction_id,
                         amount,
+                        transaction_type,
                         payment_method,
-                        f"Purchase of {amount} credits",
+                        description,
                         reference_id,
                     ),
                 )
