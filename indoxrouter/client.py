@@ -5,6 +5,9 @@ This module provides a client for interacting with the IndoxRouter API, which se
 interface to multiple AI providers and models. The client handles authentication, rate limiting,
 error handling, and provides a standardized response format across different AI services.
 
+IMPORTANT: The IndoxRouter server now supports only cookie-based authentication. This client
+automatically handles authentication by exchanging your API key for a JWT token through the login endpoint.
+
 The Client class offers methods for:
 - Authentication and session management
 - Making API requests with automatic token refresh
@@ -54,10 +57,14 @@ from .exceptions import (
     NetworkError,
     ProviderNotFoundError,
     ModelNotFoundError,
+    ModelNotAvailableError,
     InvalidParametersError,
     RateLimitError,
     ProviderError,
+    RequestError,
     InsufficientCreditsError,
+    ValidationError,
+    APIError,
 )
 from .constants import (
     DEFAULT_BASE_URL,
@@ -71,6 +78,7 @@ from .constants import (
     IMAGE_ENDPOINT,
     MODEL_ENDPOINT,
     USAGE_ENDPOINT,
+    USE_COOKIES,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,7 +92,6 @@ class Client:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
         timeout: int = DEFAULT_TIMEOUT,
     ):
         """
@@ -93,19 +100,109 @@ class Client:
         Args:
             api_key: API key for authentication. If not provided, the client will look for the
                 INDOX_ROUTER_API_KEY environment variable.
-            base_url: Custom base URL for the API. If not provided, the default base URL will be used.
             timeout: Request timeout in seconds.
         """
+
+        use_cookies = USE_COOKIES
         self.api_key = api_key or os.environ.get("INDOX_ROUTER_API_KEY")
         if not self.api_key:
             raise ValueError(
                 "API key must be provided either as an argument or as the INDOX_ROUTER_API_KEY environment variable."
             )
 
-        self.base_url = base_url or DEFAULT_BASE_URL
+        self.base_url = DEFAULT_BASE_URL
         self.timeout = timeout
+        self.use_cookies = use_cookies
         self.session = requests.Session()
-        self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
+
+        # Authenticate and get JWT tokens
+        self._authenticate()
+
+    def _authenticate(self):
+        """
+        Authenticate with the server and get JWT tokens.
+        This uses the /auth/token endpoint to get JWT tokens using the API key.
+        """
+        try:
+            # First try with the dedicated API key endpoint
+            logger.debug("Authenticating with dedicated API key endpoint")
+            response = self.session.post(
+                f"{self.base_url}/api/v1/auth/api-key",
+                headers={"X-API-Key": self.api_key},
+                timeout=self.timeout,
+            )
+
+            if response.status_code != 200:
+                # If dedicated endpoint fails, try using the API key as a username
+                logger.debug("API key endpoint failed, trying with API key as username")
+                response = self.session.post(
+                    f"{self.base_url}/api/v1/auth/token",
+                    data={
+                        "username": self.api_key,
+                        "password": self.api_key,  # Try using API key as both username and password
+                    },
+                    timeout=self.timeout,
+                )
+
+                if response.status_code != 200:
+                    # Try one more method - the token endpoint with different format
+                    logger.debug("Trying with API key as token parameter")
+                    response = self.session.post(
+                        f"{self.base_url}/api/v1/auth/token",
+                        data={
+                            "username": "pip_client",
+                            "password": self.api_key,
+                        },
+                        timeout=self.timeout,
+                    )
+
+            if response.status_code != 200:
+                error_data = {}
+                try:
+                    error_data = response.json()
+                except:
+                    error_data = {"detail": response.text}
+
+                raise AuthenticationError(
+                    f"Authentication failed: {error_data.get('detail', 'Unknown error')}"
+                )
+
+            # Check if we have a token in the response body
+            try:
+                response_data = response.json()
+                if "access_token" in response_data:
+                    # Store token in the session object for later use
+                    self.access_token = response_data["access_token"]
+                    logger.debug("Retrieved access token from response body")
+            except:
+                # If we couldn't parse JSON, that's fine - we'll rely on cookies
+                logger.debug("No token found in response body, will rely on cookies")
+
+            # At this point, the cookies should be set in the session
+            logger.debug("Authentication successful")
+
+            # Check if we have the cookies we need
+            if "access_token" not in self.session.cookies:
+                logger.warning(
+                    "Authentication succeeded but no access_token cookie was set"
+                )
+
+        except requests.RequestException as e:
+            logger.error(f"Authentication request failed: {str(e)}")
+            raise NetworkError(f"Network error during authentication: {str(e)}")
+
+    def _get_domain(self):
+        """
+        Extract domain from the base URL for cookie setting.
+        """
+        try:
+            from urllib.parse import urlparse
+
+            parsed_url = urlparse(self.base_url)
+            return parsed_url.netloc
+        except Exception:
+            # If parsing fails, return a default value
+            return ""
 
     def enable_debug(self, level=logging.DEBUG):
         """
@@ -152,6 +249,10 @@ class Client:
         url = f"{self.base_url}/{endpoint}"
         headers = {"Content-Type": "application/json"}
 
+        # Add Authorization header if we have an access token
+        if hasattr(self, "access_token") and self.access_token:
+            headers["Authorization"] = f"Bearer {self.access_token}"
+
         # logger.debug(f"Making {method} request to {url}")
         # if data:
         #     logger.debug(f"Request data: {json.dumps(data, indent=2)}")
@@ -177,6 +278,28 @@ class Client:
             if stream:
                 return response
 
+            # Check if we need to reauthenticate (401 Unauthorized)
+            if response.status_code == 401:
+                logger.debug("Received 401, attempting to reauthenticate")
+                self._authenticate()
+
+                # Update Authorization header with new token if available
+                if hasattr(self, "access_token") and self.access_token:
+                    headers["Authorization"] = f"Bearer {self.access_token}"
+
+                # Retry the request after reauthentication
+                response = self.session.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=data,
+                    timeout=self.timeout,
+                    stream=stream,
+                )
+
+                if stream:
+                    return response
+
             response.raise_for_status()
             return response.json()
         except requests.HTTPError as e:
@@ -197,29 +320,57 @@ class Client:
                 if "provider" in error_message.lower():
                     raise ProviderNotFoundError(error_message)
                 elif "model" in error_message.lower():
-                    raise ModelNotFoundError(error_message)
+                    # Check if it's a model not found vs model not available
+                    if (
+                        "not supported" in error_message.lower()
+                        or "disabled" in error_message.lower()
+                        or "unavailable" in error_message.lower()
+                    ):
+                        raise ModelNotAvailableError(error_message)
+                    else:
+                        raise ModelNotFoundError(error_message)
                 else:
-                    raise NetworkError(
-                        f"Resource not found: {error_message} (URL: {url})"
-                    )
+                    raise APIError(f"Resource not found: {error_message} (URL: {url})")
             elif status_code == 429:
                 raise RateLimitError(f"Rate limit exceeded: {error_message}")
             elif status_code == 400:
-                raise InvalidParametersError(f"Invalid parameters: {error_message}")
+                # Check if it's a validation error or invalid parameters
+                if (
+                    "validation" in error_message.lower()
+                    or "invalid format" in error_message.lower()
+                ):
+                    raise ValidationError(f"Request validation failed: {error_message}")
+                else:
+                    raise InvalidParametersError(f"Invalid parameters: {error_message}")
             elif status_code == 402:
                 raise InsufficientCreditsError(f"Insufficient credits: {error_message}")
+            elif status_code == 422:
+                # Unprocessable Entity - typically validation errors
+                raise ValidationError(f"Request validation failed: {error_message}")
+            elif status_code == 503:
+                # Service Unavailable - model might be temporarily unavailable
+                if "model" in error_message.lower():
+                    raise ModelNotAvailableError(
+                        f"Model temporarily unavailable: {error_message}"
+                    )
+                else:
+                    raise APIError(f"Service unavailable: {error_message}")
             elif status_code == 500:
                 # Provide more detailed information for server errors
                 error_detail = error_data.get("detail", "No details provided")
                 # Include the request data in the error message for better debugging
                 request_data_str = json.dumps(data, indent=2) if data else "None"
-                raise ProviderError(
+                raise RequestError(
                     f"Server error (500): {error_detail}. URL: {url}.\n"
                     f"Request data: {request_data_str}\n"
                     f"This may indicate an issue with the server configuration or a problem with the provider service."
                 )
+            elif status_code >= 400 and status_code < 500:
+                # Client errors
+                raise APIError(f"Client error ({status_code}): {error_message}")
             else:
-                raise ProviderError(f"Provider error ({status_code}): {error_message}")
+                # Server errors
+                raise RequestError(f"Server error ({status_code}): {error_message}")
         except requests.RequestException as e:
             logger.error(f"Request exception: {str(e)}")
             raise NetworkError(f"Network error: {str(e)}")
@@ -247,6 +398,48 @@ class Client:
         # For now, return the original format as it seems the server
         # is having issues with JSON formatted model strings
         return model
+
+    def _format_image_size_for_provider(
+        self, size: str, provider: str, model: str
+    ) -> str:
+        """
+        Format the image size parameter based on the provider's requirements.
+
+        Google requires aspect ratios like "1:1", "4:3", etc. while OpenAI uses pixel dimensions
+        like "1024x1024", "512x512", etc.
+
+        Args:
+            size: The size parameter (e.g., "1024x1024")
+            provider: The provider name (e.g., "google", "openai")
+            model: The model name
+
+        Returns:
+            Formatted size parameter appropriate for the provider
+        """
+        if provider.lower() == "google":
+            # Google uses aspect ratios instead of pixel dimensions
+            # Convert common pixel dimensions to aspect ratios
+            size_to_aspect_ratio = {
+                "1024x1024": "1:1",
+                "512x512": "1:1",
+                "256x256": "1:1",
+                "1024x768": "4:3",
+                "768x1024": "3:4",
+                "1024x1536": "2:3",
+                "1536x1024": "3:2",
+                "1792x1024": "16:9",
+                "1024x1792": "9:16",
+            }
+
+            # Check if size is already in aspect ratio format (contains a colon)
+            if ":" in size:
+                return size
+
+            # Convert to aspect ratio if we have a mapping, otherwise use default 1:1
+            return size_to_aspect_ratio.get(size, "1:1")
+
+        # For other providers, return the original size
+        return size
 
     def chat(
         self,
@@ -380,10 +573,32 @@ class Client:
         self,
         prompt: str,
         model: str = DEFAULT_IMAGE_MODEL,
-        size: str = "1024x1024",
-        n: int = 1,
-        quality: str = "standard",
-        style: str = "vivid",
+        size: Optional[str] = None,
+        n: Optional[int] = None,
+        quality: Optional[str] = None,
+        style: Optional[str] = None,
+        # Standard parameters
+        response_format: Optional[str] = None,
+        user: Optional[str] = None,
+        # OpenAI-specific parameters
+        background: Optional[str] = None,
+        moderation: Optional[str] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[str] = None,
+        # Google-specific parameters
+        negative_prompt: Optional[str] = None,
+        guidance_scale: Optional[float] = None,
+        seed: Optional[int] = None,
+        safety_filter_level: Optional[str] = None,
+        person_generation: Optional[str] = None,
+        include_safety_attributes: Optional[bool] = None,
+        include_rai_reason: Optional[bool] = None,
+        language: Optional[str] = None,
+        output_mime_type: Optional[str] = None,
+        add_watermark: Optional[bool] = None,
+        enhance_prompt: Optional[bool] = None,
+        # Google-specific direct parameters
+        aspect_ratio: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -391,11 +606,39 @@ class Client:
 
         Args:
             prompt: Text prompt
-            model: Model to use in the format "provider/model" (e.g., "openai/dall-e-3")
-            size: Image size (e.g., "1024x1024")
+            model: Model to use in the format "provider/model" (e.g., "openai/dall-e-3", "google/imagen-3.0-generate-002")
+
+            # Provider-specific parameters - will only be included if explicitly provided
+            # Note: Different providers support different parameters
+            size: Image size - For OpenAI: "1024x1024", "512x512", etc. For Google: use aspect_ratio instead
             n: Number of images to generate
-            quality: Image quality (e.g., "standard", "hd")
-            style: Image style (e.g., "vivid", "natural")
+            quality: Image quality (e.g., "standard", "hd") - supported by some providers
+            style: Image style (e.g., "vivid", "natural") - supported by some providers
+
+            # Standard parameters
+            response_format: Format of the response - "url" or "b64_json"
+            user: A unique identifier for the end-user
+
+            # OpenAI-specific parameters
+            background: Background style - "transparent", "opaque", or "auto"
+            moderation: Moderation level - "low" or "auto"
+            output_compression: Compression quality for output images (0-100)
+            output_format: Output format - "png", "jpeg", or "webp"
+
+            # Google-specific parameters
+            negative_prompt: Description of what to discourage in the generated images
+            guidance_scale: Controls how much the model adheres to the prompt
+            seed: Random seed for image generation
+            safety_filter_level: Filter level for safety filtering
+            person_generation: Controls generation of people ("dont_allow", "allow_adult", "allow_all")
+            include_safety_attributes: Whether to report safety scores of generated images
+            include_rai_reason: Whether to include filter reason if the image is filtered
+            language: Language of the text in the prompt
+            output_mime_type: MIME type of the generated image
+            add_watermark: Whether to add a watermark to the generated images
+            enhance_prompt: Whether to use prompt rewriting logic
+            aspect_ratio: Aspect ratio for Google models (e.g., "1:1", "16:9") - preferred over size
+
             **kwargs: Additional parameters to pass to the API
 
         Returns:
@@ -404,23 +647,187 @@ class Client:
         # Format the model string
         formatted_model = self._format_model_string(model)
 
+        # Extract provider and model name from model string if present
+        provider = "openai"  # Default provider
+        model_name = model
+        if "/" in model:
+            provider, model_name = model.split("/", 1)
+
         # Filter out problematic parameters
         filtered_kwargs = {}
         for key, value in kwargs.items():
             if key not in ["return_generator"]:  # List of parameters to exclude
                 filtered_kwargs[key] = value
 
+        # Create the base request data with only the required parameters
         data = {
             "prompt": prompt,
             "model": formatted_model,
-            "n": n,
-            "size": size,
-            "quality": quality,
-            "style": style,
-            "additional_params": filtered_kwargs,
         }
 
+        # Add optional parameters only if they are explicitly provided
+        if n is not None:
+            data["n"] = n
+
+        # Handle size/aspect_ratio parameters based on provider
+        if provider.lower() == "google":
+            # For Google, use aspect_ratio instead of size
+            if aspect_ratio is not None:
+                # Google's imagen-3 has specific supported aspect ratios
+                if model_name == "imagen-3.0-generate-002" and aspect_ratio not in [
+                    "1:1",
+                    "3:4",
+                    "4:3",
+                    "9:16",
+                    "16:9",
+                ]:
+                    aspect_ratio = "1:1"  # Default to 1:1 if not supported
+                data["aspect_ratio"] = aspect_ratio
+            elif size is not None:
+                # Convert size to aspect_ratio
+                formatted_size = self._format_image_size_for_provider(
+                    size, provider, model_name
+                )
+                data["aspect_ratio"] = formatted_size
+            else:
+                # Default aspect_ratio for Google
+                data["aspect_ratio"] = "1:1"
+        elif provider.lower() == "xai":
+            # xAI doesn't support size parameter - do not include it
+            pass
+        elif size is not None and provider.lower() != "xai":
+            # For other providers (like OpenAI), use size as is
+            data["size"] = size
+
+        if quality is not None:
+            data["quality"] = quality
+        if style is not None:
+            data["style"] = style
+
+        # Add standard parameters if provided
+        if response_format is not None:
+            # Only add response_format if explicitly provided by the user
+            data["response_format"] = response_format
+
+        if user is not None:
+            data["user"] = user
+
+        # Add OpenAI-specific parameters if provided
+        if background is not None:
+            data["background"] = background
+        if moderation is not None:
+            data["moderation"] = moderation
+        if output_compression is not None:
+            data["output_compression"] = output_compression
+        if output_format is not None:
+            data["output_format"] = output_format
+
+        # Add Google-specific parameters if provided
+        if negative_prompt is not None:
+            data["negative_prompt"] = negative_prompt
+        if guidance_scale is not None:
+            data["guidance_scale"] = guidance_scale
+        if seed is not None:
+            data["seed"] = seed
+        if safety_filter_level is not None:
+            data["safety_filter_level"] = safety_filter_level
+        if person_generation is not None:
+            data["person_generation"] = person_generation
+        if include_safety_attributes is not None:
+            data["include_safety_attributes"] = include_safety_attributes
+        if include_rai_reason is not None:
+            data["include_rai_reason"] = include_rai_reason
+        if language is not None:
+            data["language"] = language
+        if output_mime_type is not None:
+            data["output_mime_type"] = output_mime_type
+        if add_watermark is not None:
+            data["add_watermark"] = add_watermark
+        if enhance_prompt is not None:
+            data["enhance_prompt"] = enhance_prompt
+
+        # Add any remaining parameters
+        if filtered_kwargs:
+            data["additional_params"] = filtered_kwargs
+
+        # Special case handling for specific models and providers
+        # Only include parameters supported by each model based on their JSON definitions
+        if provider.lower() == "openai" and "gpt-image" in model_name.lower():
+            # For OpenAI's gpt-image models, don't automatically add response_format
+            if "response_format" in data and response_format is None:
+                del data["response_format"]
+
+        if provider.lower() == "xai" and "grok-2-image" in model_name.lower():
+            # For xAI's grok-2-image models, ensure size is not included
+            if "size" in data:
+                del data["size"]
+
+        # Clean up any parameters that shouldn't be sent to specific providers
+        # This ensures we only send parameters that each provider supports
+        supported_params = self._get_supported_parameters_for_model(
+            provider, model_name
+        )
+        if supported_params:
+            for param in list(data.keys()):
+                if param not in ["prompt", "model"] and param not in supported_params:
+                    del data[param]
+
         return self._request("POST", IMAGE_ENDPOINT, data)
+
+    def _get_supported_parameters_for_model(
+        self, provider: str, model_name: str
+    ) -> List[str]:
+        """
+        Get the list of supported parameters for a specific model.
+        This helps avoid sending unsupported parameters to providers.
+
+        Args:
+            provider: The provider name (e.g., 'openai', 'google', 'xai')
+            model_name: The model name (e.g., 'gpt-image-1', 'imagen-3.0-generate-002')
+
+        Returns:
+            List of parameter names supported by the model
+        """
+        # Define supported parameters for specific models
+        if provider.lower() == "openai" and "gpt-image" in model_name.lower():
+            return [
+                "prompt",
+                "size",
+                "quality",
+                "n",
+                "user",
+                "background",
+                "moderation",
+                "output_compression",
+                "output_format",
+                "style",
+            ]
+
+        elif provider.lower() == "google" and "imagen" in model_name.lower():
+            return [
+                "prompt",
+                "n",
+                "negative_prompt",
+                "aspect_ratio",
+                "guidance_scale",
+                "seed",
+                "safety_filter_level",
+                "person_generation",
+                "include_safety_attributes",
+                "include_rai_reason",
+                "language",
+                "output_mime_type",
+                "output_compression_quality",
+                "add_watermark",
+                "enhance_prompt",
+                "response_format",
+            ]
+
+        elif provider.lower() == "xai" and "grok-2-image" in model_name.lower():
+            return ["prompt", "n", "response_format"]
+
+        # Default case - allow all parameters
+        return []
 
     def models(self, provider: Optional[str] = None) -> Dict[str, Any]:
         """

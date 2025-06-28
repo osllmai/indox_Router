@@ -30,7 +30,7 @@ For custom server URLs:
     ```
 """
 
-from .client import Client
+from .client import Client, IndoxRouter
 from .exceptions import (
     IndoxRouterError,
     AuthenticationError,
@@ -39,13 +39,18 @@ from .exceptions import (
     ProviderError,
     ModelNotFoundError,
     ProviderNotFoundError,
+    ModelNotAvailableError,
     InvalidParametersError,
+    RequestError,
     InsufficientCreditsError,
+    ValidationError,
+    APIError,
 )
 
 __version__ = "0.2.1"
 __all__ = [
     "Client",
+    "IndoxRouter",
     "IndoxRouterError",
     "AuthenticationError",
     "NetworkError",
@@ -53,6 +58,10 @@ __all__ = [
     "ProviderError",
     "ModelNotFoundError",
     "ProviderNotFoundError",
+    "ModelNotAvailableError",
     "InvalidParametersError",
+    "RequestError",
     "InsufficientCreditsError",
+    "ValidationError",
+    "APIError",
 ]

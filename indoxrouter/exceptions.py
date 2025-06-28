@@ -38,14 +38,20 @@ class ProviderError(IndoxRouterError):
     pass
 
 
+class ProviderNotFoundError(ProviderError):
+    """Raised when a requested provider is not found."""
+
+    pass
+
+
 class ModelNotFoundError(ProviderError):
     """Raised when a requested model is not found."""
 
     pass
 
 
-class ProviderNotFoundError(ProviderError):
-    """Raised when a requested provider is not found."""
+class ModelNotAvailableError(ProviderError):
+    """Raised when a model is disabled or not supported by the provider."""
 
     pass
 
@@ -56,7 +62,25 @@ class InvalidParametersError(IndoxRouterError):
     pass
 
 
+class RequestError(IndoxRouterError):
+    """Raised when a request to a provider fails."""
+
+    pass
+
+
 class InsufficientCreditsError(IndoxRouterError):
     """Raised when the user doesn't have enough credits."""
+
+    pass
+
+
+class ValidationError(IndoxRouterError):
+    """Raised when request validation fails."""
+
+    pass
+
+
+class APIError(IndoxRouterError):
+    """Raised when the API returns an error."""
 
     pass
