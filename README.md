@@ -58,7 +58,7 @@ response = client.chat(
     temperature=0.7
 )
 
-print(response["choices"][0]["message"]["content"])
+print(response["data"])
 ```
 
 ### Text Completions
@@ -70,7 +70,7 @@ response = client.completion(
     max_tokens=100
 )
 
-print(response["choices"][0]["text"])
+print(response["data"])
 ```
 
 ### Embeddings
@@ -114,9 +114,8 @@ for chunk in client.chat(
     model="openai/gpt-4o-mini",
     stream=True
 ):
-    if chunk.get("choices") and len(chunk["choices"]) > 0:
-        content = chunk["choices"][0].get("delta", {}).get("content", "")
-        print(content, end="", flush=True)
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
 ```
 
 ### Getting Available Models
