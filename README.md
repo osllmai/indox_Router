@@ -30,12 +30,6 @@ client = Client(api_key="your_api_key")
 import os
 os.environ["INDOX_ROUTER_API_KEY"] = "your_api_key"
 client = Client()
-
-# Connect to a custom server
-client = Client(
-    api_key="your_api_key",
-    base_url="https://your-indoxrouter-server.com"
-)
 ```
 
 ### Authentication
@@ -50,22 +44,6 @@ IndoxRouter uses cookie-based authentication with JWT tokens. The client handles
 ```python
 # Authentication is handled automatically when creating the client
 client = Client(api_key="your_api_key")
-```
-
-### Testing Your API Key
-
-The package includes a test script to verify your API key and connection:
-
-```bash
-# Run the test script with your API key
-python -m indoxrouter.test_api_key --api-key YOUR_API_KEY
-
-# Or set the environment variable and run
-export INDOX_ROUTER_API_KEY=YOUR_API_KEY
-python -m indoxrouter.test_api_key
-
-# To see detailed debugging information
-python -m indoxrouter.test_api_key --debug
 ```
 
 ### Chat Completions
@@ -121,27 +99,6 @@ response = client.images(
 
 print(f"Image URL: {response['data'][0]['url']}")
 
-# Google Imagen Image Generation
-from indoxrouter.constants import GOOGLE_IMAGE_MODEL
-
-response = client.images(
-    prompt="A robot holding a red skateboard in a futuristic city",
-    model=GOOGLE_IMAGE_MODEL,
-    n=2,  # Generate 2 images
-    negative_prompt="broken, damaged, low quality",
-    guidance_scale=7.5,  # Control adherence to prompt
-    seed=42,  # For reproducible results
-)
-
-# xAI Grok Image Generation
-from indoxrouter.constants import XAI_IMAGE_MODEL
-
-response = client.images(
-    prompt="A cat in a tree",
-    model=XAI_IMAGE_MODEL,
-    n=1,
-    response_format="b64_json"  # Get base64 encoded image
-)
 
 # Access base64 encoded image data
 if "b64_json" in response["data"][0]:
@@ -175,35 +132,6 @@ for provider in providers:
 # Get models for a specific provider
 openai_provider = client.models("openai")
 print(f"OpenAI models: {[m['id'] for m in openai_provider['models']]}")
-```
-
-## Error Handling
-
-```python
-from indoxrouter import Client, ModelNotFoundError, ProviderError
-
-try:
-    client = Client(api_key="your_api_key")
-    response = client.chat(
-        messages=[{"role": "user", "content": "Hello"}],
-        model="nonexistent-provider/nonexistent-model"
-    )
-except ModelNotFoundError as e:
-    print(f"Model not found: {e}")
-except ProviderError as e:
-    print(f"Provider error: {e}")
-```
-
-## Context Manager
-
-```python
-with Client(api_key="your_api_key") as client:
-    response = client.chat(
-        messages=[{"role": "user", "content": "Hello!"}],
-        model="openai/gpt-4o-mini"
-    )
-    print(response["choices"][0]["message"]["content"])
-# Client is automatically closed when exiting the block
 ```
 
 ## License
