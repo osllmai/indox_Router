@@ -1,4 +1,4 @@
-# IndoxRouter Client
+# IndoxRouter
 
 A unified client for various AI providers, including OpenAI, anthropic, Google, and Mistral.
 
