@@ -1,0 +1,53 @@
+site_name: IndoxRouter
+site_description: Documentation for the IndoxRouter Python package
+site_author: IndoxRouter Team
+
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: indigo
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.expand
+    - navigation.indexes
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.snippets
+  - admonition
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Usage Guide:
+      - Basic Usage: usage/basic-usage.md
+      - Chat Completions: usage/chat.md
+      - Text Completions: usage/completions.md
+      - Embeddings: usage/embeddings.md
+      - Image Generation: usage/images.md
+      - Response Format: usage/responses.md
+      - Usage Tracking: usage/tracking.md
+      - Rate Limits: usage/rate-limits.md
+
+  - Examples:
+      - Basic Examples: examples/basic.md
+      - Advanced Examples: examples/advanced.md
+      - OpenAI SDK Usage: examples/openai-sdk.md
+  - API Reference:
+      - Client Methods: api/client.md
+      - Response Schemas: api/responses.md
+      - Exceptions: api/exceptions.md
+  - Use Cases:
+      - Chatbots: use-cases/chatbots.md
+      - RAG Systems: use-cases/rag-systems.md
+      - Content Generation: use-cases/content-generation.md
+      - Document Processing: use-cases/document-processing.md
