@@ -32,7 +32,7 @@ jobs:
       - name: Remove Existing .env File (if exists)
         run: |
           echo "::group::Removing existing .env File"
-          ENV_PATH="${{secrets.TARGET_FOLDER}}"
+          ENV_PATH="${{secrets.TARGET_FOLDER}}/.env"
           if [ -f "$ENV_PATH" ]; then
             rm "$ENV_PATH"
             echo "Removed old .env"
@@ -47,7 +47,7 @@ jobs:
       - name: Create .env in shared folder
         run: |
             # Define the .env file path
-            ENV_PATH="${{secrets.TARGET_FOLDER}}" Important
+            ENV_PATH="${{secrets.TARGET_FOLDER}}/.env" Important
 
             # Clear existing .env content (optional, for a fresh start)
 
