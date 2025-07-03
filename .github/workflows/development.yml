@@ -27,8 +27,8 @@ jobs:
 
   # ######################## Lint Job ########################
 
-  # ######################## Tag Job ########################
-  # tag_and_release:
-  #   needs: [setup , pre_commit]
-  #   uses: ./.github/workflows/tag_and_release.yml
-  #   secrets: inherit
+  ######################## Tag Job ########################
+  tag_and_release:
+    needs: [setup ]
+    uses: ./.github/workflows/tag_and_release.yml
+    secrets: inherit

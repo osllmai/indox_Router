@@ -1,0 +1,143 @@
+# name: Setup Environment Variables
+name: Tag & Release
+# This workflow is designed to create a new tag and release based on the branch name.
+on:
+    workflow_call:
+       inputs:
+        environment:
+            required: false
+            type: string
+
+env:
+  BRANCH_NAME: ${{ github.ref_name }}
+
+
+jobs:
+  notify:
+######################## Tag & Release Job ########################
+    runs-on: ubuntu-latest
+    if: always()
+
+#### This job runs on a separate runner to avoid conflicts with the deploy job
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+            # Fetch all history for all tags and branches
+
+      - name: Determine Branch and Set Label
+        id: branch_label
+        run: |
+            if [[ "${BRANCH_NAME}" == "master" ]]; then
+                LABEL="Master"
+            elif [[ "${BRANCH_NAME}" == "development" ]]; then
+                LABEL="Dev"
+            else
+                echo "Error: Unsupported branch '${BRANCH_NAME}'."
+                exit 1
+            fi
+            echo "LABEL=$LABEL" >> $GITHUB_ENV
+
+      - name: Fetch Latest Tag and Determine Next Version
+        id: versioning
+        run: |
+            git fetch --tags
+            LATEST_TAG=$(git tag -l "v*-${LABEL}" --sort=-v:refname | head -n 1 | tr -d '\r')
+            if [[ -z "$LATEST_TAG" ]]; then
+                NEW_TAG="v0.1.0-${LABEL}"
+            else
+                if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)-${LABEL}$ ]]; then
+                MAJOR="${BASH_REMATCH[1]}"
+                MINOR="${BASH_REMATCH[2]}"
+                PATCH="${BASH_REMATCH[3]}"
+                else
+                echo "Error: Could not parse latest tag '$LATEST_TAG'"
+                exit 1
+                fi
+                PATCH=$((PATCH + 1))
+                NEW_TAG="v$MAJOR.$MINOR.$PATCH-${LABEL}"
+            fi
+            echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+            echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+
+      - name: Configure Git User
+        run: |
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+
+      - name: Create and Push New Git Tag
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git tag "$NEW_TAG"
+            git push origin "$NEW_TAG"
+
+      - name: Prepare Deployment Message
+        id: prepare_message
+        run: |
+            REPO=${{ github.repository }}
+            DEPLOY_NUMBER=${{ github.run_number }}
+            GITHUB_RUN_URL="https://github.com/${REPO}/actions/runs/${{ github.run_id }}"
+            COMMIT_HASH=${{ github.sha }}
+            ACTOR=${{ github.actor }}
+            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            EVENT_TYPE=${{ github.event_name }}
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+
+            MESSAGE="## 🚀 New Deployment to [${BRANCH_NAME}](https://github.com/${REPO}/tree/${BRANCH_NAME})\n\n"
+            MESSAGE+="**📦 Deploy Number:** $DEPLOY_NUMBER\n\n"
+            MESSAGE+="**🔗 [View Workflow Run]($GITHUB_RUN_URL)**\n\n"
+            MESSAGE+="**🔄 Commit:** [$COMMIT_HASH](https://github.com/$REPO/commit/$COMMIT_HASH)\n\n"
+            MESSAGE+="**👤 Triggered by:** $ACTOR\n\n"
+            MESSAGE+="**📅 Timestamp:** $TIMESTAMP\n\n"
+            MESSAGE+="**📢 Event Type:** $EVENT_TYPE\n\n"
+            MESSAGE+="**💬 Commit Message:** _${COMMIT_MSG}_\n\n"
+
+            echo "MESSAGE<<EOF" >> $GITHUB_ENV
+            echo -e "$MESSAGE" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            MESSAGE: ${{ env.MESSAGE }}
+        run: |
+            echo "$MESSAGE" > release_notes.md
+            gh release create "$NEW_TAG" \
+                --title "$NEW_TAG" \
+                --notes-file release_notes.md
+
+    ######################## Notifications (Teams + Discord) ########################
+      - name: Read Release Notes
+        id: read_release_notes
+        run: |
+            NOTES=$(cat release_notes.md)
+            echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+            echo "$NOTES" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+
+      - name: Notify Discord
+        if: always()
+        env:
+            DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+            MESSAGE: ${{ env.MESSAGE }}
+            RELEASE_NOTES: ${{ env.RELEASE_NOTES }}
+        run: |
+            STATUS="${{ job.status }}"
+            ICON="✅"
+            if [ "$STATUS" = "failure" ]; then ICON="❌"; fi
+
+            FINAL_MESSAGE="$ICON *Deploy ${STATUS^^}* for \`${{ github.repository }}\` on branch \`${{ github.ref_name }}\`."
+            FINAL_MESSAGE+="\n"
+            FINAL_MESSAGE+="\nCommit: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>"
+            FINAL_MESSAGE+="\n"
+            FINAL_MESSAGE+="\n**📄 Release Notes:**"
+            FINAL_MESSAGE+="\n${RELEASE_NOTES}"
+
+            ESCAPED_MESSAGE=$(echo "$FINAL_MESSAGE" | sed 's/\\/\\\\/g' | sed 's/\"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+
+            curl -H "Content-Type: application/json" \
+                -X POST \
+                -d "{\"content\":\"$ESCAPED_MESSAGE\"}" \
+                "$DISCORD_WEBHOOK"
