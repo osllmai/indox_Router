@@ -1,0 +1,176 @@
+name: Setup Environment Variables
+
+on:
+  workflow_call:
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        required: true
+
+
+permissions:
+  contents: write
+
+env:
+  BRANCH_NAME: ${{ github.ref_name }}
+
+jobs:
+  create-env-file:
+    runs-on: [self-hosted, indoxrouterbackend]
+    steps:
+      - name: Set Variables Based on Branch master
+        run: |
+          echo "TARGET_FOLDER=${{secrets.TARGET_FOLDER}}" >> $GITHUB_ENV
+          echo "COMPOSE_FILE=docker/master/docker-compose.yml" >> $GITHUB_ENV
+        #   echo "CONTAINER_NAME=indoxrouter-master" >> $GITHUB_ENV
+
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          clean: false
+
+      - name: Remove Existing .env File (if exists)
+        run: |
+          echo "::group::Removing existing .env File"
+          ENV_PATH="${{secrets.TARGET_FOLDER}}"
+          if [ -f "$ENV_PATH" ]; then
+            rm "$ENV_PATH"
+            echo "Removed old .env"
+          else
+            echo ".env does not exist, skipping removal"
+          fi
+          echo "::endgroup::"
+
+
+
+
+      - name: Create .env in shared folder
+        run: |
+            # Define the .env file path
+            ENV_PATH="${{secrets.TARGET_FOLDER}}/.env" Important
+
+            # Clear existing .env content (optional, for a fresh start)
+
+            cat << EOF > $ENV_PATH
+            #######################################
+            #         Application Core            #
+            #######################################
+            HOST=${{secrets.HOST}}
+            PORT=${{secrets.PORT}}
+            DEBUG=${{secrets.DEBUG}}
+
+            SECRET_KEY=${{secrets.SECRET_KEY}}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+            REFRESH_TOKEN_EXPIRE_DAYS=${{secrets.REFRESH_TOKEN_EXPIRE_DAYS}}
+            INDOXROUTER_PRODUCTION_MODE=${{secrets.INDOXROUTER_PRODUCTION_MODE}}
+            INDOXROUTER_STATIC_DIR=${{secrets.INDOXROUTER_STATIC_DIR}}
+
+
+            #######################################
+            #          API Provider Keys          #
+            #######################################
+            OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}
+            OPENAI_ORGANIZATION_ID=${{secrets.OPENAI_ORGANIZATION_ID}}
+            DEEPSEEK_API_KEY=${{secrets.DEEPSEEK_API_KEY}}
+            MISTRAL_API_KEY=${{secrets.MISTRAL_API_KEY}}
+            ANTHROPIC_API_KEY=${{secrets.ANTHROPIC_API_KEY}}
+            XAI_API_KEY=${{secrets.XAI_API_KEY}}
+            GOOGLE_API_KEY=${{secrets.GOOGLE_API_KEY}}
+            QWEN_API_KEY=${{secrets.QWEN_API_KEY}}
+
+            #######################################
+            #       Default Model Settings        #
+            #######################################
+
+            DEFAULT_PROVIDER=${{secrets.DEFAULT_PROVIDER}}
+            DEFAULT_CHAT_MODEL=${{secrets.DEFAULT_CHAT_MODEL}}
+            DEFAULT_COMPLETION_MODEL=${{secrets.DEFAULT_COMPLETION_MODEL}}
+            DEFAULT_EMBEDDING_MODEL=${{secrets.DEFAULT_EMBEDDING_MODEL}}
+
+            #######################################
+            #         Rate Limiting Config        #
+            #######################################
+            RATE_LIMIT_REQUESTS=${{secrets.RATE_LIMIT_REQUESTS}}
+            RATE_LIMIT_PERIOD_SECONDS=${{secrets.RATE_LIMIT_PERIOD_SECONDS}}
+
+            #######################################
+            #      PostgreSQL Database Config     #
+            #######################################
+            POSTGRES_HOST=${{secrets.POSTGRES_HOST}}
+            POSTGRES_PORT=${{secrets.POSTGRES_PORT}}
+            POSTGRES_USER=${{secrets.POSTGRES_USER}}
+            POSTGRES_PASSWORD=${{secrets.POSTGRES_PASSWORD}}
+            POSTGRES_DB=${{secrets.POSTGRES_DB}}
+
+            #######################################
+            #        MongoDB Database Config      #
+            #######################################
+            MONGO_HOST=${{secrets.MONGO_HOST}}
+            MONGO_PORT=${{secrets.MONGO_PORT}}
+            MONGO_INITDB_ROOT_USERNAME=${{secrets.MONGO_INITDB_ROOT_USERNAME}}
+            MONGO_INITDB_ROOT_PASSWORD=${{secrets.MONGO_INITDB_ROOT_PASSWORD}}
+            MONGO_APP_USER=${{secrets.MONGO_APP_USER}}
+            MONGO_APP_PASSWORD=${{secrets.MONGO_APP_PASSWORD}}
+            MONGO_INITDB_DATABASE=${{secrets.MONGO_INITDB_DATABASE}}
+            MONGODB_URI=${{secrets.MONGODB_URI}}
+
+            #######################################
+            #          Redis Configuration        #
+            #######################################
+            REDIS_HOST=${{secrets.REDIS_HOST}}
+            REDIS_PORT=${{secrets.REDIS_PORT}}
+            REDIS_PASSWORD=${{secrets.REDIS_PASSWORD}}
+            #######################################
+            #         Cache Configuration         #
+            #######################################
+            ENABLE_RESPONSE_CACHE=${{secrets.ENABLE_RESPONSE_CACHE}}
+            CACHE_TTL_DAYS=${{secrets.CACHE_TTL_DAYS}}
+
+            #######################################
+            #         Frontend Integration        #
+            #######################################
+            EXTERNAL_URL=${{secrets.EXTERNAL_URL}}
+            COOKIE_SECURE=${{secrets.COOKIE_SECURE}}
+            COOKIE_SAMESITE=${{secrets.COOKIE_SAMESITE}}
+            COOKIE_DOMAIN=${{secrets.COOKIE_DOMAIN}}
+            COOKIE_PATH=${{secrets.COOKIE_PATH}}
+            CORS_ORIGINS=${{secrets.CORS_ORIGINS}}
+            DEV_FRONTEND_URL=${{secrets.DEV_FRONTEND_URL}}
+            PROD_FRONTEND_URL=${{secrets.PROD_FRONTEND_URL}}
+
+
+            #######################################
+            #           Email Settings           #
+            #######################################
+            MAIL_USERNAME=${{secrets.MAIL_USERNAME}}
+            MAIL_PASSWORD=${{secrets.MAIL_PASSWORD}}
+            MAIL_FROM=${{secrets.MAIL_FROM}}
+            MAIL_PORT=${{secrets.MAIL_PORT}}
+            MAIL_SERVER=${{secrets.MAIL_SERVER}}
+            MAIL_TLS=${{secrets.MAIL_TLS}}
+            MAIL_SSL=${{secrets.MAIL_SSL}}
+            MAIL_USE_CREDENTIALS=${{secrets.MAIL_USE_CREDENTIALS}}
+
+
+            #######################################
+            #               Stripe                #
+            #######################################
+            STRIPE_API_KEY=${{secrets.STRIPE_API_KEY}}
+            STRIPE_WEBHOOK_SECRET=${{secrets.STRIPE_WEBHOOK_SECRET}}
+            STRIPE_PROCESSING_FEE_PERCENT=${{secrets.STRIPE_PROCESSING_FEE_PERCENT}}
+            STRIPE_CURRENCY=${{secrets.STRIPE_CURRENCY}}
+            STRIPE_TAX_ENABLED=${{secrets.STRIPE_TAX_ENABLED}}
+
+            #######################################
+            #            Google Client           #
+            #######################################
+            GOOGLE_CLIENT_ID=${{secrets.GOOGLE_CLIENT_ID}}
+            GOOGLE_CLIENT_SECRET=${{secrets.GOOGLE_CLIENT_SECRET}}
+            ################################################################################
+            # Discord Configuration
+            ################################################################################
+            DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
+            EOF
+
+            echo ".env created at $ENV_FILE_PATH"
+            cat $ENV_FILE_PATH
