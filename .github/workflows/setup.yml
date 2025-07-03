@@ -17,12 +17,12 @@ jobs:
   create-env-file:
     runs-on: [self-hosted, indoxrouterbackend]
     steps:
+
       - name: Set Variables Based on Branch development
         run: |
-          echo "TARGET_FOLDER=${{secrets.TARGET_FOLDER}}" >> $GITHUB_ENV
+          echo "TARGET_FOLDER=${{ secrets.TARGET_FOLDER }}" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker/development/docker-compose.yml" >> $GITHUB_ENV
           echo "CONTAINER_NAME=indoxrouter-development" >> $GITHUB_ENV
-
 
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -32,25 +32,36 @@ jobs:
       - name: Remove Existing .env File (if exists)
         run: |
           echo "::group::Removing existing .env File"
-          ENV_PATH="${{secrets.TARGET_FOLDER}}"
+          ENV_PATH="${{ secrets.TARGET_FOLDER }}/.env"
           if [ -f "$ENV_PATH" ]; then
             rm "$ENV_PATH"
-            echo "Removed old .env"
+            echo "✅ Removed old .env"
           else
-            echo ".env does not exist, skipping removal"
+            echo "ℹ️  .env does not exist, skipping removal"
           fi
           echo "::endgroup::"
 
-
-
-
       - name: Create .env in shared folder
         run: |
-          # Define the .env file path
-            ENV_PATH="${{secrets.TARGET_FOLDER}}"
+          echo "::group::Creating .env File"
+          TARGET_FOLDER="${{ secrets.TARGET_FOLDER }}"
+          ENV_PATH="$TARGET_FOLDER/.env"
 
-            # Clear existing .env content (optional, for a fresh start)
+          mkdir -p "$TARGET_FOLDER"
 
+          cat <<EOF > "$ENV_PATH"
+          VAR1=value1
+          VAR2=value2
+          BRANCH_NAME=${{ env.BRANCH_NAME }}
+          COMPOSE_FILE=${{ env.COMPOSE_FILE }}
+          CONTAINER_NAME=${{ env.CONTAINER_NAME }}
+          EOF
+
+          echo "✅ .env created at $ENV_PATH"
+          cat "$ENV_PATH"
+          echo "::endgroup::"
+      - name: Create .env file with secrets
+        run: |
             cat << EOF > $ENV_PATH
             #######################################
             #         Application Core            #
