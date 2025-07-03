@@ -1,34 +1,8 @@
-# IndoxRouter
-
-IndoxRouter is a unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.
-
-## Key Features
-
-### 🚀 Unified API
-
-- Access 7+ AI providers through one consistent interface
-- Switch between models without changing your code
-- Automatic cost tracking and usage monitoring
-
-### 🔧 Multiple AI Capabilities
-
-- **Chat Completions**: Conversational AI with system/user/assistant messages
-- **Text Completions**: Direct text generation and completion
-- **Embeddings**: Vector embeddings for text processing and similarity
-- **Image Generation**: Text-to-image generation with various styles and sizes
-
-### 📊 Built-in Analytics
-
-- Detailed usage tracking with costs
-- Token consumption monitoring
-- Request latency metrics
-- Historical usage reports
-
-### 🛡️ Rate Limiting & Tiers
-
-- **Free Tier**: 10 requests/minute, 10K tokens/hour
-- **Standard Tier**: 60 requests/minute, 100K tokens/hour
-- **Enterprise Tier**: 500 requests/minute, 1M tokens/hour
+<div class="hero-section">
+<h1>IndoxRouter</h1>
+<p>A unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.</p>
+<a href="getting-started/" class="cta-button">Get Started</a>
+</div>
 
 ## Installation
 
