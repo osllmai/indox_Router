@@ -15,7 +15,7 @@ env:
 
 jobs:
   create-env-file:
-    runs-on: [self-hosted, indox-back-runner]
+    runs-on: [self-hosted, indoxrouterbackend]
     steps:
       - name: Set Variables Based on Branch development
         run: |
