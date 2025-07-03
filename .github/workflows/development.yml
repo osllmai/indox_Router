@@ -1,8 +1,8 @@
-name: CI/CD Pipeline for Development Branch for indox router
+name: CI/CD Pipeline for master Branch for indox router
 
 on:
   push:
-    branches: ["development"]
+    branches: ["master"]
 
 permissions:
   contents: write
