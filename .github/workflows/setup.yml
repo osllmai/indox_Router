@@ -17,11 +17,11 @@ jobs:
   create-env-file:
     runs-on: [self-hosted, indoxrouterbackend]
     steps:
-      - name: Set Variables Based on Branch development
+      - name: Set Variables Based on Branch master
         run: |
           echo "TARGET_FOLDER=${{secrets.TARGET_FOLDER}}" >> $GITHUB_ENV
-          echo "COMPOSE_FILE=docker/development/docker-compose.yml" >> $GITHUB_ENV
-        #   echo "CONTAINER_NAME=indoxrouter-development" >> $GITHUB_ENV
+          echo "COMPOSE_FILE=docker/master/docker-compose.yml" >> $GITHUB_ENV
+        #   echo "CONTAINER_NAME=indoxrouter-master" >> $GITHUB_ENV
 
 
       - name: Checkout Repository
@@ -58,11 +58,6 @@ jobs:
             HOST=${{secrets.HOST}}
             PORT=${{secrets.PORT}}
             DEBUG=${{secrets.DEBUG}}
-            SECRET_KEY=${{secrets.SECRET_KEY}}
-            ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
-            REFRESH_TOKEN_EXPIRE_DAYS=${{secrets.REFRESH_TOKEN_EXPIRE_DAYS}}
-            INDOXROUTER_PRODUCTION_MODE=${{secrets.INDOXROUTER_PRODUCTION_MODE}}
-            INDOXROUTER_STATIC_DIR=${{secrets.INDOXROUTER_STATIC_DIR}}
 
 
             ################################################################################
