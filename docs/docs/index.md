@@ -1,8 +1,6 @@
-<div class="hero-section">
-<h1>IndoxRouter</h1>
-<p>A unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.</p>
-<a href="getting-started/" class="cta-button">Get Started</a>
-</div>
+# IndoxRouter
+
+A unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.
 
 ## Installation
 
@@ -178,5 +176,4 @@ Rate limit information is included in error responses when limits are exceeded.
 
 - **[Getting Started](getting-started.md)**: Detailed setup guide
 - **[Usage Examples](usage/basic-usage.md)**: Comprehensive usage examples
-- **[Model Guide](usage/models.md)**: Complete model reference
 - **[API Reference](api/client.md)**: Full API documentation
