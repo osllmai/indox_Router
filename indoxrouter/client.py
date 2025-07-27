@@ -11,7 +11,7 @@ automatically handles authentication by exchanging your API key for a JWT token 
 The Client class offers methods for:
 - Authentication and session management
 - Making API requests with automatic token refresh
-- Accessing AI capabilities: chat completions, text completions, embeddings, and image generation
+- Accessing AI capabilities: chat completions, text completions, embeddings, image generation, and text-to-speech
 - Retrieving information about available providers and models
 - Monitoring usage statistics and credit consumption
 
@@ -33,6 +33,9 @@ Usage example:
 
     # Generate text embeddings
     embeddings = client.embeddings("This is a sample text", model="openai/text-embedding-ada-002")
+
+    # Generate text-to-speech audio
+    audio = client.text_to_speech("Hello, welcome to IndoxRouter!", model="openai/tts-1", voice="alloy")
 
     # Clean up resources when done
     client.close()
@@ -72,10 +75,12 @@ from .constants import (
     DEFAULT_MODEL,
     DEFAULT_EMBEDDING_MODEL,
     DEFAULT_IMAGE_MODEL,
+    DEFAULT_TTS_MODEL,
     CHAT_ENDPOINT,
     COMPLETION_ENDPOINT,
     EMBEDDING_ENDPOINT,
     IMAGE_ENDPOINT,
+    TTS_ENDPOINT,
     MODEL_ENDPOINT,
     USAGE_ENDPOINT,
     USE_COOKIES,
@@ -773,6 +778,82 @@ class Client:
                     del data[param]
 
         return self._request("POST", IMAGE_ENDPOINT, data)
+
+    def text_to_speech(
+        self,
+        input: str,
+        model: str = DEFAULT_TTS_MODEL,
+        voice: Optional[str] = None,
+        response_format: Optional[str] = None,
+        speed: Optional[float] = None,
+        instructions: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Generate audio from text using text-to-speech models.
+
+        Args:
+            input: The text to generate audio for
+            model: Model to use in the format "provider/model" (e.g., "openai/tts-1")
+            voice: Voice to use for the audio generation (provider-specific)
+            response_format: Format of the audio response (e.g., "mp3", "opus", "aac", "flac")
+            speed: Speed of the generated audio (0.25 to 4.0)
+            instructions: Optional instructions for the TTS generation
+            **kwargs: Additional parameters to pass to the API
+
+        Returns:
+            Response data with audio content
+
+        Examples:
+            Basic usage:
+                response = client.text_to_speech("Hello, world!")
+
+            With specific voice and format:
+                response = client.text_to_speech(
+                    "Hello, world!",
+                    model="openai/tts-1",
+                    voice="alloy",
+                    response_format="mp3",
+                    speed=1.0
+                )
+
+            For different providers (when available):
+                response = client.text_to_speech(
+                    "Hello, world!",
+                    model="provider/model-name",
+                    voice="provider-specific-voice"
+                )
+        """
+        # Format the model string
+        formatted_model = self._format_model_string(model)
+
+        # Filter out problematic parameters
+        filtered_kwargs = {}
+        for key, value in kwargs.items():
+            if key not in ["return_generator"]:  # List of parameters to exclude
+                filtered_kwargs[key] = value
+
+        # Create the base request data with required parameters
+        data = {
+            "input": input,
+            "model": formatted_model,
+        }
+
+        # Add optional parameters only if they are explicitly provided
+        if voice is not None:
+            data["voice"] = voice
+        if response_format is not None:
+            data["response_format"] = response_format
+        if speed is not None:
+            data["speed"] = speed
+        if instructions is not None and instructions.strip():
+            data["instructions"] = instructions
+
+        # Add any additional parameters from kwargs
+        if filtered_kwargs:
+            data["additional_params"] = filtered_kwargs
+
+        return self._request("POST", TTS_ENDPOINT, data)
 
     def _get_supported_parameters_for_model(
         self, provider: str, model_name: str

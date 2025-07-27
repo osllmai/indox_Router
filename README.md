@@ -5,7 +5,7 @@ A unified client for various AI providers, including OpenAI, anthropic, Google, 
 ## Features
 
 - **Unified API**: Access multiple AI providers through a single API
-- **Simple Interface**: Easy-to-use methods for chat, completion, embeddings, and image generation
+- **Simple Interface**: Easy-to-use methods for chat, completion, embeddings, image generation, and text-to-speech
 - **Error Handling**: Standardized error handling across providers
 - **Authentication**: Secure cookie-based authentication
 
@@ -104,6 +104,22 @@ print(f"Image URL: {response['data'][0]['url']}")
 if "b64_json" in response["data"][0]:
     b64_data = response["data"][0]["b64_json"]
     # Use the base64 data (e.g., to display in HTML or save to file)
+```
+
+### Text-to-Speech
+
+```python
+# Generate audio from text
+response = client.text_to_speech(
+    input="Hello, welcome to IndoxRouter!",
+    model="openai/tts-1",
+    voice="alloy",  # Options: alloy, echo, fable, onyx, nova, shimmer
+    response_format="mp3",  # Options: mp3, opus, aac, flac
+    speed=1.0  # Range: 0.25 to 4.0
+)
+
+print(f"Audio generated successfully: {response['success']}")
+print(f"Audio data available: {'data' in response}")
 ```
 
 ### Streaming Responses

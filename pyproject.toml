@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "indoxrouter"
-version = "0.1.23"
+version = "0.1.25"
 authors = [
     {name = "indoxRouter Team", email = "ashkan.eskandari.dev@gmail.com"},
 ]
@@ -12,7 +12,7 @@ description = "A unified client for various AI providers"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
-keywords = ["ai", "api", "client", "openai", "anthropic", "google", "mistral", "xai", "imagen", "grok", "image-generation"]
+keywords = ["ai", "api", "client", "openai", "anthropic", "google", "mistral", "xai", "imagen", "grok", "image-generation", "text-to-speech", "tts", "audio"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
