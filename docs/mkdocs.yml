@@ -97,6 +97,7 @@ nav:
       - Text Completions: usage/completions.md
       - Embeddings: usage/embeddings.md
       - Image Generation: usage/images.md
+      - Text-to-Speech: usage/tts.md
       - Response Format: usage/responses.md
       - Usage Tracking: usage/tracking.md
       - Rate Limits: usage/rate-limits.md

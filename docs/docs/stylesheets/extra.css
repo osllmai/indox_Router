@@ -45,6 +45,27 @@
   border-bottom-color: var(--indox-border);
 }
 
+/* Fix navbar text visibility in light mode */
+[data-md-color-scheme="default"] .md-header-nav__button,
+[data-md-color-scheme="default"] .md-header__topic,
+[data-md-color-scheme="default"] .md-header__title,
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: #334155 !important;
+}
+
+[data-md-color-scheme="default"] .md-header-nav__button:hover {
+  color: var(--indox-primary) !important;
+}
+
+/* Ensure search icon and nav buttons are visible in light mode */
+[data-md-color-scheme="default"] .md-header__button.md-icon {
+  color: #334155 !important;
+}
+
+[data-md-color-scheme="default"] .md-header__button.md-icon:hover {
+  color: var(--indox-primary) !important;
+}
+
 /* Logo styling - clean and minimal */
 .md-header__button.md-logo {
   margin: 0.2rem;
@@ -65,8 +86,16 @@
 .md-header__title {
   font-weight: 600;
   font-size: 1.125rem;
-  color: var(--indox-primary);
   margin-left: 0.5rem;
+}
+
+/* Header title colors for different themes */
+[data-md-color-scheme="default"] .md-header__title {
+  color: #334155 !important;
+}
+
+[data-md-color-scheme="slate"] .md-header__title {
+  color: var(--indox-primary) !important;
 }
 
 /* Navigation tabs - minimal styling */
@@ -88,6 +117,16 @@
 .md-tabs__link--active,
 .md-tabs__link:hover {
   color: var(--indox-primary);
+}
+
+/* Ensure tab text is visible in light mode */
+[data-md-color-scheme="default"] .md-tabs__link {
+  color: #64748b !important;
+}
+
+[data-md-color-scheme="default"] .md-tabs__link--active,
+[data-md-color-scheme="default"] .md-tabs__link:hover {
+  color: var(--indox-primary) !important;
 }
 
 /* Clean navigation */
