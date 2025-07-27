@@ -6,14 +6,15 @@ theme:
   name: material
   logo: image.png
   favicon: image.png
+
   palette:
-    # Palette toggle for automatic mode
+    # Automatic mode
     - media: "(prefers-color-scheme)"
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
 
-    # Palette toggle for light mode
+    # Light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: indigo
@@ -22,7 +23,7 @@ theme:
         icon: material/brightness-7
         name: Switch to dark mode
 
-    # Palette toggle for dark mode
+    # Dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: indigo
@@ -41,6 +42,7 @@ theme:
     - navigation.expand
     - navigation.indexes
     - navigation.top
+    - navigation.footer    
     - search.highlight
     - search.share
     - search.suggest
@@ -106,10 +108,12 @@ nav:
       - Basic Examples: examples/basic.md
       - Advanced Examples: examples/advanced.md
       - OpenAI SDK Usage: examples/openai-sdk.md
+
   - API Reference:
       - Client Methods: api/client.md
       - Response Schemas: api/responses.md
       - Exceptions: api/exceptions.md
+
   - Use Cases:
       - Chatbots: use-cases/chatbots.md
       - RAG Systems: use-cases/rag-systems.md
