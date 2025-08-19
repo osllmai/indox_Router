@@ -177,3 +177,6 @@ Rate limit information is included in error responses when limits are exceeded.
 - **[Getting Started](getting-started.md)**: Detailed setup guide
 - **[Usage Examples](usage/basic-usage.md)**: Comprehensive usage examples
 - **[API Reference](api/client.md)**: Full API documentation
+
+
+_Last updated: July 27, 2025_
