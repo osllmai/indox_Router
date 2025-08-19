@@ -98,6 +98,7 @@ class Client:
         self,
         api_key: Optional[str] = None,
         timeout: int = DEFAULT_TIMEOUT,
+        base_url: Optional[str] = None,
     ):
         """
         Initialize the client.
@@ -106,6 +107,7 @@ class Client:
             api_key: API key for authentication. If not provided, the client will look for the
                 INDOX_ROUTER_API_KEY environment variable.
             timeout: Request timeout in seconds.
+            base_url: Base URL for the API. If not provided, the client will use the default URL.
         """
 
         use_cookies = USE_COOKIES
@@ -115,7 +117,11 @@ class Client:
                 "API key must be provided either as an argument or as the INDOX_ROUTER_API_KEY environment variable."
             )
 
-        self.base_url = DEFAULT_BASE_URL
+        self.base_url = base_url if base_url is not None else DEFAULT_BASE_URL
+
+        if self.base_url.endswith("/"):
+            self.base_url = self.base_url.rstrip("/")
+
         self.timeout = timeout
         self.use_cookies = use_cookies
         self.session = requests.Session()
