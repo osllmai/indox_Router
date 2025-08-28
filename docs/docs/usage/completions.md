@@ -30,6 +30,45 @@ print("Response:", response["data"])
 - `frequency_penalty`: Penalizes frequent tokens
 - `presence_penalty`: Penalizes new tokens
 
+## BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK for text completions, allowing you to use your own API keys for AI providers:
+
+```python
+# Use your own OpenAI API key for completions
+response = client.completion(
+    prompt="The future of artificial intelligence is",
+    model="openai/gpt-3.5-turbo-instruct",
+    max_tokens=100,
+    temperature=0.7,
+    byok_api_key="sk-your-openai-key-here"
+)
+
+# Use your own Anthropic API key for completions
+response = client.completion(
+    prompt="Explain quantum computing in simple terms:",
+    model="anthropic/claude-3-sonnet-20240229",
+    max_tokens=150,
+    byok_api_key="sk-ant-your-anthropic-key-here"
+)
+
+# Use your own Google API key for completions
+response = client.completion(
+    prompt="Write a short story about a robot:",
+    model="google/gemini-1.5-pro",
+    max_tokens=200,
+    byok_api_key="your-google-api-key-here"
+)
+```
+
+### BYOK Benefits for Text Completions
+
+- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Rate Limiting**: Bypass platform rate limits
+- **Direct Provider Access**: Connect directly to your provider accounts
+- **Cost Control**: Pay providers directly at their rates
+- **Full Features**: Access to all provider-specific completion features
+
 ## Example Use Cases
 
 ### Creative Writing

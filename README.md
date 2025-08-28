@@ -8,6 +8,7 @@ A unified client for various AI providers, including OpenAI, anthropic, Google, 
 - **Simple Interface**: Easy-to-use methods for chat, completion, embeddings, image generation, and text-to-speech
 - **Error Handling**: Standardized error handling across providers
 - **Authentication**: Secure cookie-based authentication
+- **BYOK Support**: Bring Your Own Key support for using your own provider API keys
 
 ## Installation
 
@@ -105,6 +106,34 @@ if "b64_json" in response["data"][0]:
     b64_data = response["data"][0]["b64_json"]
     # Use the base64 data (e.g., to display in HTML or save to file)
 ```
+
+### BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers:
+
+```python
+# Use your own OpenAI API key
+response = client.chat(
+    messages=[{"role": "user", "content": "Hello!"}],
+    model="openai/gpt-4",
+    byok_api_key="sk-your-openai-key-here"
+)
+
+# Use your own Google API key for image generation
+response = client.images(
+    prompt="A beautiful sunset",
+    model="google/imagen-3.0-generate-002",
+    aspect_ratio="16:9",
+    byok_api_key="your-google-api-key-here"
+)
+```
+
+**BYOK Benefits:**
+
+- No credit deduction from your IndoxRouter account
+- No platform rate limiting
+- Direct provider access with your own API keys
+- Cost control - pay providers directly at their rates
 
 ### Text-to-Speech
 

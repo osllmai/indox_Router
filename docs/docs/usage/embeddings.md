@@ -75,9 +75,43 @@ mistral_response = client.embeddings(
     text="Example text for embedding",
     model="mistral/mistral-embed"
 )
-
-
 ```
+
+## BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK for embeddings, allowing you to use your own API keys for AI providers:
+
+```python
+# Use your own OpenAI API key for embeddings
+response = client.embeddings(
+    text="Machine learning is transforming industries",
+    model="openai/text-embedding-3-small",
+    byok_api_key="sk-your-openai-key-here"
+)
+
+# Use your own Google API key for embeddings
+response = client.embeddings(
+    text="Natural language processing examples",
+    model="google/text-embedding-gecko",
+    byok_api_key="your-google-api-key-here"
+)
+
+# Use your own Mistral API key for embeddings
+response = client.embeddings(
+    text="AI and machine learning concepts",
+    model="mistral/mistral-embed",
+    byok_api_key="your-mistral-api-key-here"
+)
+```
+
+### BYOK Benefits for Embeddings
+
+- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Rate Limiting**: Bypass platform rate limits
+- **Direct Provider Access**: Connect directly to your provider accounts
+- **Cost Control**: Pay providers directly at their rates
+- **Full Features**: Access to all provider-specific embedding features
+- **Higher Quality**: Use provider's native embedding capabilities
 
 ## Response Format
 

@@ -89,6 +89,41 @@ response = client.chat(
 )
 ```
 
+## BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers. This bypasses platform rate limits and credit deductions:
+
+```python
+# Use your own OpenAI API key
+response = client.chat(
+    messages=[{"role": "user", "content": "Hello!"}],
+    model="openai/gpt-4",
+    byok_api_key="sk-your-openai-key-here"
+)
+
+# Use your own Anthropic API key
+response = client.chat(
+    messages=[{"role": "user", "content": "Tell me a story"}],
+    model="anthropic/claude-3-sonnet-20240229",
+    byok_api_key="sk-ant-your-anthropic-key-here"
+)
+
+# Use your own Google API key
+response = client.chat(
+    messages=[{"role": "user", "content": "Explain quantum computing"}],
+    model="google/gemini-1.5-pro",
+    byok_api_key="your-google-api-key-here"
+)
+```
+
+### BYOK Benefits for Chat
+
+- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Rate Limiting**: Bypass platform rate limits
+- **Direct Provider Access**: Connect directly to your provider accounts
+- **Cost Control**: Pay providers directly at their rates
+- **Full Features**: Access to all provider-specific chat features
+
 ## Streaming Responses
 
 For long responses, you might want to stream the response to get it piece by piece:

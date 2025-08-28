@@ -41,13 +41,31 @@ tts1_hd_response = client.text_to_speech(
     input="This is generated with TTS-1-HD",
     model="openai/tts-1-hd"
 )
-
-# Future providers can be added similarly
-# provider_response = client.text_to_speech(
-#     input="Text to convert to speech",
-#     model="provider/model-name"
-# )
 ```
+
+## BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK for text-to-speech, allowing you to use your own API keys for AI providers:
+
+```python
+# Use your own OpenAI API key for TTS
+response = client.text_to_speech(
+    input="Hello, this is generated with my own OpenAI API key",
+    model="openai/tts-1",
+    voice="alloy",
+    byok_api_key="sk-your-openai-key-here"
+)
+
+```
+
+### BYOK Benefits for Text-to-Speech
+
+- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Rate Limiting**: Bypass platform rate limits
+- **Direct Provider Access**: Connect directly to your provider accounts
+- **Cost Control**: Pay providers directly at their rates
+- **Full Features**: Access to all provider-specific TTS features
+- **Higher Quality**: Use provider's native text-to-speech capabilities
 
 ## Voice Selection
 

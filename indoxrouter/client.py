@@ -14,6 +14,7 @@ The Client class offers methods for:
 - Accessing AI capabilities: chat completions, text completions, embeddings, image generation, and text-to-speech
 - Retrieving information about available providers and models
 - Monitoring usage statistics and credit consumption
+- BYOK (Bring Your Own Key) support for using your own provider API keys
 
 Usage example:
     ```python
@@ -37,6 +38,11 @@ Usage example:
     # Generate text-to-speech audio
     audio = client.text_to_speech("Hello, welcome to IndoxRouter!", model="openai/tts-1", voice="alloy")
 
+    # Using BYOK (Bring Your Own Key)
+    response = client.chat([
+        {"role": "user", "content": "Hello!"}
+    ], model="openai/gpt-4", byok_api_key="sk-your-openai-key-here")
+
     # Clean up resources when done
     client.close()
     ```
@@ -46,6 +52,21 @@ The client can also be used as a context manager:
     with Client(api_key="your_api_key") as client:
         response = client.chat([{"role": "user", "content": "Hello!"}], model="openai/gpt-4o-mini")
     ```
+
+BYOK (Bring Your Own Key) Support:
+    The client supports BYOK, allowing you to use your own API keys for AI providers:
+
+    - No credit deduction from your IndoxRouter account
+    - No rate limiting from the platform
+    - Direct provider access with your own API keys
+    - Cost control - you pay providers directly at their rates
+
+    Example:
+        response = client.chat(
+            messages=[{"role": "user", "content": "Hello!"}],
+            model="openai/gpt-4",
+            byok_api_key="sk-your-openai-key-here"
+        )
 """
 
 import os
@@ -459,6 +480,7 @@ class Client:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         stream: bool = False,
+        byok_api_key: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -470,6 +492,7 @@ class Client:
             temperature: Sampling temperature
             max_tokens: Maximum number of tokens to generate
             stream: Whether to stream the response
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
             **kwargs: Additional parameters to pass to the API
 
         Returns:
@@ -490,6 +513,7 @@ class Client:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": stream,
+            "byok_api_key": byok_api_key,
             "additional_params": filtered_kwargs,
         }
 
@@ -506,6 +530,7 @@ class Client:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         stream: bool = False,
+        byok_api_key: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -517,6 +542,7 @@ class Client:
             temperature: Sampling temperature
             max_tokens: Maximum number of tokens to generate
             stream: Whether to stream the response
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
             **kwargs: Additional parameters to pass to the API
 
         Returns:
@@ -537,6 +563,7 @@ class Client:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": stream,
+            "byok_api_key": byok_api_key,
             "additional_params": filtered_kwargs,
         }
 
@@ -550,6 +577,7 @@ class Client:
         self,
         text: Union[str, List[str]],
         model: str = DEFAULT_EMBEDDING_MODEL,
+        byok_api_key: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -558,6 +586,7 @@ class Client:
         Args:
             text: Text to embed (string or list of strings)
             model: Model to use in the format "provider/model" (e.g., "openai/text-embedding-ada-002")
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
             **kwargs: Additional parameters to pass to the API
 
         Returns:
@@ -575,6 +604,7 @@ class Client:
         data = {
             "text": text if isinstance(text, list) else [text],
             "model": formatted_model,
+            "byok_api_key": byok_api_key,
             "additional_params": filtered_kwargs,
         }
 
@@ -610,6 +640,7 @@ class Client:
         enhance_prompt: Optional[bool] = None,
         # Google-specific direct parameters
         aspect_ratio: Optional[str] = None,
+        byok_api_key: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -650,6 +681,8 @@ class Client:
             enhance_prompt: Whether to use prompt rewriting logic
             aspect_ratio: Aspect ratio for Google models (e.g., "1:1", "16:9") - preferred over size
 
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
+
             **kwargs: Additional parameters to pass to the API
 
         Returns:
@@ -674,6 +707,7 @@ class Client:
         data = {
             "prompt": prompt,
             "model": formatted_model,
+            "byok_api_key": byok_api_key,
         }
 
         # Add optional parameters only if they are explicitly provided
@@ -793,6 +827,7 @@ class Client:
         response_format: Optional[str] = None,
         speed: Optional[float] = None,
         instructions: Optional[str] = None,
+        byok_api_key: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -805,6 +840,7 @@ class Client:
             response_format: Format of the audio response (e.g., "mp3", "opus", "aac", "flac")
             speed: Speed of the generated audio (0.25 to 4.0)
             instructions: Optional instructions for the TTS generation
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
             **kwargs: Additional parameters to pass to the API
 
         Returns:
@@ -828,6 +864,13 @@ class Client:
                     "Hello, world!",
                     model="provider/model-name",
                     voice="provider-specific-voice"
+                )
+
+            Using BYOK (Bring Your Own Key):
+                response = client.text_to_speech(
+                    "Hello, world!",
+                    model="openai/tts-1",
+                    byok_api_key="sk-your-openai-key-here"
                 )
         """
         # Format the model string
@@ -859,6 +902,10 @@ class Client:
         if filtered_kwargs:
             data["additional_params"] = filtered_kwargs
 
+        # Add BYOK API key if provided
+        if byok_api_key:
+            data["byok_api_key"] = byok_api_key
+
         return self._request("POST", TTS_ENDPOINT, data)
 
     def _get_supported_parameters_for_model(
@@ -875,7 +922,6 @@ class Client:
         Returns:
             List of parameter names supported by the model
         """
-        # Define supported parameters for specific models
         if provider.lower() == "openai" and "gpt-image" in model_name.lower():
             return [
                 "prompt",

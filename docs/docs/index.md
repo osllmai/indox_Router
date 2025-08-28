@@ -37,6 +37,58 @@ print(f"Cost: ${response['usage']['cost']}")
 print(f"Tokens used: {response['usage']['tokens_total']}")
 ```
 
+## BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers instead of using the platform's shared keys. This provides several benefits:
+
+- **No credit deduction** from your IndoxRouter account
+- **No rate limiting** from the platform
+- **Direct provider access** with your own API keys
+- **Cost control** - you pay providers directly at their rates
+
+### Using BYOK
+
+```python
+# Use your own OpenAI API key
+response = client.chat(
+    messages=[{"role": "user", "content": "Hello!"}],
+    model="openai/gpt-4",
+    byok_api_key="sk-your-openai-key-here"
+)
+
+# Use your own Google API key for image generation
+response = client.images(
+    prompt="A beautiful sunset",
+    model="google/imagen-3.0-generate-002",
+    byok_api_key="your-google-api-key"
+)
+
+# Use your own API key for embeddings
+response = client.embeddings(
+    text="Sample text for embedding",
+    model="openai/text-embedding-ada-002",
+    byok_api_key="sk-your-openai-key-here"
+)
+```
+
+### BYOK Benefits
+
+- **Cost Savings**: No platform markup on API calls
+- **Higher Limits**: Use provider's native rate limits
+- **Direct Billing**: Pay providers directly at their rates
+- **Full Control**: Access to all provider-specific features
+- **No Platform Dependencies**: Works even if IndoxRouter is down
+
+### Supported Endpoints
+
+All AI endpoints support BYOK:
+
+- ✅ Chat completions (`client.chat()`)
+- ✅ Text completions (`client.completion()`)
+- ✅ Embeddings (`client.embeddings()`)
+- ✅ Image generation (`client.images()`)
+- ✅ Text-to-speech (`client.text_to_speech()`)
+
 ### Response Format
 
 Every response includes detailed usage information:
@@ -177,6 +229,5 @@ Rate limit information is included in error responses when limits are exceeded.
 - **[Getting Started](getting-started.md)**: Detailed setup guide
 - **[Usage Examples](usage/basic-usage.md)**: Comprehensive usage examples
 - **[API Reference](api/client.md)**: Full API documentation
-
 
 _Last updated: July 27, 2025_

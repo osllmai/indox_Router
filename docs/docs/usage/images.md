@@ -70,6 +70,29 @@ response = client.images(
 - `quality`: Image quality level (model dependent)
 - `style`: Image style (model dependent)
 
+## BYOK (Bring Your Own Key) Support
+
+IndoxRouter supports BYOK for image generation, allowing you to use your own API keys for AI providers:
+
+```python
+# Use your own OpenAI API key for DALL-E 3
+response = client.images(
+    prompt="A futuristic cityscape at sunset",
+    model="openai/dall-e-3",
+    size="1024x1024",
+    byok_api_key="sk-your-openai-key-here"
+)
+```
+
+### BYOK Benefits for Image Generation
+
+- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Rate Limiting**: Bypass platform rate limits
+- **Direct Provider Access**: Connect directly to your provider accounts
+- **Cost Control**: Pay providers directly at their rates
+- **Full Features**: Access to all provider-specific image generation features
+- **Higher Quality**: Use provider's native image generation capabilities
+
 ## Response Format
 
 The response from the images method follows this structure:
