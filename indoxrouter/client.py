@@ -38,6 +38,9 @@ Usage example:
     # Generate text-to-speech audio
     audio = client.text_to_speech("Hello, welcome to IndoxRouter!", model="openai/tts-1", voice="alloy")
 
+    # Transcribe audio to text using speech-to-text
+    transcription = client.speech_to_text("path/to/audio.mp3", model="openai/whisper-1")
+
     # Using BYOK (Bring Your Own Key)
     response = client.chat([
         {"role": "user", "content": "Hello!"}
@@ -97,11 +100,14 @@ from .constants import (
     DEFAULT_EMBEDDING_MODEL,
     DEFAULT_IMAGE_MODEL,
     DEFAULT_TTS_MODEL,
+    DEFAULT_STT_MODEL,
     CHAT_ENDPOINT,
     COMPLETION_ENDPOINT,
     EMBEDDING_ENDPOINT,
     IMAGE_ENDPOINT,
     TTS_ENDPOINT,
+    STT_ENDPOINT,
+    STT_TRANSLATION_ENDPOINT,
     MODEL_ENDPOINT,
     USAGE_ENDPOINT,
     USE_COOKIES,
@@ -257,6 +263,7 @@ class Client:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         stream: bool = False,
+        files: Optional[Dict[str, Any]] = None,
     ) -> Any:
         """
         Make a request to the API.
@@ -266,6 +273,7 @@ class Client:
             endpoint: API endpoint
             data: Request data
             stream: Whether to stream the response
+            files: Files to upload (for multipart/form-data requests)
 
         Returns:
             Response data
@@ -279,7 +287,14 @@ class Client:
             endpoint = endpoint[1:]
 
         url = f"{self.base_url}/{endpoint}"
-        headers = {"Content-Type": "application/json"}
+
+        # Set headers based on whether we're uploading files
+        if files:
+            # For multipart/form-data, don't set Content-Type header
+            # requests will set it automatically with boundary
+            headers = {}
+        else:
+            headers = {"Content-Type": "application/json"}
 
         # Add Authorization header if we have an access token
         if hasattr(self, "access_token") and self.access_token:
@@ -289,8 +304,8 @@ class Client:
         # if data:
         #     logger.debug(f"Request data: {json.dumps(data, indent=2)}")
 
-        # Diagnose potential issues with the request
-        if method == "POST" and data:
+        # Diagnose potential issues with the request (only for non-file uploads)
+        if method == "POST" and data and not files:
             diagnosis = self.diagnose_request(endpoint, data)
             if not diagnosis["is_valid"]:
                 issues_str = "\n".join([f"- {issue}" for issue in diagnosis["issues"]])
@@ -298,14 +313,25 @@ class Client:
                 # We'll still send the request, but log the issues
 
         try:
-            response = self.session.request(
-                method,
-                url,
-                headers=headers,
-                json=data,
-                timeout=self.timeout,
-                stream=stream,
-            )
+            # Prepare request parameters
+            request_params = {
+                "method": method,
+                "url": url,
+                "headers": headers,
+                "timeout": self.timeout,
+                "stream": stream,
+            }
+
+            # Add data based on request type
+            if files:
+                # For file uploads, use form data
+                request_params["data"] = data
+                request_params["files"] = files
+            else:
+                # For regular requests, use JSON
+                request_params["json"] = data
+
+            response = self.session.request(**request_params)
 
             if stream:
                 return response
@@ -318,16 +344,10 @@ class Client:
                 # Update Authorization header with new token if available
                 if hasattr(self, "access_token") and self.access_token:
                     headers["Authorization"] = f"Bearer {self.access_token}"
+                    request_params["headers"] = headers
 
                 # Retry the request after reauthentication
-                response = self.session.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=data,
-                    timeout=self.timeout,
-                    stream=stream,
-                )
+                response = self.session.request(**request_params)
 
                 if stream:
                     return response
@@ -907,6 +927,231 @@ class Client:
             data["byok_api_key"] = byok_api_key
 
         return self._request("POST", TTS_ENDPOINT, data)
+
+    def speech_to_text(
+        self,
+        file: Union[str, bytes],
+        model: str = DEFAULT_STT_MODEL,
+        language: Optional[str] = None,
+        prompt: Optional[str] = None,
+        response_format: Optional[str] = "json",
+        temperature: Optional[float] = 0.0,
+        timestamp_granularities: Optional[List[str]] = None,
+        byok_api_key: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Transcribe audio to text using speech-to-text models.
+
+        Args:
+            file: Audio file path (str) or audio file data (bytes)
+            model: Model to use in the format "provider/model" (e.g., "openai/whisper-1")
+            language: Language code for the audio (e.g., "en", "es", "fr")
+            prompt: Optional text to guide the model's style
+            response_format: Format of the response ("json", "text", "srt", "verbose_json", "vtt")
+            temperature: Temperature for transcription (0.0 to 1.0)
+            timestamp_granularities: List of timestamp granularities (["word", "segment"])
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
+            **kwargs: Additional parameters to pass to the API
+
+        Returns:
+            Response data with transcription text
+
+        Examples:
+            Basic usage with file path:
+                response = client.speech_to_text("path/to/audio.mp3")
+
+            Basic usage with file bytes:
+                with open("audio.mp3", "rb") as f:
+                    audio_data = f.read()
+                response = client.speech_to_text(audio_data)
+
+            With specific model and language:
+                response = client.speech_to_text(
+                    "path/to/audio.wav",
+                    model="openai/whisper-1",
+                    language="en",
+                    response_format="json"
+                )
+
+            With timestamps for detailed analysis:
+                response = client.speech_to_text(
+                    "path/to/audio.mp3",
+                    model="openai/whisper-1",
+                    response_format="verbose_json",
+                    timestamp_granularities=["word", "segment"]
+                )
+
+            Using BYOK (Bring Your Own Key):
+                response = client.speech_to_text(
+                    "path/to/audio.mp3",
+                    model="openai/whisper-1",
+                    byok_api_key="sk-your-openai-key-here"
+                )
+        """
+        # Format the model string
+        formatted_model = self._format_model_string(model)
+
+        # Handle file input - can be a file path (str) or file data (bytes)
+        if isinstance(file, str):
+            # It's a file path, read the file
+            try:
+                with open(file, "rb") as f:
+                    file_data = f.read()
+                filename = os.path.basename(file)
+            except FileNotFoundError:
+                raise InvalidParametersError(f"File not found: {file}")
+            except Exception as e:
+                raise InvalidParametersError(f"Error reading file {file}: {str(e)}")
+        elif isinstance(file, bytes):
+            # It's file data
+            file_data = file
+            filename = kwargs.get("filename", "audio_file")
+        else:
+            raise InvalidParametersError(
+                "File must be either a file path (str) or file data (bytes)"
+            )
+
+        # Prepare form data for multipart upload
+        files = {"file": (filename, file_data, "audio/*")}
+
+        # Create the form data with required parameters
+        data = {
+            "model": formatted_model,
+        }
+
+        # Add optional parameters only if they are provided
+        if language is not None:
+            data["language"] = language
+        if prompt is not None:
+            data["prompt"] = prompt
+        if response_format is not None:
+            data["response_format"] = response_format
+        if temperature is not None:
+            data["temperature"] = temperature
+        if timestamp_granularities is not None:
+            # Convert to JSON string as expected by the API
+            data["timestamp_granularities"] = json.dumps(timestamp_granularities)
+
+        # Add BYOK API key if provided
+        if byok_api_key:
+            data["byok_api_key"] = byok_api_key
+
+        # Filter out problematic parameters from kwargs
+        filtered_kwargs = {}
+        for key, value in kwargs.items():
+            if key not in [
+                "filename",
+                "return_generator",
+            ]:  # List of parameters to exclude
+                filtered_kwargs[key] = value
+
+        # Add any additional parameters from kwargs
+        if filtered_kwargs:
+            data.update(filtered_kwargs)
+
+        return self._request("POST", STT_ENDPOINT, data, files=files)
+
+    def translate_audio(
+        self,
+        file: Union[str, bytes],
+        model: str = DEFAULT_STT_MODEL,
+        prompt: Optional[str] = None,
+        response_format: Optional[str] = "json",
+        temperature: Optional[float] = 0.0,
+        byok_api_key: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Translate audio to English text using speech-to-text models.
+
+        Args:
+            file: Audio file path (str) or audio file data (bytes)
+            model: Model to use in the format "provider/model" (e.g., "openai/whisper-1")
+            prompt: Optional text to guide the model's style
+            response_format: Format of the response ("json", "text", "srt", "verbose_json", "vtt")
+            temperature: Temperature for translation (0.0 to 1.0)
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
+            **kwargs: Additional parameters to pass to the API
+
+        Returns:
+            Response data with translated text in English
+
+        Examples:
+            Basic usage with file path:
+                response = client.translate_audio("path/to/spanish_audio.mp3")
+
+            With specific response format:
+                response = client.translate_audio(
+                    "path/to/french_audio.wav",
+                    model="openai/whisper-1",
+                    response_format="text"
+                )
+
+            Using BYOK (Bring Your Own Key):
+                response = client.translate_audio(
+                    "path/to/audio.mp3",
+                    model="openai/whisper-1",
+                    byok_api_key="sk-your-openai-key-here"
+                )
+        """
+        # Format the model string
+        formatted_model = self._format_model_string(model)
+
+        # Handle file input - can be a file path (str) or file data (bytes)
+        if isinstance(file, str):
+            # It's a file path, read the file
+            try:
+                with open(file, "rb") as f:
+                    file_data = f.read()
+                filename = os.path.basename(file)
+            except FileNotFoundError:
+                raise InvalidParametersError(f"File not found: {file}")
+            except Exception as e:
+                raise InvalidParametersError(f"Error reading file {file}: {str(e)}")
+        elif isinstance(file, bytes):
+            # It's file data
+            file_data = file
+            filename = kwargs.get("filename", "audio_file")
+        else:
+            raise InvalidParametersError(
+                "File must be either a file path (str) or file data (bytes)"
+            )
+
+        # Prepare form data for multipart upload
+        files = {"file": (filename, file_data, "audio/*")}
+
+        # Create the form data with required parameters
+        data = {
+            "model": formatted_model,
+        }
+
+        # Add optional parameters only if they are provided
+        if prompt is not None:
+            data["prompt"] = prompt
+        if response_format is not None:
+            data["response_format"] = response_format
+        if temperature is not None:
+            data["temperature"] = temperature
+
+        # Add BYOK API key if provided
+        if byok_api_key:
+            data["byok_api_key"] = byok_api_key
+
+        # Filter out problematic parameters from kwargs
+        filtered_kwargs = {}
+        for key, value in kwargs.items():
+            if key not in [
+                "filename",
+                "return_generator",
+            ]:  # List of parameters to exclude
+                filtered_kwargs[key] = value
+
+        # Add any additional parameters from kwargs
+        if filtered_kwargs:
+            data.update(filtered_kwargs)
+
+        return self._request("POST", STT_TRANSLATION_ENDPOINT, data, files=files)
 
     def _get_supported_parameters_for_model(
         self, provider: str, model_name: str

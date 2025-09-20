@@ -5,7 +5,7 @@ Constants for the IndoxRouter client.
 # API settings
 DEFAULT_API_VERSION = "v1"
 DEFAULT_BASE_URL = "https://api.indoxrouter.com"  # Production server URL with HTTPS
-# DEFAULT_BASE_URL = "http://localhost:8000"  # Local development server
+# DEFAULT_BASE_URL = "http://localhost:9050"  # Local development server
 DEFAULT_TIMEOUT = 60
 USE_COOKIES = True  # Always use cookie-based authentication
 
@@ -14,6 +14,7 @@ DEFAULT_MODEL = "openai/gpt-4o-mini"
 DEFAULT_EMBEDDING_MODEL = "openai/text-embedding-3-small"
 DEFAULT_IMAGE_MODEL = "openai/dall-e-3"
 DEFAULT_TTS_MODEL = "openai/tts-1"
+DEFAULT_STT_MODEL = "openai/whisper-1"
 GOOGLE_IMAGE_MODEL = "google/imagen-3.0-generate-002"
 XAI_IMAGE_MODEL = "xai/grok-2-image"
 XAI_IMAGE_LATEST_MODEL = "xai/grok-2-image-latest"
@@ -25,6 +26,8 @@ COMPLETION_ENDPOINT = "completions"
 EMBEDDING_ENDPOINT = "embeddings"
 IMAGE_ENDPOINT = "images/generations"
 TTS_ENDPOINT = "tts/generations"
+STT_ENDPOINT = "audio/stt/transcriptions"
+STT_TRANSLATION_ENDPOINT = "audio/stt/translations"
 MODEL_ENDPOINT = "models"
 USAGE_ENDPOINT = "user/usage"
 

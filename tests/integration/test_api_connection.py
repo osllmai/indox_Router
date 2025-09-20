@@ -35,3 +35,34 @@ class TestAPIConnection:
             model = response["models"][0]
             assert "id" in model
             assert "provider" in model
+
+    @pytest.mark.skipif(
+        not os.environ.get("RUN_LIVE_TESTS"), reason="Live tests disabled"
+    )
+    def test_speech_to_text_endpoint_structure(self, live_client):
+        """Test that speech-to-text endpoints are accessible (without actual audio file)."""
+        # Create a minimal fake audio file data for testing endpoint structure
+        fake_audio_data = b"fake_audio_content"
+
+        try:
+            # This will likely fail due to invalid audio format, but should reach the endpoint
+            response = live_client.speech_to_text(fake_audio_data)
+        except Exception as e:
+            # We expect this to fail with audio format or validation error, not authentication
+            error_msg = str(e).lower()
+            # Should not be authentication errors
+            assert "authentication" not in error_msg
+            assert "unauthorized" not in error_msg
+            # Should be a validation or format error
+            assert any(
+                keyword in error_msg
+                for keyword in ["invalid", "format", "audio", "file", "validation"]
+            )
+
+    def test_speech_to_text_method_exists(self, live_client):
+        """Test that speech-to-text methods exist in the client."""
+        # Check that the methods exist
+        assert hasattr(live_client, "speech_to_text")
+        assert hasattr(live_client, "translate_audio")
+        assert callable(getattr(live_client, "speech_to_text"))
+        assert callable(getattr(live_client, "translate_audio"))
