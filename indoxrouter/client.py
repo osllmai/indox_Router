@@ -300,9 +300,11 @@ class Client:
         if hasattr(self, "access_token") and self.access_token:
             headers["Authorization"] = f"Bearer {self.access_token}"
 
-        # logger.debug(f"Making {method} request to {url}")
-        # if data:
-        #     logger.debug(f"Request data: {json.dumps(data, indent=2)}")
+        logger.debug(f"Making {method} request to {url} (stream={stream})")
+        if data and stream:
+            logger.debug(f"Streaming request data: {json.dumps(data, indent=2)}")
+        elif data and not stream:
+            logger.debug(f"Non-streaming request data: {json.dumps(data, indent=2)}")
 
         # Diagnose potential issues with the request (only for non-file uploads)
         if method == "POST" and data and not files:
@@ -335,16 +337,24 @@ class Client:
 
             # Check if we need to reauthenticate (401 Unauthorized) - for both streaming and non-streaming
             if response.status_code == 401:
-                logger.debug("Received 401, attempting to reauthenticate")
+                logger.debug(
+                    f"Received 401 for {method} {url} (stream={stream}), attempting to reauthenticate"
+                )
                 self._authenticate()
 
                 # Update Authorization header with new token if available
                 if hasattr(self, "access_token") and self.access_token:
                     headers["Authorization"] = f"Bearer {self.access_token}"
                     request_params["headers"] = headers
+                    logger.debug(
+                        f"Updated Authorization header for retry (stream={stream})"
+                    )
 
                 # Retry the request after reauthentication
                 response = self.session.request(**request_params)
+                logger.debug(
+                    f"Retry response status: {response.status_code} (stream={stream})"
+                )
 
             # For streaming requests, check if the response is successful before returning
             if stream:
@@ -1415,6 +1425,9 @@ class Client:
 
                             # Check if this is an error chunk
                             if "error" in chunk:
+                                logger.debug(
+                                    f"Received error chunk during streaming: {chunk}"
+                                )
                                 # Extract error details
                                 error_info = chunk["error"]
                                 if isinstance(error_info, str):
