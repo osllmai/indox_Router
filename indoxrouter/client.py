@@ -333,10 +333,7 @@ class Client:
 
             response = self.session.request(**request_params)
 
-            if stream:
-                return response
-
-            # Check if we need to reauthenticate (401 Unauthorized)
+            # Check if we need to reauthenticate (401 Unauthorized) - for both streaming and non-streaming
             if response.status_code == 401:
                 logger.debug("Received 401, attempting to reauthenticate")
                 self._authenticate()
@@ -349,8 +346,8 @@ class Client:
                 # Retry the request after reauthentication
                 response = self.session.request(**request_params)
 
-                if stream:
-                    return response
+            if stream:
+                return response
 
             response.raise_for_status()
             return response.json()
