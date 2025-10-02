@@ -346,7 +346,11 @@ class Client:
                 # Retry the request after reauthentication
                 response = self.session.request(**request_params)
 
+            # For streaming requests, check if the response is successful before returning
             if stream:
+                if response.status_code >= 400:
+                    # If streaming request still fails after retry, raise an exception
+                    response.raise_for_status()
                 return response
 
             response.raise_for_status()
@@ -1408,6 +1412,23 @@ class Client:
                         try:
                             # Parse JSON chunk
                             chunk = json.loads(data)
+
+                            # Check if this is an error chunk
+                            if "error" in chunk:
+                                # Extract error details
+                                error_info = chunk["error"]
+                                if isinstance(error_info, str):
+                                    # Try to parse error details from the string
+                                    if "Status 401" in error_info:
+                                        raise AuthenticationError(
+                                            f"Authentication failed during streaming: {error_info}"
+                                        )
+                                    else:
+                                        raise APIError(
+                                            f"API error during streaming: {error_info}"
+                                        )
+                                else:
+                                    raise APIError(f"Streaming error: {error_info}")
 
                             # For chat responses, return the processed chunk
                             # with data field for backward compatibility
