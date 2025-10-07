@@ -20,7 +20,7 @@ with Client(api_key="your_api_key") as client:
     )
 
     # Print the response
-    print(response["choices"][0]["message"]["content"])
+    print(response["data"])
 ```
 
 ## Text Completion Example
@@ -38,7 +38,7 @@ with Client(api_key="your_api_key") as client:
     )
 
     # Print the response
-    print(response["choices"][0]["text"])
+    print(response["data"])
 ```
 
 ## Embedding Example

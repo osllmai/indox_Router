@@ -12,26 +12,29 @@ from indoxrouter import Client
 client = Client(api_key="your_api_key")
 
 # Stream chat responses
-for chunk in client.chat_stream(
+response = client.chat(
     messages=[
         {"role": "user", "content": "Write a short story about AI"}
     ],
-    model="openai/gpt-4o-mini"
-):
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="", flush=True)
+    model="openai/gpt-4o-mini",
+    stream=True
+)
+
+for chunk in response:
+    if chunk.get("data"):
+        print(chunk["data"], end="", flush=True)
 ```
 
 ## Batch Processing
 
-Process multiple requests efficiently:
+Process multiple requests efficiently using synchronous calls:
 
 ```python
-import asyncio
-from indoxrouter import AsyncClient
+from concurrent.futures import ThreadPoolExecutor
+from indoxrouter import Client
 
-async def process_batch():
-    client = AsyncClient(api_key="your_api_key")
+def process_batch():
+    client = Client(api_key="your_api_key")
 
     prompts = [
         "Explain quantum computing",
@@ -39,19 +42,59 @@ async def process_batch():
         "How does blockchain work?"
     ]
 
-    tasks = []
-    for prompt in prompts:
-        task = client.chat(
+    # Process requests in parallel using threads
+    def make_request(prompt):
+        return client.chat(
             messages=[{"role": "user", "content": prompt}],
             model="openai/gpt-4o-mini"
         )
-        tasks.append(task)
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        responses = list(executor.map(make_request, prompts))
+
+    for i, response in enumerate(responses):
+        print(f"Question {i+1}: {prompts[i]}")
+        print(f"Answer: {response['data']}")
+        print("---")
+
+# Run the batch processing
+process_batch()
+```
+
+Or using asyncio with synchronous client:
+
+```python
+import asyncio
+from indoxrouter import Client
+
+async def process_batch():
+    client = Client(api_key="your_api_key")
+
+    prompts = [
+        "Explain quantum computing",
+        "What is machine learning?",
+        "How does blockchain work?"
+    ]
+
+    # Run synchronous requests in thread pool
+    loop = asyncio.get_event_loop()
+
+    def make_request(prompt):
+        return client.chat(
+            messages=[{"role": "user", "content": prompt}],
+            model="openai/gpt-4o-mini"
+        )
+
+    tasks = [
+        loop.run_in_executor(None, make_request, prompt)
+        for prompt in prompts
+    ]
 
     responses = await asyncio.gather(*tasks)
 
     for i, response in enumerate(responses):
         print(f"Question {i+1}: {prompts[i]}")
-        print(f"Answer: {response['choices'][0]['message']['content']}")
+        print(f"Answer: {response['data']}")
         print("---")
 
 # Run the batch processing
@@ -92,7 +135,7 @@ try:
         [{"role": "user", "content": "Hello!"}],
         "openai/gpt-4o-mini"
     )
-    print(response['choices'][0]['message']['content'])
+    print(response['data'])
 except IndoxRouterError as e:
     print(f"Failed after all retries: {e}")
 ```
@@ -131,7 +174,7 @@ class SmartRouter:
 
         return {
             "model_used": model,
-            "response": response['choices'][0]['message']['content']
+            "response": response['data']
         }
 
 # Usage
@@ -142,9 +185,9 @@ print(f"Model used: {result['model_used']}")
 print(f"Response: {result['response']}")
 ```
 
-## Function Calling
+## Tool Calling (Function Calling)
 
-Use function calling for structured outputs:
+Use tool calling for structured outputs with compatible models:
 
 ```python
 from indoxrouter import Client
@@ -152,25 +195,28 @@ import json
 
 client = Client(api_key="your_api_key")
 
-# Define available functions
-functions = [
+# Define available tools (OpenAI tools format)
+tools = [
     {
-        "name": "get_weather",
-        "description": "Get weather information for a location",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "The city and state, e.g. San Francisco, CA"
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get weather information for a location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "Temperature unit"
+                    }
                 },
-                "unit": {
-                    "type": "string",
-                    "enum": ["celsius", "fahrenheit"],
-                    "description": "Temperature unit"
-                }
-            },
-            "required": ["location"]
+                "required": ["location"]
+            }
         }
     }
 ]
@@ -180,31 +226,37 @@ response = client.chat(
         {"role": "user", "content": "What's the weather like in New York?"}
     ],
     model="openai/gpt-4o-mini",
-    functions=functions,
-    function_call="auto"
+    tools=tools,
+    tool_choice="auto"
 )
 
-# Handle function call
-if response['choices'][0]['message'].get('function_call'):
-    function_call = response['choices'][0]['message']['function_call']
-    function_name = function_call['name']
-    function_args = json.loads(function_call['arguments'])
+# Handle tool call (Note: This feature may not be fully implemented in current backend)
+if response.get('tool_calls'):
+    tool_calls = response['tool_calls']
+    for tool_call in tool_calls:
+        tool_name = tool_call['function']['name']
+        tool_args = json.loads(tool_call['function']['arguments'])
 
-    print(f"Function called: {function_name}")
-    print(f"Arguments: {function_args}")
+        print(f"Tool called: {tool_name}")
+        print(f"Arguments: {tool_args}")
 
-    # In a real application, you would call the actual function here
-    weather_result = f"The weather in {function_args['location']} is sunny, 72°F"
+        # In a real application, you would call the actual tool here
+        weather_result = f"The weather in {tool_args['location']} is sunny, 72°F"
 
-    # Send the function result back to the model
-    follow_up = client.chat(
-        messages=[
-            {"role": "user", "content": "What's the weather like in New York?"},
-            response['choices'][0]['message'],
-            {"role": "function", "name": function_name, "content": weather_result}
-        ],
-        model="openai/gpt-4o-mini"
-    )
+        # Send the tool result back to the model
+        follow_up = client.chat(
+            messages=[
+                {"role": "user", "content": "What's the weather like in New York?"},
+                {"role": "assistant", "content": response['data'], "tool_calls": tool_calls},
+                {"role": "tool", "tool_call_id": tool_call['id'], "content": weather_result}
+            ],
+            model="openai/gpt-4o-mini"
+        )
 
-    print(follow_up['choices'][0]['message']['content'])
+        print(follow_up['data'])
+else:
+    # Regular response without tool calls
+    print(f"Response: {response['data']}")
 ```
+
+**Note:** Tool calling support may vary by provider and model. Not all models in IndoxRouter currently support tool calling.
