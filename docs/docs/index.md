@@ -198,6 +198,37 @@ response = client.chat(
 )
 ```
 
+### Vision & Image Analysis
+
+```python
+import base64
+
+# Analyze images with vision-capable models
+with open("photo.jpg", "rb") as f:
+    image_base64 = base64.b64encode(f.read()).decode('utf-8')
+
+response = client.chat(
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image",
+                    "image": {
+                        "data": image_base64,
+                        "media_type": "image/jpeg"
+                    }
+                }
+            ]
+        }
+    ],
+    model="openai/gpt-4o"
+)
+
+print(response['data'])
+```
+
 ### Image Generation
 
 ```python

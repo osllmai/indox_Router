@@ -96,6 +96,7 @@ nav:
   - Usage Guide:
       - Basic Usage: usage/basic-usage.md
       - Chat Completions: usage/chat.md
+      - Vision & Multimodal: usage/vision.md
       - Text Completions: usage/completions.md
       - Embeddings: usage/embeddings.md
       - Image Generation: usage/images.md

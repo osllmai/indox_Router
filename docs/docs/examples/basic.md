@@ -64,6 +64,45 @@ with Client(api_key="your_api_key") as client:
         print(f"Embedding {i+1} dimensions: {len(embedding)}")
 ```
 
+## Vision & Image Analysis Example
+
+```python
+from indoxrouter import Client
+import base64
+
+# Initialize the client
+with Client(api_key="your_api_key") as client:
+    # Read and encode an image
+    with open("photo.jpg", "rb") as f:
+        image_base64 = base64.b64encode(f.read()).decode('utf-8')
+
+    # Analyze the image with a vision-capable model
+    response = client.chat(
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "What's in this image? Please describe it in detail."
+                    },
+                    {
+                        "type": "image",
+                        "image": {
+                            "data": image_base64,
+                            "media_type": "image/jpeg"
+                        }
+                    }
+                ]
+            }
+        ],
+        model="openai/gpt-4o"
+    )
+
+    # Print the image description
+    print(response["data"])
+```
+
 ## Image Generation Example
 
 ```python

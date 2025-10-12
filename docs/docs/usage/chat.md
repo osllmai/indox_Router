@@ -27,7 +27,7 @@ print(response["data"])
 The `messages` parameter is a list of dictionaries, each with `role` and `content` keys:
 
 - `role`: Can be one of "system", "user", "assistant", or "function"
-- `content`: The content of the message
+- `content`: The content of the message (string for text-only, or list for multimodal)
 
 Example message formats:
 
@@ -44,6 +44,39 @@ Example message formats:
 # Function message (for function calling, when available)
 {"role": "function", "name": "get_weather", "content": '{"temperature": 72, "condition": "sunny"}'}
 ```
+
+### Multimodal Messages (Text + Images)
+
+For vision-capable models, you can send images along with text by using a list format for the content:
+
+```python
+import base64
+
+# Read and encode image
+with open("image.jpg", "rb") as f:
+    image_base64 = base64.b64encode(f.read()).decode('utf-8')
+
+# Multimodal message with text and image
+{
+    "role": "user",
+    "content": [
+        {
+            "type": "text",
+            "text": "What's in this image?"
+        },
+        {
+            "type": "image",
+            "image": {
+                "data": image_base64,
+                "media_type": "image/jpeg"
+            }
+        }
+    ]
+}
+```
+
+!!! info "Vision Models"
+Not all models support image inputs. Vision-capable models include `gpt-4o`, `claude-sonnet-4.5`, `gemini-2.0-flash`, and many others. See the [Vision & Multimodal](vision.md) guide for complete documentation.
 
 ## Model Selection
 
