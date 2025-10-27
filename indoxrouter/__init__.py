@@ -47,7 +47,7 @@ from .exceptions import (
     APIError,
 )
 
-__version__ = "0.1.27"
+__version__ = "0.1.36"
 __all__ = [
     "Client",
     "IndoxRouter",
