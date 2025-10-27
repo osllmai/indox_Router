@@ -39,7 +39,8 @@ Every IndoxRouter response follows this consistent format:
     },
     'raw_response': None,
     'data': 'Your AI response content here...',
-    'finish_reason': None
+    'finish_reason': None,
+    'images': None
 }
 ```
 
@@ -96,6 +97,7 @@ The `cost_breakdown` object provides detailed cost information:
 | --------------- | ------------ | ------------------------------------------- |
 | `data`          | string/array | The actual AI response content              |
 | `finish_reason` | string       | Why the response ended (stop, length, etc.) |
+| `images`        | array/null   | Generated images with URLs (null if none)   |
 | `raw_response`  | object       | Original provider response (optional)       |
 
 ## Response Examples by Operation
@@ -187,7 +189,61 @@ response = client.completions(
     },
     'raw_response': None,
     'data': 'Once upon a time, in a small village nestled between rolling hills and a sparkling river, there lived a young girl named Elara. She was known throughout the village for her kindness and her love for nature...',
-    'finish_reason': None
+    'finish_reason': None,
+    'images': None
+}
+```
+
+### Text Completion Response with Images
+
+For models that support image generation (like `gemini-2.5-flash-image`), the response may include generated images:
+
+```python
+response = client.completions(
+    prompt="Describe a cat and draw a picture of it",
+    model="google/gemini-2.5-flash-image"
+)
+
+# Response structure:
+{
+    'request_id': '48c93623-286e-4e03-807b-938e53cb5076',
+    'created_at': '2025-10-26T16:48:59.574195',
+    'duration_ms': 10853.046178817749,
+    'provider': 'google',
+    'model': 'gemini-2.5-flash-image',
+    'success': True,
+    'message': '',
+    'usage': {
+        'tokens_prompt': 8,
+        'tokens_completion': 1377,
+        'tokens_total': 1385,
+        'cost': 0.0034449000000000003,
+        'latency': 9.228402614593506,
+        'timestamp': '2025-10-26T16:48:58.009249',
+        'cache_read_tokens': 0,
+        'cache_write_tokens': 0,
+        'reasoning_tokens': 0,
+        'web_search_count': 0,
+        'request_count': 1,
+        'cost_breakdown': {
+            'input_tokens': 2.4e-06,
+            'output_tokens': 0.0034425000000000002,
+            'cache_read': 0.0,
+            'cache_write': 0.0,
+            'reasoning': 0.0,
+            'web_search': 0.0,
+            'request': 0.0
+        }
+    },
+    'raw_response': None,
+    'data': 'A cat is a small, domesticated carnivorous mammal... Here\'s a drawing of a cat for you:',
+    'finish_reason': 'STOP',
+    'images': [
+        {
+            'url': 'https://indoxrouter.s3.amazonaws.com/dev_user_4/image/d0847065-2f2b-4529-8484-0e98e19b7318_20251026_164858.png?...',
+            'index': 0
+        }
+    ]
 }
 ```
 
@@ -225,12 +281,10 @@ response = client.embeddings(
 
 ### Image Generation Response
 
-#### URL-Based Models (DALL-E 2, DALL-E 3)
-
 ```python
 response = client.images(
     prompt="A beautiful sunset over the ocean",
-    model="openai/dall-e-2",
+    model="openai/dall-e-3",
     size="1024x1024"
 )
 
@@ -240,7 +294,7 @@ response = client.images(
     'created_at': '2025-05-29T11:39:24.621706',
     'duration_ms': 12340.412378311157,
     'provider': 'openai',
-    'model': 'dall-e-2',
+    'model': 'dall-e-3',
     'success': True,
     'message': '',
     'usage': {
@@ -260,49 +314,8 @@ response = client.images(
     'raw_response': None,
     'data': [
         {
-            'url': 'https://dalle-images.openai.com/...',
+            'url': 'https://....image_12345.jpg',
             'revised_prompt': 'A beautiful sunset over the ocean with golden clouds...'
-        }
-    ]
-}
-```
-
-#### Base64-Based Models (GPT-Image-1)
-
-```python
-response = client.images(
-    prompt="A beautiful sunset over the ocean",
-    model="openai/gpt-image-1",
-    size="1024x1024"
-)
-
-# Response structure:
-{
-    'request_id': 'b4ece4dd-b41d-4e57-952a-7cc4e7d60be4',
-    'created_at': '2025-06-15T10:00:04.021541',
-    'duration_ms': 36015.32602310181,
-    'provider': 'openai',
-    'model': 'gpt-image-1',
-    'success': True,
-    'message': '',
-    'usage': {
-        'tokens_prompt': 12,
-        'tokens_completion': 4160,
-        'tokens_total': 4172,
-        'cost': 0.17746,
-        'latency': 35.91205406188965,
-        'timestamp': '2025-06-15T10:00:04.010734',
-        'cache_read_tokens': 0,
-        'cache_write_tokens': 0,
-        'reasoning_tokens': 0,
-        'web_search_count': 0,
-        'request_count': 1,
-        'cost_breakdown': None
-    },
-    'raw_response': None,
-    'data': [
-        {
-            'b64_json': 'iVBORw0KGgoAAAANSUhEUgAAB...(base64 encoded image data)'
         }
     ]
 }
@@ -343,12 +356,10 @@ print(f"Request ID: {response['request_id']}")
 
 ### Handling Image Responses
 
-#### URL-Based Images (DALL-E 2, DALL-E 3)
-
 ```python
 response = client.images(
     prompt="A beautiful sunset",
-    model="openai/dall-e-2",
+    model="openai/dall-e-3",
     size="1024x1024"
 )
 
@@ -365,37 +376,45 @@ if response['data']:
     img_response = requests.get(image_url)
     img = Image.open(BytesIO(img_response.content))
     img.show()  # Or save: img.save("generated_image.png")
+
+    # Optional: Get revised prompt if available
+    if 'revised_prompt' in response['data'][0]:
+        print(f"Revised prompt: {response['data'][0]['revised_prompt']}")
 ```
 
-#### Base64-Based Images (GPT-Image-1)
+### Handling Images in Text Completions
+
+For text completion models that can generate images (like Gemini models), check for the `images` field:
 
 ```python
-response = client.images(
-    prompt="A beautiful sunset",
-    model="openai/gpt-image-1",
-    size="1024x1024"
+response = client.completions(
+    prompt="Describe a sunset and create an image",
+    model="google/gemini-2.5-flash-image"
 )
 
-# Handle base64 encoded image
-if response['data'] and 'b64_json' in response['data'][0]:
-    import base64
-    from PIL import Image
-    from io import BytesIO
+# Check if images were generated
+if response['images'] and len(response['images']) > 0:
+    print(f"Generated {len(response['images'])} image(s)")
 
-    # Decode base64 image data
-    b64_data = response['data'][0]['b64_json']
-    image_data = base64.b64decode(b64_data)
+    for image in response['images']:
+        image_url = image['url']
+        image_index = image['index']
+        print(f"Image {image_index}: {image_url}")
 
-    # Convert to PIL Image
-    img = Image.open(BytesIO(image_data))
+        # Download and save the image
+        import requests
 
-    # Save the image
-    img.save("generated_image.png")
-    print("Image saved as 'generated_image.png'")
+        img_response = requests.get(image_url)
+        if img_response.status_code == 200:
+            filename = f"generated_image_{image_index}.png"
+            with open(filename, 'wb') as f:
+                f.write(img_response.content)
+            print(f"Saved image to {filename}")
+else:
+    print("No images were generated in this response")
 
-    # Display in Jupyter notebook
-    from IPython.display import Image as IPImage, display
-    display(IPImage(data=image_data))
+# The text content is still available in response['data']
+print(f"Text response: {response['data']}")
 ```
 
 ### Cost Tracking

@@ -20,7 +20,8 @@ response = client.text_to_speech(
 # Check if audio was generated successfully
 if response["success"]:
     print("Audio generated successfully!")
-    audio_data = response["data"]
+    audio_url = response["data"]["url"]
+    print(f"Audio URL: {audio_url}")
 else:
     print(f"Error: {response['message']}")
 ```
@@ -211,14 +212,17 @@ def generate_speech_sample():
         print(f"🤖 Model: {response.get('model', 'N/A')}")
         print(f"⏱️ Duration: {response.get('duration_ms', 0)}ms")
 
-        # The audio data is available in response["data"]
-        audio_data = response["data"]
+        # The audio URL is available in response["data"]["url"]
+        audio_url = response["data"]["url"]
+        print(f"🔗 Audio URL: {audio_url}")
 
-        # You can save this to a file or use it directly
+        # You can download the audio file using the URL
+        # import requests
+        # audio_response = requests.get(audio_url)
         # with open("generated_speech.mp3", "wb") as f:
-        #     f.write(audio_data)
+        #     f.write(audio_response.content)
 
-        return audio_data
+        return audio_url
     else:
         print(f"❌ Error: {response.get('message', 'Unknown error')}")
         return None
@@ -240,7 +244,9 @@ The text-to-speech response includes several fields:
     "model": "tts-1",
     "success": true,
     "message": "Audio generated successfully",
-    "data": "binary_audio_data",
+    "data": {
+        "url": "https://generated-audio.example.com/audio_12345.mp3"
+    },
     "usage": {
         "characters": 150,
         "cost": 0.0075
@@ -258,7 +264,7 @@ The text-to-speech response includes several fields:
 - **model**: Specific model used (e.g., "tts-1")
 - **success**: Boolean indicating if the generation was successful
 - **message**: Human-readable status message
-- **data**: The generated audio data in binary format
+- **data**: Object containing the URL to the generated audio file
 - **usage**: Usage statistics including character count and cost
 - **raw_response**: Raw response from the provider
 
@@ -281,8 +287,8 @@ try:
     )
 
     if response["success"]:
-        audio_data = response["data"]
-        # Process the audio data
+        audio_url = response["data"]["url"]
+        # Process the audio URL
     else:
         print(f"Generation failed: {response['message']}")
 

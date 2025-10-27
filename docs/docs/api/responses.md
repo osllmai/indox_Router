@@ -54,6 +54,7 @@ This page documents the response formats for all IndoxRouter API endpoints.
     "message": "",
     "data": "This is a sample completion text.",
     "finish_reason": "stop",
+    "images": null,
     "usage": {
         "tokens_prompt": 5,
         "tokens_completion": 7,
@@ -73,6 +74,53 @@ This page documents the response formats for all IndoxRouter API endpoints.
             "reasoning_cost": 0.0,
             "web_search_cost": 0.0,
             "total_cost": 0.00018
+        }
+    },
+    "raw_response": {...},
+    "byok_api_key": false
+}
+```
+
+### Text Completion Response with Images
+
+For models that support image generation:
+
+```python
+{
+    "request_id": "48c93623-286e-4e03-807b-938e53cb5076",
+    "created_at": "2025-10-26T16:48:59.574195",
+    "duration_ms": 10853.046178817749,
+    "provider": "google",
+    "model": "gemini-2.5-flash-image",
+    "success": true,
+    "message": "",
+    "data": "A cat is a small, domesticated carnivorous mammal... Here's a drawing of a cat for you:",
+    "finish_reason": "stop",
+    "images": [
+        {
+            "url": "https://indoxrouter.s3.amazonaws.com/dev_user_4/image/d0847065-2f2b-4529-8484-0e98e19b7318_20251026_164858.png?...",
+            "index": 0
+        }
+    ],
+    "usage": {
+        "tokens_prompt": 8,
+        "tokens_completion": 1377,
+        "tokens_total": 1385,
+        "cost": 0.0034449,
+        "latency": 9.228402614593506,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "reasoning_tokens": 0,
+        "web_search_count": 0,
+        "request_count": 1,
+        "cost_breakdown": {
+            "prompt_cost": 0.0000024,
+            "completion_cost": 0.0034425,
+            "cache_read_cost": 0.0,
+            "cache_write_cost": 0.0,
+            "reasoning_cost": 0.0,
+            "web_search_cost": 0.0,
+            "total_cost": 0.0034449
         }
     },
     "raw_response": {...},
