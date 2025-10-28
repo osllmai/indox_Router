@@ -1430,6 +1430,12 @@ class Client:
                                 else:
                                     raise APIError(f"Streaming error: {error_info}")
 
+                            # Handle image chunks
+                            if "images" in chunk:
+                                # This is an image chunk - yield it as-is for the user to handle
+                                yield chunk
+                                continue
+
                             # For chat responses, return the processed chunk
                             # with data field for backward compatibility
                             if "choices" in chunk:
