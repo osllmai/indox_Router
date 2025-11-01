@@ -11,7 +11,7 @@ automatically handles authentication by exchanging your API key for a JWT token 
 The Client class offers methods for:
 - Authentication and session management
 - Making API requests with automatic token refresh
-- Accessing AI capabilities: chat completions, text completions, embeddings, image generation, and text-to-speech
+- Accessing AI capabilities: chat completions, text completions, embeddings, image generation, video generation, and text-to-speech
 - Retrieving information about available providers and models
 - Monitoring usage statistics and credit consumption
 - BYOK (Bring Your Own Key) support for using your own provider API keys
@@ -34,6 +34,12 @@ Usage example:
 
     # Generate text embeddings
     embeddings = client.embeddings("This is a sample text", model="openai/text-embedding-ada-002")
+
+    # Generate images
+    images = client.images("A futuristic city", model="openai/dall-e-3")
+
+    # Generate videos
+    videos = client.videos("A neon hologram of a cat", model="google/veo-3.0-generate-001", duration=8)
 
     # Generate text-to-speech audio
     audio = client.text_to_speech("Hello, welcome to IndoxRouter!", model="openai/tts-1", voice="alloy")
@@ -101,10 +107,12 @@ from .constants import (
     DEFAULT_IMAGE_MODEL,
     DEFAULT_TTS_MODEL,
     DEFAULT_STT_MODEL,
+    DEFAULT_VIDEO_MODEL,
     CHAT_ENDPOINT,
     COMPLETION_ENDPOINT,
     EMBEDDING_ENDPOINT,
     IMAGE_ENDPOINT,
+    VIDEO_ENDPOINT,
     TTS_ENDPOINT,
     STT_ENDPOINT,
     STT_TRANSLATION_ENDPOINT,
@@ -839,6 +847,193 @@ class Client:
                     del data[param]
 
         return self._request("POST", IMAGE_ENDPOINT, data)
+
+    def videos(
+        self,
+        prompt: str,
+        model: str = DEFAULT_VIDEO_MODEL,
+        # Common parameters
+        aspect_ratio: Optional[str] = None,
+        resolution: Optional[str] = None,
+        duration: Optional[int] = None,
+        n: Optional[int] = None,
+        # OpenAI-specific parameters
+        size: Optional[str] = None,
+        # Google-specific parameters
+        input_image: Optional[str] = None,
+        reference_image: Optional[str] = None,
+        reference_images: Optional[List[str]] = None,
+        generate_audio: Optional[bool] = None,
+        negative_prompt: Optional[str] = None,
+        person_generation: Optional[str] = None,
+        last_frame: Optional[str] = None,
+        video: Optional[str] = None,
+        # General parameters
+        response_format: Optional[str] = None,
+        byok_api_key: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Generate videos from a prompt.
+
+        Args:
+            prompt: Text prompt for video generation
+            model: Model to use in the format "provider/model" (e.g., "google/veo-3.0-generate-001")
+
+            # Common parameters
+            aspect_ratio: Video aspect ratio (e.g., "16:9", "9:16", "1:1")
+            resolution: Video resolution (e.g., "720p", "1080p")
+            duration: Duration of the video in seconds (e.g., 4, 6, 8)
+            n: Number of videos to generate
+
+            # OpenAI-specific parameters
+            size: Video size specification for OpenAI models
+
+            # Google Veo-specific parameters
+            input_image: Base64 encoded image or URL for image-to-video
+            reference_image: Base64 encoded reference image (for style reference)
+            reference_images: List of base64 encoded reference images (up to 3 for Veo 3.1)
+            generate_audio: Whether to generate synchronized audio with video (Veo 3+)
+            negative_prompt: Description of what NOT to include in the video (Veo 3.1+)
+            person_generation: Control generation of people - "dont_allow", "allow_adult", "allow_all"
+            last_frame: Base64 encoded last frame for frame interpolation
+            video: Base64 encoded video or GCS URI for video extension
+
+            # General parameters
+            response_format: Format of the response ("url" or "b64_json")
+            byok_api_key: Your own API key for the provider (BYOK - Bring Your Own Key)
+
+            **kwargs: Additional parameters to pass to the API
+
+        Returns:
+            Response data with video URLs
+
+        Examples:
+            Basic text-to-video:
+                response = client.videos(
+                    "A neon hologram of a cat driving at top speed",
+                    model="google/veo-3.0-generate-001",
+                    duration=8,
+                    resolution="720p"
+                )
+
+            Text-to-video with audio:
+                response = client.videos(
+                    "A butterfly lands on a flower",
+                    model="google/veo-3.0-generate-001",
+                    duration=6,
+                    generate_audio=True
+                )
+
+            Portrait mode video:
+                response = client.videos(
+                    "A vertical video of a waterfall",
+                    model="google/veo-3.0-generate-001",
+                    aspect_ratio="9:16",
+                    resolution="720p",
+                    duration=6
+                )
+
+            High resolution with Veo 3:
+                response = client.videos(
+                    "A futuristic city at sunset",
+                    model="google/veo-3.0-generate-001",
+                    aspect_ratio="16:9",
+                    resolution="1080p",
+                    duration=4
+                )
+
+            Fast generation with Veo 3 Fast:
+                response = client.videos(
+                    "Waves crashing on a beach",
+                    model="google/veo-3.0-fast-generate-001",
+                    duration=8
+                )
+
+            Advanced Veo 3.1 with negative prompt:
+                response = client.videos(
+                    "A beautiful garden with flowers",
+                    model="google/veo-3.1-generate-preview",
+                    duration=8,
+                    negative_prompt="rain, storm, dark clouds",
+                    person_generation="allow_adult"
+                )
+
+            Image-to-video:
+                response = client.videos(
+                    "Animate this image with gentle movement",
+                    model="google/veo-3.0-generate-001",
+                    input_image="data:image/png;base64,iVBOR...",
+                    duration=6
+                )
+
+            Using BYOK (Bring Your Own Key):
+                response = client.videos(
+                    "A scenic landscape",
+                    model="google/veo-3.0-generate-001",
+                    byok_api_key="your-google-api-key-here"
+                )
+        """
+        # Format the model string
+        formatted_model = self._format_model_string(model)
+
+        # Filter out problematic parameters
+        filtered_kwargs = {}
+        for key, value in kwargs.items():
+            if key not in ["return_generator"]:  # List of parameters to exclude
+                filtered_kwargs[key] = value
+
+        # Create the base request data with required parameters
+        data = {
+            "prompt": prompt,
+            "model": formatted_model,
+        }
+
+        # Add optional parameters only if they are explicitly provided
+        if n is not None:
+            data["n"] = n
+        if aspect_ratio is not None:
+            data["aspect_ratio"] = aspect_ratio
+        if resolution is not None:
+            data["resolution"] = resolution
+        if duration is not None:
+            data["duration"] = duration
+
+        # Add OpenAI-specific parameters if provided
+        if size is not None:
+            data["size"] = size
+
+        # Add Google-specific parameters if provided
+        if input_image is not None:
+            data["input_image"] = input_image
+        if reference_image is not None:
+            data["reference_image"] = reference_image
+        if reference_images is not None:
+            data["reference_images"] = reference_images
+        if generate_audio is not None:
+            data["generate_audio"] = generate_audio
+        if negative_prompt is not None:
+            data["negative_prompt"] = negative_prompt
+        if person_generation is not None:
+            data["person_generation"] = person_generation
+        if last_frame is not None:
+            data["last_frame"] = last_frame
+        if video is not None:
+            data["video"] = video
+
+        # Add general parameters if provided
+        if response_format is not None:
+            data["response_format"] = response_format
+
+        # Add any remaining parameters
+        if filtered_kwargs:
+            data["additional_params"] = filtered_kwargs
+
+        # Add BYOK API key if provided
+        if byok_api_key:
+            data["byok_api_key"] = byok_api_key
+
+        return self._request("POST", VIDEO_ENDPOINT, data)
 
     def text_to_speech(
         self,

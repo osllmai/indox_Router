@@ -17,6 +17,9 @@ Example:
         {"role": "user", "content": "Tell me a joke."}
     ], model="openai/gpt-4o-mini")
 
+    # Generate videos
+    videos = client.videos("A neon hologram of a cat", model="google/veo-3.0-generate-001", duration=8)
+
     print(response["data"])
     ```
 
@@ -47,7 +50,7 @@ from .exceptions import (
     APIError,
 )
 
-__version__ = "0.1.37"
+__version__ = "0.1.38"
 __all__ = [
     "Client",
     "IndoxRouter",
