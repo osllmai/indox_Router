@@ -135,3 +135,4 @@ Now that you understand the basics, check out the detailed guides for each capab
 - [Text Completions](completions.md)
 - [Embeddings](embeddings.md)
 - [Image Generation](images.md)
+- [Video Generation](video.md)

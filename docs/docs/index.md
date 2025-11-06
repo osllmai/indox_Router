@@ -87,6 +87,7 @@ All AI endpoints support BYOK:
 - ✅ Text completions (`client.completion()`)
 - ✅ Embeddings (`client.embeddings()`)
 - ✅ Image generation (`client.images()`)
+- ✅ Video generation (`client.videos()`)
 - ✅ Text-to-speech (`client.text_to_speech()`)
 
 ### Response Format
@@ -241,6 +242,25 @@ response = client.images(
 )
 
 image_url = response['data'][0]['url']
+```
+
+### Video Generation
+
+```python
+# Generate videos (asynchronous process)
+response = client.videos(
+    prompt="A majestic eagle soaring over mountain peaks, cinematic camera movement",
+    model="openai/sora-2",
+    size="1280x720",
+    duration=4
+)
+
+job_id = response['data']['job_id']
+
+# Check job status
+status_response = client.jobs(job_id=job_id)
+if status_response['status'] == 'completed':
+    video_url = status_response['result']['data'][0]['url']
 ```
 
 ## Rate Limits

@@ -117,3 +117,4 @@ Now that you're set up, check out the Usage Guide for more detailed information 
 - [Text Completions](usage/completions.md)
 - [Embeddings](usage/embeddings.md)
 - [Image Generation](usage/images.md)
+- [Video Generation](usage/video.md)

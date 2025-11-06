@@ -100,6 +100,7 @@ nav:
       - Text Completions: usage/completions.md
       - Embeddings: usage/embeddings.md
       - Image Generation: usage/images.md
+      - Video Generation: usage/video.md
       - Text-to-Speech: usage/tts.md
       - Speech-to-Text: usage/stt.md
       - BYOK Support: usage/byok.md
