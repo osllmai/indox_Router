@@ -236,3 +236,5 @@ The response from the chat method follows this structure:
  'data': 'The capital of France is Paris.',
  'finish_reason': None}
 ```
+
+_Last updated: Nov 08, 2025_

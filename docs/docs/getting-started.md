@@ -118,3 +118,5 @@ Now that you're set up, check out the Usage Guide for more detailed information 
 - [Embeddings](usage/embeddings.md)
 - [Image Generation](usage/images.md)
 - [Video Generation](usage/video.md)
+
+_Last updated: Nov 08, 2025_

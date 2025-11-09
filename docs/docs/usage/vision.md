@@ -646,3 +646,5 @@ Different providers have different limitations:
 - Learn about [BYOK Support](byok.md) to use your own API keys
 - Check [Rate Limits](rate-limits.md) for usage constraints
 - See [Basic Examples](../examples/basic.md) for more code samples
+
+_Last updated: Nov 08, 2025_

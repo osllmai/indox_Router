@@ -260,3 +260,5 @@ else:
 ```
 
 **Note:** Tool calling support may vary by provider and model. Not all models in IndoxRouter currently support tool calling.
+
+_Last updated: Nov 08, 2025_

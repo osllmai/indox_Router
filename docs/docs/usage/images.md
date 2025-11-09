@@ -226,3 +226,5 @@ print(f"Architecture concept URL: {architecture_response['data'][0]['url']}")
 - Some providers may have content filters that restrict certain types of content
 - Image quality and adherence to the prompt varies across different models
 - Costs for image generation can be higher than text generation
+
+_Last updated: Nov 08, 2025_

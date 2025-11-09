@@ -295,3 +295,5 @@ for i, doc in enumerate(documents):
 4. **Cache embeddings**: Store embeddings to avoid regenerating them for the same content
 5. **Use appropriate similarity metrics**: Cosine similarity is common, but other metrics might be better for specific use cases
 6. **Consider dimensionality reduction**: For very large collections, consider techniques like PCA to reduce embedding dimensions
+
+_Last updated: Nov 08, 2025_
