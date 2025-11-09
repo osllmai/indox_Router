@@ -38,8 +38,15 @@ Usage example:
     # Generate images
     images = client.images("A futuristic city", model="openai/dall-e-3")
 
-    # Generate videos
+    # Generate videos (Google - synchronous)
     videos = client.videos("A neon hologram of a cat", model="google/veo-3.0-generate-001", duration=8)
+
+    # Generate videos (OpenAI - asynchronous)
+    response = client.videos("A cat on a motorcycle", model="openai/sora-2", duration=4)
+    job_id = response["data"]["job_id"]
+    # Wait for completion
+    final_status = client.wait_for_video_job(job_id)
+    video_url = final_status["result"]["video_url"]
 
     # Generate text-to-speech audio
     audio = client.text_to_speech("Hello, welcome to IndoxRouter!", model="openai/tts-1", voice="alloy")
@@ -1034,6 +1041,150 @@ class Client:
             data["byok_api_key"] = byok_api_key
 
         return self._request("POST", VIDEO_ENDPOINT, data)
+
+    def get_video_job_status(self, job_id: str) -> Dict[str, Any]:
+        """
+        Get the status of an async video generation job.
+
+        Args:
+            job_id: The job ID returned from the videos() call
+
+        Returns:
+            Job status information including completion status and video URL when ready
+
+        Example:
+            # Start video generation
+            response = client.videos(
+                "A cat on a motorcycle",
+                model="openai/sora-2",
+                duration=4
+            )
+
+            # Check if it's an async job
+            if isinstance(response.get("data"), dict) and response["data"].get("is_async"):
+                job_id = response["data"]["job_id"]
+
+                # Get status
+                status = client.get_video_job_status(job_id)
+                print(f"Status: {status['status']}, Progress: {status['progress']}%")
+
+                # When completed
+                if status["status"] == "completed":
+                    video_url = status["result"]["video_url"]
+                    print(f"Video ready: {video_url}")
+        """
+        return self._request("GET", f"videos/jobs/{job_id}")
+
+    def list_video_jobs(self, limit: int = 20, skip: int = 0) -> Dict[str, Any]:
+        """
+        List all video generation jobs for the current user.
+
+        Args:
+            limit: Maximum number of jobs to return
+            skip: Number of jobs to skip (for pagination)
+
+        Returns:
+            Dictionary with jobs list and pagination info
+
+        Example:
+            jobs = client.list_video_jobs(limit=10)
+            for job in jobs["jobs"]:
+                print(f"Job {job['job_id']}: {job['status']}")
+        """
+        return self._request("GET", f"videos/jobs?limit={limit}&skip={skip}")
+
+    def cancel_video_job(self, job_id: str) -> Dict[str, Any]:
+        """
+        Cancel a pending video generation job.
+
+        Args:
+            job_id: The job ID to cancel
+
+        Returns:
+            Cancellation status
+
+        Example:
+            response = client.videos("Test", model="openai/sora-2")
+            job_id = response["data"]["job_id"]
+
+            # Cancel if needed
+            result = client.cancel_video_job(job_id)
+            print(result["message"])
+        """
+        return self._request("POST", f"videos/jobs/{job_id}/cancel")
+
+    def wait_for_video_job(
+        self,
+        job_id: str,
+        check_interval: int = 15,
+        max_wait_time: int = 600,
+        callback: Optional[callable] = None,
+    ) -> Dict[str, Any]:
+        """
+        Wait for a video generation job to complete.
+
+        This method polls the job status until it's completed or failed.
+
+        Args:
+            job_id: The job ID to wait for
+            check_interval: Seconds between status checks (default: 15)
+            max_wait_time: Maximum time to wait in seconds (default: 600 = 10 minutes)
+            callback: Optional callback function called on each status update.
+                      Signature: callback(status_dict)
+
+        Returns:
+            Final job status with video URL if successful
+
+        Raises:
+            TimeoutError: If max_wait_time is exceeded
+            APIError: If the job fails
+
+        Example:
+            # Simple usage
+            response = client.videos("A cat", model="openai/sora-2", duration=4)
+            job_id = response["data"]["job_id"]
+
+            final_status = client.wait_for_video_job(job_id)
+            video_url = final_status["result"]["video_url"]
+
+            # With progress callback
+            def on_progress(status):
+                print(f"Progress: {status['progress']}%")
+
+            final_status = client.wait_for_video_job(
+                job_id,
+                check_interval=10,
+                callback=on_progress
+            )
+        """
+        import time
+
+        start_time = time.time()
+
+        while True:
+            # Check if we've exceeded max wait time
+            elapsed = time.time() - start_time
+            if elapsed > max_wait_time:
+                raise TimeoutError(
+                    f"Video job did not complete within {max_wait_time} seconds"
+                )
+
+            # Get current status
+            status = self.get_video_job_status(job_id)
+
+            # Call callback if provided
+            if callback:
+                callback(status)
+
+            # Check if job is in final state
+            if status["status"] == "completed":
+                return status
+            elif status["status"] == "failed":
+                error_msg = status.get("error", "Unknown error")
+                raise APIError(f"Video generation failed: {error_msg}")
+
+            # Wait before next check
+            time.sleep(check_interval)
 
     def text_to_speech(
         self,
