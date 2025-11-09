@@ -293,3 +293,5 @@ response = client.chat(
 ---
 
 _BYOK support is available for all IndoxRouter AI endpoints. Start using your own API keys today for better control, cost savings, and performance._
+
+_Last updated: Nov 08, 2025_

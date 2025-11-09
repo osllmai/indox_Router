@@ -136,3 +136,5 @@ Now that you understand the basics, check out the detailed guides for each capab
 - [Embeddings](embeddings.md)
 - [Image Generation](images.md)
 - [Video Generation](video.md)
+
+_Last updated: Nov 08, 2025_

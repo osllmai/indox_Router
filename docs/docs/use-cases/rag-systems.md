@@ -306,3 +306,5 @@ class ProductionRAG:
 ```
 
 This approach provides scalable, production-ready RAG systems with IndoxRouter.
+
+_Last updated: Nov 08, 2025_

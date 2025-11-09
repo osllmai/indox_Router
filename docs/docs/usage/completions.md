@@ -92,3 +92,5 @@ response = client.completions(
     temperature=0.2
 )
 ```
+
+_Last updated: Nov 08, 2025_

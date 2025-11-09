@@ -428,3 +428,5 @@ Possible values for `finish_reason`:
 - **500**: Internal Server Error
 - **502**: Bad Gateway - Provider error
 - **503**: Service Unavailable - Temporary outage
+
+_Last updated: Nov 08, 2025_

@@ -391,3 +391,5 @@ If you encounter issues:
 
 !!! tip "Rate Limits"
 Text-to-speech requests may have different rate limits than text generation. Monitor your usage and implement appropriate retry logic for production applications.
+
+_Last updated: Nov 08, 2025_

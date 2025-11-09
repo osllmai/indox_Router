@@ -245,3 +245,5 @@ def set_base_url(self, base_url: str) -> None:
         base_url: The base URL to use.
     """
 ```
+
+_Last updated: Nov 08, 2025_
