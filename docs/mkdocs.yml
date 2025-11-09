@@ -1,6 +1,7 @@
 site_name: IndoxRouter
 site_description: Documentation for the IndoxRouter Python package
 site_author: IndoxRouter Team
+site_url: https://indoxrouter.com
 
 theme:
   name: material
@@ -60,9 +61,27 @@ extra_css:
 
 extra:
   social:
+    - icon: fontawesome/solid/globe
+      link: https://indoxrouter.com
+      name: IndoxRouter Website
     - icon: fontawesome/brands/github
-      link: https://github.com/osllmai/indoxRouter
-      name: IndoxRouter on GitHub
+      link: https://github.com/osllmai/
+      name: osllmai on GitHub
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/osllmai
+      name: osllmai on LinkedIn
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/c8wCgrsGJr
+      name: Join our Discord
+    - icon: fontawesome/brands/youtube
+      link: https://www.youtube.com/@osllm-rb9pr
+      name: osllm on YouTube
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/OsllmAi
+      name: Follow us on X
+    - icon: fontawesome/solid/envelope
+      link: mailto:support@IndoxRouter.com
+      name: Contact Support
   generator: false
 
 markdown_extensions:

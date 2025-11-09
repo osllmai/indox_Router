@@ -1,5 +1,7 @@
 # IndoxRouter
 
+[![Website](https://img.shields.io/badge/Website-indoxrouter.com-blue)](https://indoxrouter.com)
+
 A unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.
 
 ## Installation
