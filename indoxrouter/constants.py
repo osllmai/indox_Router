@@ -4,9 +4,9 @@ Constants for the IndoxRouter client.
 
 # API settings
 DEFAULT_API_VERSION = "v1"
-DEFAULT_BASE_URL = "https://api.indoxrouter.com"  # Production server URL with HTTPS
+# DEFAULT_BASE_URL = "https://api.indoxrouter.com"  # Production server URL with HTTPS
 # DEFAULT_BASE_URL = "http://localhost:9050"  # Local server
-# DEFAULT_BASE_URL = "https://dev-api.indoxrouter.com"  # development server
+DEFAULT_BASE_URL = "https://dev-api.indoxrouter.com"  # development server
 DEFAULT_TIMEOUT = (
     1200  
 )
