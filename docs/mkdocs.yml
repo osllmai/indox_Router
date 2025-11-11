@@ -133,7 +133,7 @@ nav:
       - OpenAI SDK Usage: examples/openai-sdk.md
 
   - API Reference:
-      - Overview: api-reference.md
+      - Overview: api-reference/api-reference.md
       - Client Methods: api/client.md
       - Response Schemas: api/responses.md
       - Exceptions: api/exceptions.md

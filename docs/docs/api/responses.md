@@ -429,4 +429,4 @@ Possible values for `finish_reason`:
 - **502**: Bad Gateway - Provider error
 - **503**: Service Unavailable - Temporary outage
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 11, 2025_

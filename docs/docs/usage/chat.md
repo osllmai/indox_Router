@@ -237,4 +237,4 @@ The response from the chat method follows this structure:
  'finish_reason': None}
 ```
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 11, 2025_

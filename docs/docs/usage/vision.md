@@ -647,4 +647,4 @@ Different providers have different limitations:
 - Check [Rate Limits](rate-limits.md) for usage constraints
 - See [Basic Examples](../examples/basic.md) for more code samples
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 11, 2025_

@@ -466,4 +466,4 @@ generated_email = generate_from_template(email_template, str(email_data))
 
 This comprehensive guide covers the main document processing capabilities available through IndoxRouter, enabling you to build sophisticated document analysis and processing systems.
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 11, 2025_

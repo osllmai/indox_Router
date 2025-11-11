@@ -296,4 +296,4 @@ for i, doc in enumerate(documents):
 5. **Use appropriate similarity metrics**: Cosine similarity is common, but other metrics might be better for specific use cases
 6. **Consider dimensionality reduction**: For very large collections, consider techniques like PCA to reduce embedding dimensions
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 11, 2025_

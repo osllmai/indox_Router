@@ -239,4 +239,4 @@ except APIError as e:
     print(f"Request ID: {e.request_id}")  # For debugging with support
 ```
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 11, 2025_
