@@ -643,4 +643,4 @@ response = client.chat(messages=[...], model="openai/gpt-4o-mini")
 save_request_info(response, "User greeting response")
 ```
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

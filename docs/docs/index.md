@@ -283,4 +283,4 @@ Rate limit information is included in error responses when limits are exceeded.
 - **[Usage Examples](usage/basic-usage.md)**: Comprehensive usage examples
 - **[API Reference](api/client.md)**: Full API documentation
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

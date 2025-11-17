@@ -3082,4 +3082,4 @@ API key creation request model.
 | `name` | string |  |  |
 | `expiration_time` | any |  | Expiration time in days from now. If not provided (None), the API key will never expire. |
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

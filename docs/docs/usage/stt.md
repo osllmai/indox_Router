@@ -411,4 +411,4 @@ def transcribe_audio_file(file_path, language=None):
 transcribed_text = transcribe_audio_file("meeting_recording.mp3", language="en")
 ```
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

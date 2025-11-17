@@ -227,4 +227,4 @@ print(f"Architecture concept URL: {architecture_response['data'][0]['url']}")
 - Image quality and adherence to the prompt varies across different models
 - Costs for image generation can be higher than text generation
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

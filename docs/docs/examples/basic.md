@@ -150,4 +150,4 @@ with Client(api_key="your_api_key") as client:
     print(f"Max tokens: {model_info.get('max_tokens', 'Unknown')}")
 ```
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

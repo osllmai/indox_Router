@@ -246,4 +246,4 @@ def set_base_url(self, base_url: str) -> None:
     """
 ```
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

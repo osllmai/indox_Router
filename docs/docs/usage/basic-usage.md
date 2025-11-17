@@ -137,4 +137,4 @@ Now that you understand the basics, check out the detailed guides for each capab
 - [Image Generation](images.md)
 - [Video Generation](video.md)
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

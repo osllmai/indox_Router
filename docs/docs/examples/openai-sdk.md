@@ -611,4 +611,4 @@ response = chat_with_fallback(
 
 This approach lets you use the familiar OpenAI SDK while getting access to all IndoxRouter providers and their cost tracking features!
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

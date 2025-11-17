@@ -207,4 +207,4 @@ def track_usage_metrics(usage_data):
 track_usage_metrics(client.get_usage())
 ```
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_

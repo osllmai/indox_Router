@@ -93,4 +93,4 @@ response = client.completions(
 )
 ```
 
-_Last updated: Nov 11, 2025_
+_Last updated: Nov 16, 2025_
