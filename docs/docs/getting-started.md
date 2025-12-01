@@ -24,11 +24,11 @@ client = Client(api_key="your_api_key")
 
 ### Method 2: Using environment variables
 
-You can set the `INDOX_ROUTER_API_KEY` environment variable and the client will use it automatically:
+You can set the `INDOX_HUB_API_KEY` environment variable and the client will use it automatically:
 
 ```python
 # In your terminal or .env file
-# export INDOX_ROUTER_API_KEY=your_api_key
+# export INDOX_HUB_API_KEY=your_api_key
 
 # In your Python code
 from indoxhub import Client

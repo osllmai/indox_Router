@@ -20,7 +20,7 @@ from indoxhub import Client
 # Initialize with API key
 client = Client(api_key="your_api_key")
 
-# Or use environment variable INDOX_ROUTER_API_KEY
+# Or use environment variable INDOX_HUB_API_KEY
 client = Client()
 ```
 

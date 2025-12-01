@@ -1,0 +1,17 @@
+services:
+  mkdocs-server-idxr:
+    image: python:3.11-alpine
+    container_name: mkdocs-server
+    volumes:
+      - ../../docs:/docs
+      - ../../mkdocs.yml:/mkdocs.yml
+    ports:
+      - "8000:8000"
+    working_dir: /
+    command: sh -c "apk add --no-cache gcc musl-dev libffi-dev && pip install mkdocs mkdocs-material && mkdocs serve -a 0.0.0.0:8000"
+    restart: unless-stopped
+    networks:
+      - edge
+networks:
+  edge:
+    external: true

@@ -15,7 +15,7 @@ client = Client(
 
 ### Parameters
 
-- `api_key` (`str`, optional): Your API key for authentication. If not provided, the client will look for the `INDOX_ROUTER_API_KEY` environment variable.
+- `api_key` (`str`, optional): Your API key for authentication. If not provided, the client will look for the `INDOX_HUB_API_KEY` environment variable.
 - `timeout` (`int`, optional): Request timeout in seconds. Defaults to 30.
 
 ## Methods
