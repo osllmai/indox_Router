@@ -1,6 +1,6 @@
 # Response Schemas
 
-This page documents the response formats for all IndoxRouter API endpoints.
+This page documents the response formats for all indoxhub API endpoints.
 
 ## Chat Completion Response
 
@@ -98,7 +98,7 @@ For models that support image generation:
     "finish_reason": "stop",
     "images": [
         {
-            "url": "https://indoxrouter.s3.amazonaws.com/dev_user_4/image/d0847065-2f2b-4529-8484-0e98e19b7318_20251026_164858.png?...",
+            "url": "https://indoxhub.s3.amazonaws.com/dev_user_4/image/d0847065-2f2b-4529-8484-0e98e19b7318_20251026_164858.png?...",
             "index": 0
         }
     ],

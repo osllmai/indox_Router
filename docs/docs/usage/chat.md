@@ -1,13 +1,13 @@
 # Chat Completions
 
-Chat completions are the primary way to interact with conversational AI models like GPT-4, Claude, and Gemini. This guide covers how to use the chat completions feature of the IndoxRouter Client.
+Chat completions are the primary way to interact with conversational AI models like GPT-4, Claude, and Gemini. This guide covers how to use the chat completions feature of the indoxhub Client.
 
 ## Basic Usage
 
 The simplest way to use chat completions is with the `chat()` method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -124,7 +124,7 @@ response = client.chat(
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers. This bypasses platform rate limits and credit deductions:
+indoxhub supports BYOK, allowing you to use your own API keys for AI providers. This bypasses platform rate limits and credit deductions:
 
 ```python
 # Use your own OpenAI API key
@@ -151,7 +151,7 @@ response = client.chat(
 
 ### BYOK Benefits for Chat
 
-- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Credit Deduction**: Your indoxhub credits remain unchanged
 - **No Rate Limiting**: Bypass platform rate limits
 - **Direct Provider Access**: Connect directly to your provider accounts
 - **Cost Control**: Pay providers directly at their rates

@@ -1,13 +1,13 @@
 # Advanced Examples
 
-This section covers advanced usage patterns and real-world applications of IndoxRouter.
+This section covers advanced usage patterns and real-world applications of indoxhub.
 
 ## Streaming Responses
 
 Handle real-time streaming responses for better user experience:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -31,7 +31,7 @@ Process multiple requests efficiently using synchronous calls:
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
-from indoxrouter import Client
+from indoxhub import Client
 
 def process_batch():
     client = Client(api_key="your_api_key")
@@ -65,7 +65,7 @@ Or using asyncio with synchronous client:
 
 ```python
 import asyncio
-from indoxrouter import Client
+from indoxhub import Client
 
 async def process_batch():
     client = Client(api_key="your_api_key")
@@ -107,7 +107,7 @@ Implement robust error handling:
 
 ```python
 import time
-from indoxrouter import Client, IndoxRouterError
+from indoxhub import Client, indoxhubError
 
 def chat_with_retry(client, messages, model, max_retries=3):
     for attempt in range(max_retries):
@@ -117,7 +117,7 @@ def chat_with_retry(client, messages, model, max_retries=3):
                 model=model
             )
             return response
-        except IndoxRouterError as e:
+        except indoxhubError as e:
             if attempt == max_retries - 1:
                 raise e
 
@@ -136,7 +136,7 @@ try:
         "openai/gpt-4o-mini"
     )
     print(response['data'])
-except IndoxRouterError as e:
+except indoxhubError as e:
     print(f"Failed after all retries: {e}")
 ```
 
@@ -145,7 +145,7 @@ except IndoxRouterError as e:
 Route requests to different models based on content:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 class SmartRouter:
     def __init__(self, api_key):
@@ -190,7 +190,7 @@ print(f"Response: {result['response']}")
 Use tool calling for structured outputs with compatible models:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 import json
 
 client = Client(api_key="your_api_key")
@@ -259,6 +259,6 @@ else:
     print(f"Response: {response['data']}")
 ```
 
-**Note:** Tool calling support may vary by provider and model. Not all models in IndoxRouter currently support tool calling.
+**Note:** Tool calling support may vary by provider and model. Not all models in indoxhub currently support tool calling.
 
 _Last updated: Nov 16, 2025_

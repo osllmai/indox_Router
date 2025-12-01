@@ -1,13 +1,13 @@
 # Embeddings
 
-Embeddings are vector representations of text that capture semantic meaning, making them useful for similarity search, clustering, classification, and retrieval applications. This guide covers how to use the embeddings feature of IndoxRouter.
+Embeddings are vector representations of text that capture semantic meaning, making them useful for similarity search, clustering, classification, and retrieval applications. This guide covers how to use the embeddings feature of indoxhub.
 
 ## Basic Usage
 
 The simplest way to generate embeddings is with the `embeddings()` method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -27,7 +27,7 @@ print(f"First few dimensions: {response['data'][0]['embedding'][:5]}")
 You can generate embeddings for multiple texts in a single request by passing a list of strings:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -79,7 +79,7 @@ mistral_response = client.embeddings(
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK for embeddings, allowing you to use your own API keys for AI providers:
+indoxhub supports BYOK for embeddings, allowing you to use your own API keys for AI providers:
 
 ```python
 # Use your own OpenAI API key for embeddings
@@ -106,7 +106,7 @@ response = client.embeddings(
 
 ### BYOK Benefits for Embeddings
 
-- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Credit Deduction**: Your indoxhub credits remain unchanged
 - **No Rate Limiting**: Bypass platform rate limits
 - **Direct Provider Access**: Connect directly to your provider accounts
 - **Cost Control**: Pay providers directly at their rates

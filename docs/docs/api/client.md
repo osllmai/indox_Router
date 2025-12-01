@@ -1,11 +1,11 @@
 # Client API Reference
 
-The `Client` class is the main entry point for interacting with the IndoxRouter API. This page documents all the methods and functionality provided by the client.
+The `Client` class is the main entry point for interacting with the indoxhub API. This page documents all the methods and functionality provided by the client.
 
 ## Initialization
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(
     api_key="your_api_key",

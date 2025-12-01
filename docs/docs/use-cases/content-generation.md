@@ -1,13 +1,13 @@
-# Content Generation with IndoxRouter
+# Content Generation with indoxhub
 
-IndoxRouter provides access to powerful language models that can be used for a wide range of content generation tasks. This guide demonstrates various content generation use cases and how to implement them.
+indoxhub provides access to powerful language models that can be used for a wide range of content generation tasks. This guide demonstrates various content generation use cases and how to implement them.
 
 ## Text Generation Basics
 
 At its core, content generation involves prompting a language model to produce text that meets specific requirements. Here's a simple example:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 

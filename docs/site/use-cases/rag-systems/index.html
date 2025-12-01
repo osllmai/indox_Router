@@ -6,13 +6,13 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the IndoxRouter Python package">
+        <meta name="description" content="Documentation for the indoxhub Python package">
       
       
-        <meta name="author" content="IndoxRouter Team">
+        <meta name="author" content="indoxhub Team">
       
       
-        <link rel="canonical" href="https://indoxrouter.com/use-cases/rag-systems/">
+        <link rel="canonical" href="https://indoxhub.com/use-cases/rag-systems/">
       
       
         <link rel="prev" href="../chatbots/">
@@ -26,7 +26,7 @@
     
     
       
-        <title>RAG Systems - IndoxRouter</title>
+        <title>RAG Systems - indoxhub</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#building-rag-systems-with-indoxrouter" class="md-skip">
+        <a href="#building-rag-systems-with-indoxhub" class="md-skip">
           Skip to content
         </a>
       
@@ -96,7 +96,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="IndoxRouter" class="md-header__button md-logo" aria-label="IndoxRouter" data-md-component="logo">
+    <a href="../.." title="indoxhub" class="md-header__button md-logo" aria-label="indoxhub" data-md-component="logo">
       
   <img src="../../image.png" alt="logo">
 
@@ -109,7 +109,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            IndoxRouter
+            indoxhub
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -360,12 +360,12 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="IndoxRouter" class="md-nav__button md-logo" aria-label="IndoxRouter" data-md-component="logo">
+    <a href="../.." title="indoxhub" class="md-nav__button md-logo" aria-label="indoxhub" data-md-component="logo">
       
   <img src="../../image.png" alt="logo">
 
     </a>
-    IndoxRouter
+    indoxhub
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -1446,8 +1446,8 @@
                   
 
 
-<h1 id="building-rag-systems-with-indoxrouter">Building RAG Systems with IndoxRouter<a class="headerlink" href="#building-rag-systems-with-indoxrouter" title="Permanent link">&para;</a></h1>
-<p>Retrieval-Augmented Generation (RAG) is a powerful approach that combines the benefits of retrieving relevant information from a knowledge base with the capabilities of large language models. This guide demonstrates how to build effective RAG systems using IndoxRouter.</p>
+<h1 id="building-rag-systems-with-indoxhub">Building RAG Systems with indoxhub<a class="headerlink" href="#building-rag-systems-with-indoxhub" title="Permanent link">&para;</a></h1>
+<p>Retrieval-Augmented Generation (RAG) is a powerful approach that combines the benefits of retrieving relevant information from a knowledge base with the capabilities of large language models. This guide demonstrates how to build effective RAG systems using indoxhub.</p>
 <h2 id="what-is-rag">What is RAG?<a class="headerlink" href="#what-is-rag" title="Permanent link">&para;</a></h2>
 <p>RAG enhances language model responses by:</p>
 <ol>
@@ -1459,10 +1459,10 @@
 </ol>
 <p>This approach helps ground model responses in specific knowledge and reduces hallucinations.</p>
 <h2 id="basic-rag-implementation">Basic RAG Implementation<a class="headerlink" href="#basic-rag-implementation" title="Permanent link">&para;</a></h2>
-<p>Here's a simple implementation of a RAG system using IndoxRouter:</p>
+<p>Here's a simple implementation of a RAG system using indoxhub:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">sklearn.metrics.pairwise</span> <span class="kn">import</span> <span class="n">cosine_similarity</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span> <span class="nn">indoxrouter</span> <span class="kn">import</span> <span class="n">Client</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span> <span class="nn">indoxhub</span> <span class="kn">import</span> <span class="n">Client</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Initialize client</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your_api_key&quot;</span><span class="p">)</span>
@@ -1521,7 +1521,7 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">os</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">sklearn.metrics.pairwise</span> <span class="kn">import</span> <span class="n">cosine_similarity</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span> <span class="nn">indoxrouter</span> <span class="kn">import</span> <span class="n">Client</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span> <span class="nn">indoxhub</span> <span class="kn">import</span> <span class="n">Client</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">class</span> <span class="nc">RAGSystem</span><span class="p">:</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">embed_model</span><span class="o">=</span><span class="s2">&quot;openai/text-embedding-3-small&quot;</span><span class="p">,</span> <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;openai/gpt-4o-mini&quot;</span><span class="p">):</span>
@@ -1684,7 +1684,7 @@
 <p>For production systems, consider using dedicated vector databases:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Example with Pinecone</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">import</span> <span class="nn">pinecone</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">indoxrouter</span> <span class="kn">import</span> <span class="n">Client</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">indoxhub</span> <span class="kn">import</span> <span class="n">Client</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">class</span> <span class="nc">ProductionRAG</span><span class="p">:</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">pinecone_api_key</span><span class="p">,</span> <span class="n">pinecone_env</span><span class="p">):</span>
@@ -1736,7 +1736,7 @@
 </span><span id="__span-2-52"><a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a>
 </span><span id="__span-2-53"><a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a>        <span class="k">return</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
 </span></code></pre></div>
-<p>This approach provides scalable, production-ready RAG systems with IndoxRouter.</p>
+<p>This approach provides scalable, production-ready RAG systems with indoxhub.</p>
 <p><em>Last updated: Nov 16, 2025</em></p>
 
 
@@ -1823,7 +1823,7 @@
     
     
     
-    <a href="https://indoxrouter.com" target="_blank" rel="noopener" title="IndoxRouter Website" class="md-social__link">
+    <a href="https://indoxhub.com" target="_blank" rel="noopener" title="indoxhub Website" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M352 256c0 22.2-1.2 43.6-3.3 64H163.4c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64h185.3c2.2 20.4 3.3 41.8 3.3 64m28.8-64h123.1c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64H380.8c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64m112.6-32H376.7c-10-63.9-29.8-117.4-55.3-151.6 78.3 20.7 142 77.5 171.9 151.6zm-149.1 0H167.7c6.1-36.4 15.5-68.6 27-94.7 10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5 11.6 26 20.9 58.2 27 94.7m-209 0H18.6c30-74.1 93.6-130.9 172-151.6-25.5 34.2-45.3 87.7-55.3 151.6M8.1 192h123.1c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64H8.1C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64m186.6 254.6c-11.6-26-20.9-58.2-27-94.6h176.6c-6.1 36.4-15.5 68.6-27 94.6-10.5 23.6-22.2 40.7-33.5 51.5-11.2 10.7-20.5 13.9-27.8 13.9s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6-78.4-20.7-142-77.5-172-151.6zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6 25.5-34.2 45.2-87.7 55.3-151.6h116.7z"/></svg>
     </a>
   
@@ -1871,7 +1871,7 @@
     
     
     
-    <a href="mailto:support@IndoxRouter.com" target="_blank" rel="noopener" title="Contact Support" class="md-social__link">
+    <a href="mailto:support@indoxhub.com" target="_blank" rel="noopener" title="Contact Support" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
     </a>
   

@@ -1,10 +1,10 @@
 # Rate Limits
 
-IndoxRouter implements a three-tier rate limiting system to ensure fair usage and optimal performance. Understanding these limits helps you optimize your application's AI usage.
+indoxhub implements a three-tier rate limiting system to ensure fair usage and optimal performance. Understanding these limits helps you optimize your application's AI usage.
 
 ## Rate Limit Tiers
 
-IndoxRouter has three subscription tiers with different rate limits:
+indoxhub has three subscription tiers with different rate limits:
 
 ```python
 # Rate limits by tier
@@ -97,7 +97,7 @@ When you exceed rate limits, you'll receive an error response:
 ### Error Handling Example
 
 ```python
-from indoxrouter import Client, RateLimitError
+from indoxhub import Client, RateLimitError
 import time
 
 client = Client(api_key="your_api_key")

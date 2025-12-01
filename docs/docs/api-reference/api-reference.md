@@ -8,7 +8,7 @@ A unified API for various AI providers
 ## Base URL
 
 ```
-https://api.indoxrouter.com/api/v1
+https://api.indoxhub.com/api/v1
 ```
 
 ## Authentication
@@ -28,13 +28,13 @@ Install the client libraries:
 === "Python"
 
     ```bash
-    pip install indoxrouter
+    pip install indoxhub
     ```
 
 === "JavaScript/TypeScript"
 
     ```bash
-    npm install @indoxrouter/client
+    npm install @indoxhub/client
     ```
 
 ---
@@ -165,7 +165,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -176,7 +176,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/analytics/models \
+    curl -X GET https://api.indoxhub.com/api/v1/analytics/models \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -184,7 +184,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -260,7 +260,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -275,7 +275,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/audio/tts/generations \
+    curl -X POST https://api.indoxhub.com/api/v1/audio/tts/generations \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -288,7 +288,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -374,7 +374,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -388,7 +388,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/audio/stt/transcriptions \
+    curl -X POST https://api.indoxhub.com/api/v1/audio/stt/transcriptions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -398,7 +398,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -480,7 +480,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -494,7 +494,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/audio/stt/translations \
+    curl -X POST https://api.indoxhub.com/api/v1/audio/stt/translations \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -504,7 +504,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -587,7 +587,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -603,7 +603,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/chat/completions \
+    curl -X POST https://api.indoxhub.com/api/v1/chat/completions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -615,7 +615,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -738,7 +738,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -752,7 +752,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/completions \
+    curl -X POST https://api.indoxhub.com/api/v1/completions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -764,7 +764,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -823,7 +823,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -837,7 +837,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/completions/stop-stream/{stream_id} \
+    curl -X POST https://api.indoxhub.com/api/v1/completions/stop-stream/{stream_id} \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -849,7 +849,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -924,7 +924,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -938,7 +938,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/embeddings \
+    curl -X POST https://api.indoxhub.com/api/v1/embeddings \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -950,7 +950,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1049,7 +1049,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1063,7 +1063,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/images/generations \
+    curl -X POST https://api.indoxhub.com/api/v1/images/generations \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -1075,7 +1075,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1127,7 +1127,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1138,7 +1138,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/ \
+    curl -X GET https://api.indoxhub.com/api/v1/models/ \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1146,7 +1146,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1196,7 +1196,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1207,7 +1207,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/trending \
+    curl -X GET https://api.indoxhub.com/api/v1/models/trending \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1215,7 +1215,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1268,7 +1268,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1279,7 +1279,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id} \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id} \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1287,7 +1287,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1340,7 +1340,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1351,7 +1351,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/text_completions \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/text_completions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1359,7 +1359,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1412,7 +1412,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1426,7 +1426,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/embeddings \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/embeddings \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1434,7 +1434,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1490,7 +1490,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1501,7 +1501,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/image_generation \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/image_generation \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1509,7 +1509,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1562,7 +1562,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1573,7 +1573,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/text_to_speech \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/text_to_speech \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1581,7 +1581,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1634,7 +1634,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1645,7 +1645,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/speech_to_text \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/speech_to_text \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1653,7 +1653,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1706,7 +1706,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1717,7 +1717,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/video_generation \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/video_generation \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1725,7 +1725,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -1780,7 +1780,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -1791,7 +1791,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/models/{provider_id}/{model_id} \
+    curl -X GET https://api.indoxhub.com/api/v1/models/{provider_id}/{model_id} \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -1799,7 +1799,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -2089,7 +2089,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -2100,7 +2100,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/user/usage \
+    curl -X GET https://api.indoxhub.com/api/v1/user/usage \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -2108,7 +2108,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -2312,7 +2312,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -2327,7 +2327,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/videos/generations \
+    curl -X POST https://api.indoxhub.com/api/v1/videos/generations \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -2340,7 +2340,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -2399,7 +2399,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -2410,7 +2410,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X GET https://api.indoxrouter.com/api/v1/videos/jobs/{job_id} \
+    curl -X GET https://api.indoxhub.com/api/v1/videos/jobs/{job_id} \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -2418,7 +2418,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 
@@ -2514,7 +2514,7 @@ Returns:
 === "Python"
 
     ```python
-    from indoxrouter import Client
+    from indoxhub import Client
 
     client = Client(api_key="your_api_key")
 
@@ -2525,7 +2525,7 @@ Returns:
 === "cURL"
 
     ```bash
-    curl -X POST https://api.indoxrouter.com/api/v1/videos/jobs/{job_id}/cancel \
+    curl -X POST https://api.indoxhub.com/api/v1/videos/jobs/{job_id}/cancel \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -2538,7 +2538,7 @@ Returns:
 === "JavaScript"
 
     ```javascript
-    import { Client } from "@indoxrouter/client";
+    import { Client } from "@indoxhub/client";
 
     const client = new Client("your_api_key");
 

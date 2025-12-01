@@ -1,10 +1,10 @@
-# Using OpenAI SDK with IndoxRouter
+# Using OpenAI SDK with indoxhub
 
-You can use the familiar OpenAI SDK with IndoxRouter to access all supported providers through the OpenAI-compatible API. This is perfect if you're already using OpenAI SDK in your codebase.
+You can use the familiar OpenAI SDK with indoxhub to access all supported providers through the OpenAI-compatible API. This is perfect if you're already using OpenAI SDK in your codebase.
 
 ## Setup
 
-Install the OpenAI SDK and configure it to use IndoxRouter:
+Install the OpenAI SDK and configure it to use indoxhub:
 
 ```bash
 pip install openai
@@ -13,10 +13,10 @@ pip install openai
 ```python
 from openai import OpenAI
 
-# Configure OpenAI client to use IndoxRouter
+# Configure OpenAI client to use indoxhub
 client = OpenAI(
-    api_key="your_indoxrouter_api_key",  # Your IndoxRouter API key
-    base_url="https://api.indoxrouter.com"  # IndoxRouter base URL
+    api_key="your_indoxhub_api_key",  # Your indoxhub API key
+    base_url="https://api.indoxhub.com"  # indoxhub base URL
 )
 ```
 
@@ -187,8 +187,8 @@ Handle errors using OpenAI SDK patterns:
 from openai import OpenAI, RateLimitError, AuthenticationError
 
 client = OpenAI(
-    api_key="your_indoxrouter_api_key",
-    base_url="https://api.indoxrouter.com"
+    api_key="your_indoxhub_api_key",
+    base_url="https://api.indoxhub.com"
 )
 
 try:
@@ -416,8 +416,8 @@ from openai import AsyncOpenAI
 
 # Use async client for better performance
 async_client = AsyncOpenAI(
-    api_key="your_indoxrouter_api_key",
-    base_url="https://api.indoxrouter.com"
+    api_key="your_indoxhub_api_key",
+    base_url="https://api.indoxhub.com"
 )
 
 async def process_batch(prompts, model="openai/gpt-4o-mini"):
@@ -472,7 +472,7 @@ for result in results:
 
 ## Migration from OpenAI
 
-If you're migrating from direct OpenAI usage to IndoxRouter:
+If you're migrating from direct OpenAI usage to indoxhub:
 
 ### Before (Direct OpenAI)
 
@@ -487,15 +487,15 @@ response = client.chat.completions.create(
 )
 ```
 
-### After (IndoxRouter)
+### After (indoxhub)
 
 ```python
 from openai import OpenAI
 
 # Only change: API key and base URL
 client = OpenAI(
-    api_key="your_indoxrouter_api_key",  # IndoxRouter API key
-    base_url="https://api.indoxrouter.com"  # IndoxRouter base URL
+    api_key="your_indoxhub_api_key",  # indoxhub API key
+    base_url="https://api.indoxhub.com"  # indoxhub base URL
 )
 
 response = client.chat.completions.create(
@@ -554,12 +554,12 @@ def track_usage(response):
     if hasattr(response, 'usage') and response.usage:
         usage = response.usage
 
-        # Estimate cost (you'd get actual cost from IndoxRouter response headers)
+        # Estimate cost (you'd get actual cost from indoxhub response headers)
         print(f"Tokens used: {usage.total_tokens}")
         print(f"  Prompt: {usage.prompt_tokens}")
         print(f"  Completion: {usage.completion_tokens}")
 
-        # Note: Actual costs would be in IndoxRouter's response format
+        # Note: Actual costs would be in indoxhub's response format
         # when using the native client, not available in OpenAI SDK format
 
 # Usage
@@ -609,6 +609,6 @@ response = chat_with_fallback(
 )
 ```
 
-This approach lets you use the familiar OpenAI SDK while getting access to all IndoxRouter providers and their cost tracking features!
+This approach lets you use the familiar OpenAI SDK while getting access to all indoxhub providers and their cost tracking features!
 
 _Last updated: Nov 16, 2025_

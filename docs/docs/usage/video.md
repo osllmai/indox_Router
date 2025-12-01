@@ -1,13 +1,13 @@
 # Video Generation
 
-IndoxRouter provides a unified interface for generating videos from text prompts across various AI providers. This guide covers how to use the video generation capabilities with support for different models from Google, OpenAI, and Amazon.
+indoxhub provides a unified interface for generating videos from text prompts across various AI providers. This guide covers how to use the video generation capabilities with support for different models from Google, OpenAI, and Amazon.
 
 ## Basic Usage
 
 The simplest way to generate videos is with the `videos()` method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -333,7 +333,7 @@ interpolation_response = client.videos(
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK for video generation:
+indoxhub supports BYOK for video generation:
 
 ```python
 # Use your own OpenAI API key
@@ -357,7 +357,7 @@ google_response = client.videos(
 
 ### BYOK Benefits for Video Generation
 
-- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Credit Deduction**: Your indoxhub credits remain unchanged
 - **No Rate Limiting**: Bypass platform rate limits
 - **Direct Provider Access**: Connect directly to your provider accounts
 - **Cost Control**: Pay providers directly at their rates

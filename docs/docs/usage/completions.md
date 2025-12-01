@@ -1,11 +1,11 @@
 # Text Completions
 
-IndoxRouter supports text completion endpoints for generating text based on prompts.
+indoxhub supports text completion endpoints for generating text based on prompts.
 
 ## Basic Text Completion
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -32,7 +32,7 @@ print("Response:", response["data"])
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK for text completions, allowing you to use your own API keys for AI providers:
+indoxhub supports BYOK for text completions, allowing you to use your own API keys for AI providers:
 
 ```python
 # Use your own OpenAI API key for completions
@@ -63,7 +63,7 @@ response = client.completion(
 
 ### BYOK Benefits for Text Completions
 
-- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Credit Deduction**: Your indoxhub credits remain unchanged
 - **No Rate Limiting**: Bypass platform rate limits
 - **Direct Provider Access**: Connect directly to your provider accounts
 - **Cost Control**: Pay providers directly at their rates

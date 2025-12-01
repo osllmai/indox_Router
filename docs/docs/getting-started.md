@@ -1,23 +1,23 @@
 # Getting Started
 
-This guide will help you get started with the IndoxRouter library, showing you how to install the package, set up your API key, and make your first API call.
+This guide will help you get started with the indoxhub library, showing you how to install the package, set up your API key, and make your first API call.
 
 ## Installation
 
-To install the IndoxRouter, use pip:
+To install the indoxhub, use pip:
 
 ```bash
-pip install indoxrouter
+pip install indoxhub
 ```
 
 ## Setting Up Your API Key
 
-To use IndoxRouter, you need an API key from your IndoxRouter Server instance. There are several ways to configure your API key:
+To use indoxhub, you need an API key from your indoxhub Server instance. There are several ways to configure your API key:
 
 ### Method 1: Directly in the Client constructor
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 ```
@@ -31,7 +31,7 @@ You can set the `INDOX_ROUTER_API_KEY` environment variable and the client will 
 # export INDOX_ROUTER_API_KEY=your_api_key
 
 # In your Python code
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client()  # Will use the environment variable
 ```
@@ -45,7 +45,7 @@ Coming soon: Support for loading configuration from a file.
 You can verify that your API key is working correctly by using the test_connection method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 try:
@@ -61,7 +61,7 @@ except Exception as e:
 Here's a simple example of making a chat completion request:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize the client
 client = Client(api_key="your_api_key")
@@ -81,10 +81,10 @@ print(response["data"])
 
 ## Error Handling
 
-IndoxRouter provides clear error handling. Here's an example of how to handle errors:
+indoxhub provides clear error handling. Here's an example of how to handle errors:
 
 ```python
-from indoxrouter import Client, ModelNotFoundError, ProviderError, AuthenticationError
+from indoxhub import Client, ModelNotFoundError, ProviderError, AuthenticationError
 
 try:
     client = Client(api_key="your_api_key")

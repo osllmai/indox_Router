@@ -1,13 +1,13 @@
-# IndoxRouter
+# indoxhub
 
-[![Website](https://img.shields.io/badge/Website-indoxrouter.com-blue)](https://indoxrouter.com)
+[![Website](https://img.shields.io/badge/Website-indoxhub.com-blue)](https://indoxhub.com)
 
 A unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.
 
 ## Installation
 
 ```bash
-pip install indoxrouter
+pip install indoxhub
 ```
 
 ## Quick Start
@@ -15,7 +15,7 @@ pip install indoxrouter
 ### Initialize the Client
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize with API key
 client = Client(api_key="your_api_key")
@@ -41,9 +41,9 @@ print(f"Tokens used: {response['usage']['tokens_total']}")
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers instead of using the platform's shared keys. This provides several benefits:
+indoxhub supports BYOK, allowing you to use your own API keys for AI providers instead of using the platform's shared keys. This provides several benefits:
 
-- **No credit deduction** from your IndoxRouter account
+- **No credit deduction** from your indoxhub account
 - **No rate limiting** from the platform
 - **Direct provider access** with your own API keys
 - **Cost control** - you pay providers directly at their rates
@@ -79,7 +79,7 @@ response = client.embeddings(
 - **Higher Limits**: Use provider's native rate limits
 - **Direct Billing**: Pay providers directly at their rates
 - **Full Control**: Access to all provider-specific features
-- **No Platform Dependencies**: Works even if IndoxRouter is down
+- **No Platform Dependencies**: Works even if indoxhub is down
 
 ### Supported Endpoints
 
@@ -150,14 +150,14 @@ for provider in models:
 
 ## Using with OpenAI SDK
 
-You can also use the OpenAI SDK with IndoxRouter's base URL:
+You can also use the OpenAI SDK with indoxhub's base URL:
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="your_indoxrouter_api_key",
-    base_url="https://api.indoxrouter.com"
+    api_key="your_indoxhub_api_key",
+    base_url="https://api.indoxhub.com"
 )
 
 response = client.chat.completions.create(
@@ -267,7 +267,7 @@ if status_response['status'] == 'completed':
 
 ## Rate Limits
 
-IndoxRouter has three tiers with different rate limits:
+indoxhub has three tiers with different rate limits:
 
 | Tier       | Requests/Minute | Tokens/Hour | Best For                 |
 | ---------- | --------------- | ----------- | ------------------------ |

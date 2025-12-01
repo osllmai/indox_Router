@@ -1,18 +1,18 @@
-# Building Chatbots with IndoxRouter
+# Building Chatbots with indoxhub
 
-This guide shows how to build a simple but effective chatbot using the IndoxRouter client. By following these examples, you can create chatbots that leverage different AI models through a consistent interface.
+This guide shows how to build a simple but effective chatbot using the indoxhub client. By following these examples, you can create chatbots that leverage different AI models through a consistent interface.
 
 ## Basic Chatbot
 
 Here's a simple example of a command-line chatbot:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 def simple_chatbot():
-    """A simple command-line chatbot using IndoxRouter."""
+    """A simple command-line chatbot using indoxhub."""
 
-    print("Welcome to IndoxRouter Chatbot!")
+    print("Welcome to indoxhub Chatbot!")
     print("Type 'exit' to end the conversation.\n")
 
     # Initialize the client
@@ -59,10 +59,10 @@ if __name__ == "__main__":
 
 ## Multi-Provider Chatbot
 
-One of the key benefits of IndoxRouter is the ability to use multiple AI providers through a consistent interface. Here's an example of a chatbot that can switch between different providers:
+One of the key benefits of indoxhub is the ability to use multiple AI providers through a consistent interface. Here's an example of a chatbot that can switch between different providers:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 import argparse
 
 def multi_provider_chatbot():
@@ -96,7 +96,7 @@ def multi_provider_chatbot():
         model = provider_models[provider]
 
     full_model = f"{provider}/{model}"
-    print(f"Welcome to IndoxRouter Multi-Provider Chatbot!")
+    print(f"Welcome to indoxhub Multi-Provider Chatbot!")
     print(f"Using model: {full_model}")
     print("Type 'exit' to end the conversation.")
     print("Type 'switch provider model' to change the AI model.\n")
@@ -164,11 +164,11 @@ You can also create a simple web-based chatbot using Streamlit:
 ```python
 # Save as chatbot_app.py
 import streamlit as st
-from indoxrouter import Client, ModelNotFoundError, ProviderError
+from indoxhub import Client, ModelNotFoundError, ProviderError
 
 # Set page title and configure
-st.set_page_config(page_title="IndoxRouter Chatbot", page_icon="💬")
-st.title("IndoxRouter Chatbot")
+st.set_page_config(page_title="indoxhub Chatbot", page_icon="💬")
+st.title("indoxhub Chatbot")
 
 # Initialize session state for conversation history
 if "messages" not in st.session_state:

@@ -1,15 +1,15 @@
 # Usage Tracking
 
-IndoxRouter provides comprehensive usage tracking to help you monitor your API consumption, costs, and performance metrics.
+indoxhub provides comprehensive usage tracking to help you monitor your API consumption, costs, and performance metrics.
 
 ## Getting Usage Statistics
 
 Use the `get_usage()` method to retrieve detailed usage information:
 
 ```python
-from indoxrouter import IndoxRouter
+from indoxhub import indoxhub
 
-client = IndoxRouter(api_key="your-api-key")
+client = indoxhub(api_key="your-api-key")
 
 # Get current usage statistics
 usage_stats = client.get_usage()

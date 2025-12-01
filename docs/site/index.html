@@ -6,13 +6,13 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the IndoxRouter Python package">
+        <meta name="description" content="Documentation for the indoxhub Python package">
       
       
-        <meta name="author" content="IndoxRouter Team">
+        <meta name="author" content="indoxhub Team">
       
       
-        <link rel="canonical" href="https://indoxrouter.com/">
+        <link rel="canonical" href="https://indoxhub.com/">
       
       
       
@@ -24,7 +24,7 @@
     
     
       
-        <title>IndoxRouter</title>
+        <title>indoxhub</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#indoxrouter" class="md-skip">
+        <a href="#indoxhub" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="IndoxRouter" class="md-header__button md-logo" aria-label="IndoxRouter" data-md-component="logo">
+    <a href="." title="indoxhub" class="md-header__button md-logo" aria-label="indoxhub" data-md-component="logo">
       
   <img src="image.png" alt="logo">
 
@@ -107,7 +107,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            IndoxRouter
+            indoxhub
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -358,12 +358,12 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="IndoxRouter" class="md-nav__button md-logo" aria-label="IndoxRouter" data-md-component="logo">
+    <a href="." title="indoxhub" class="md-nav__button md-logo" aria-label="indoxhub" data-md-component="logo">
       
   <img src="image.png" alt="logo">
 
     </a>
-    IndoxRouter
+    indoxhub
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -1663,15 +1663,15 @@
                   
 
 
-<h1 id="indoxrouter">IndoxRouter<a class="headerlink" href="#indoxrouter" title="Permanent link">&para;</a></h1>
-<p><a href="https://indoxrouter.com"><img alt="Website" src="https://img.shields.io/badge/Website-indoxrouter.com-blue" /></a></p>
+<h1 id="indoxhub">indoxhub<a class="headerlink" href="#indoxhub" title="Permanent link">&para;</a></h1>
+<p><a href="https://indoxhub.com"><img alt="Website" src="https://img.shields.io/badge/Website-indoxhub.com-blue" /></a></p>
 <p>A unified Python client for accessing multiple AI providers through a single, consistent API. Switch between OpenAI, Anthropic, Google, Mistral, DeepSeek, XAI, and Qwen models seamlessly without changing your code.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>indoxrouter
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>indoxhub
 </span></code></pre></div>
 <h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <h3 id="initialize-the-client">Initialize the Client<a class="headerlink" href="#initialize-the-client" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">indoxrouter</span> <span class="kn">import</span> <span class="n">Client</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">indoxhub</span> <span class="kn">import</span> <span class="n">Client</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Initialize with API key</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your_api_key&quot;</span><span class="p">)</span>
@@ -1692,9 +1692,9 @@
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tokens used: </span><span class="si">{</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;usage&#39;</span><span class="p">][</span><span class="s1">&#39;tokens_total&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="byok-bring-your-own-key-support">BYOK (Bring Your Own Key) Support<a class="headerlink" href="#byok-bring-your-own-key-support" title="Permanent link">&para;</a></h2>
-<p>IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers instead of using the platform's shared keys. This provides several benefits:</p>
+<p>indoxhub supports BYOK, allowing you to use your own API keys for AI providers instead of using the platform's shared keys. This provides several benefits:</p>
 <ul>
-<li><strong>No credit deduction</strong> from your IndoxRouter account</li>
+<li><strong>No credit deduction</strong> from your indoxhub account</li>
 <li><strong>No rate limiting</strong> from the platform</li>
 <li><strong>Direct provider access</strong> with your own API keys</li>
 <li><strong>Cost control</strong> - you pay providers directly at their rates</li>
@@ -1727,7 +1727,7 @@
 <li><strong>Higher Limits</strong>: Use provider's native rate limits</li>
 <li><strong>Direct Billing</strong>: Pay providers directly at their rates</li>
 <li><strong>Full Control</strong>: Access to all provider-specific features</li>
-<li><strong>No Platform Dependencies</strong>: Works even if IndoxRouter is down</li>
+<li><strong>No Platform Dependencies</strong>: Works even if indoxhub is down</li>
 </ul>
 <h3 id="supported-endpoints">Supported Endpoints<a class="headerlink" href="#supported-endpoints" title="Permanent link">&para;</a></h3>
 <p>All AI endpoints support BYOK:</p>
@@ -1784,12 +1784,12 @@
 </span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">&#39;modelName&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="using-with-openai-sdk">Using with OpenAI SDK<a class="headerlink" href="#using-with-openai-sdk" title="Permanent link">&para;</a></h2>
-<p>You can also use the OpenAI SDK with IndoxRouter's base URL:</p>
+<p>You can also use the OpenAI SDK with indoxhub's base URL:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your_indoxrouter_api_key&quot;</span><span class="p">,</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://api.indoxrouter.com&quot;</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your_indoxhub_api_key&quot;</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://api.indoxhub.com&quot;</span>
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="p">)</span>
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
 </span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
@@ -1878,7 +1878,7 @@
 </span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>    <span class="n">video_url</span> <span class="o">=</span> <span class="n">status_response</span><span class="p">[</span><span class="s1">&#39;result&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span>
 </span></code></pre></div>
 <h2 id="rate-limits">Rate Limits<a class="headerlink" href="#rate-limits" title="Permanent link">&para;</a></h2>
-<p>IndoxRouter has three tiers with different rate limits:</p>
+<p>indoxhub has three tiers with different rate limits:</p>
 <table>
 <thead>
 <tr>
@@ -1986,7 +1986,7 @@
     
     
     
-    <a href="https://indoxrouter.com" target="_blank" rel="noopener" title="IndoxRouter Website" class="md-social__link">
+    <a href="https://indoxhub.com" target="_blank" rel="noopener" title="indoxhub Website" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M352 256c0 22.2-1.2 43.6-3.3 64H163.4c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64h185.3c2.2 20.4 3.3 41.8 3.3 64m28.8-64h123.1c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64H380.8c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64m112.6-32H376.7c-10-63.9-29.8-117.4-55.3-151.6 78.3 20.7 142 77.5 171.9 151.6zm-149.1 0H167.7c6.1-36.4 15.5-68.6 27-94.7 10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5 11.6 26 20.9 58.2 27 94.7m-209 0H18.6c30-74.1 93.6-130.9 172-151.6-25.5 34.2-45.3 87.7-55.3 151.6M8.1 192h123.1c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64H8.1C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64m186.6 254.6c-11.6-26-20.9-58.2-27-94.6h176.6c-6.1 36.4-15.5 68.6-27 94.6-10.5 23.6-22.2 40.7-33.5 51.5-11.2 10.7-20.5 13.9-27.8 13.9s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6-78.4-20.7-142-77.5-172-151.6zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6 25.5-34.2 45.2-87.7 55.3-151.6h116.7z"/></svg>
     </a>
   
@@ -2034,7 +2034,7 @@
     
     
     
-    <a href="mailto:support@IndoxRouter.com" target="_blank" rel="noopener" title="Contact Support" class="md-social__link">
+    <a href="mailto:support@indoxhub.com" target="_blank" rel="noopener" title="Contact Support" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
     </a>
   

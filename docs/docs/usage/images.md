@@ -1,13 +1,13 @@
 # Image Generation
 
-IndoxRouter provides a unified interface for generating images from text prompts across various AI providers. This guide covers how to use the image generation capabilities.
+indoxhub provides a unified interface for generating images from text prompts across various AI providers. This guide covers how to use the image generation capabilities.
 
 ## Basic Usage
 
 The simplest way to generate images is with the `images()` method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -72,7 +72,7 @@ response = client.images(
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK for image generation, allowing you to use your own API keys for AI providers:
+indoxhub supports BYOK for image generation, allowing you to use your own API keys for AI providers:
 
 ```python
 # Use your own OpenAI API key for DALL-E 3
@@ -86,7 +86,7 @@ response = client.images(
 
 ### BYOK Benefits for Image Generation
 
-- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Credit Deduction**: Your indoxhub credits remain unchanged
 - **No Rate Limiting**: Bypass platform rate limits
 - **Direct Provider Access**: Connect directly to your provider accounts
 - **Cost Control**: Pay providers directly at their rates
