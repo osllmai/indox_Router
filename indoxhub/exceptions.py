@@ -1,30 +1,30 @@
 """
-Exceptions for the IndoxRouter client.
+Exceptions for the IndoxHub client.
 """
 
 from datetime import datetime
 from typing import Optional
 
 
-class IndoxRouterError(Exception):
-    """Base exception for all IndoxRouter errors."""
+class IndoxHubError(Exception):
+    """Base exception for all IndoxHub errors."""
 
     pass
 
 
-class AuthenticationError(IndoxRouterError):
+class AuthenticationError(IndoxHubError):
     """Raised when authentication fails."""
 
     pass
 
 
-class NetworkError(IndoxRouterError):
+class NetworkError(IndoxHubError):
     """Raised when a network error occurs."""
 
     pass
 
 
-class RateLimitError(IndoxRouterError):
+class RateLimitError(IndoxHubError):
     """Raised when rate limits are exceeded."""
 
     def __init__(self, message: str, reset_time: Optional[datetime] = None):
@@ -32,7 +32,7 @@ class RateLimitError(IndoxRouterError):
         self.reset_time = reset_time
 
 
-class ProviderError(IndoxRouterError):
+class ProviderError(IndoxHubError):
     """Raised when a provider returns an error."""
 
     pass
@@ -56,31 +56,31 @@ class ModelNotAvailableError(ProviderError):
     pass
 
 
-class InvalidParametersError(IndoxRouterError):
+class InvalidParametersError(IndoxHubError):
     """Raised when invalid parameters are provided."""
 
     pass
 
 
-class RequestError(IndoxRouterError):
+class RequestError(IndoxHubError):
     """Raised when a request to a provider fails."""
 
     pass
 
 
-class InsufficientCreditsError(IndoxRouterError):
+class InsufficientCreditsError(IndoxHubError):
     """Raised when the user doesn't have enough credits."""
 
     pass
 
 
-class ValidationError(IndoxRouterError):
+class ValidationError(IndoxHubError):
     """Raised when request validation fails."""
 
     pass
 
 
-class APIError(IndoxRouterError):
+class APIError(IndoxHubError):
     """Raised when the API returns an error."""
 
     pass
