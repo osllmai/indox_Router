@@ -1,4 +1,4 @@
-# IndoxRouter
+# indoxhub
 
 A unified client for various AI providers, including OpenAI, anthropic, Google, and Mistral.
 
@@ -13,7 +13,7 @@ A unified client for various AI providers, including OpenAI, anthropic, Google, 
 ## Installation
 
 ```bash
-pip install indoxrouter
+pip install indoxhub
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ pip install indoxrouter
 ### Initialization
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize with API key
 client = Client(api_key="your_api_key")
@@ -35,7 +35,7 @@ client = Client()
 
 ### Authentication
 
-IndoxRouter uses cookie-based authentication with JWT tokens. The client handles this automatically by:
+indoxhub uses cookie-based authentication with JWT tokens. The client handles this automatically by:
 
 1. Taking your API key and exchanging it for JWT tokens using the server's authentication endpoints
 2. Storing the JWT tokens in cookies
@@ -109,7 +109,7 @@ if "b64_json" in response["data"][0]:
 
 ### BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK, allowing you to use your own API keys for AI providers:
+indoxhub supports BYOK, allowing you to use your own API keys for AI providers:
 
 ```python
 # Use your own OpenAI API key
@@ -130,7 +130,7 @@ response = client.images(
 
 **BYOK Benefits:**
 
-- No credit deduction from your IndoxRouter account
+- No credit deduction from your indoxhub account
 - No platform rate limiting
 - Direct provider access with your own API keys
 - Cost control - pay providers directly at their rates
@@ -140,7 +140,7 @@ response = client.images(
 ```python
 # Generate audio from text
 response = client.text_to_speech(
-    input="Hello, welcome to IndoxRouter!",
+    input="Hello, welcome to indoxhub!",
     model="openai/tts-1",
     voice="alloy",  # Options: alloy, echo, fable, onyx, nova, shimmer
     response_format="mp3",  # Options: mp3, opus, aac, flac

@@ -1,6 +1,6 @@
-# IndoxRouter Client Tests
+# indoxhub Client Tests
 
-This directory contains tests for the IndoxRouter client.
+This directory contains tests for the indoxhub client.
 
 ## Test Structure
 
@@ -45,7 +45,7 @@ pytest tests/unit/
 pytest tests/integration/
 
 # Generate coverage report
-pytest --cov=indoxRouter --cov-report=term --cov-report=html:coverage_html
+pytest --cov=indoxhub --cov-report=term --cov-report=html:coverage_html
 ```
 
 ## Running Tests in GitHub Actions
@@ -80,7 +80,7 @@ To enable integration tests in GitHub Actions when your server is available:
 
 Integration tests require the following environment variables to be set:
 
-- `INDOX_ROUTER_API_KEY` - Your IndoxRouter API key
+- `INDOX_ROUTER_API_KEY` - Your indoxhub API key
 - `INDOX_ROUTER_BASE_URL` - Your server URL (optional, defaults to the standard URL)
 
 You can set these in a `.env` file or in your environment.

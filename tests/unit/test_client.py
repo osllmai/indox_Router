@@ -3,8 +3,8 @@ from unittest.mock import patch, MagicMock, mock_open
 import os
 import json
 
-from indoxRouter import Client
-from indoxRouter.exceptions import AuthenticationError
+from indoxhub import Client
+from indoxhub.exceptions import AuthenticationError
 
 
 @pytest.mark.unit
@@ -251,14 +251,14 @@ class TestClient:
 
     def test_speech_to_text_file_not_found(self, client):
         """Test speech-to-text with non-existent file path."""
-        from indoxRouter.exceptions import InvalidParametersError
+        from indoxhub.exceptions import InvalidParametersError
 
         with pytest.raises(InvalidParametersError, match="File not found"):
             client.speech_to_text("non_existent_file.mp3")
 
     def test_speech_to_text_invalid_file_type(self, client):
         """Test speech-to-text with invalid file parameter."""
-        from indoxRouter.exceptions import InvalidParametersError
+        from indoxhub.exceptions import InvalidParametersError
 
         with pytest.raises(
             InvalidParametersError, match="File must be either a file path"

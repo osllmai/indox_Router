@@ -1,5 +1,5 @@
 """
-Unit Tests for IndoxRouter
+Unit Tests for indoxhub
 
-This package contains unit tests for the IndoxRouter client.
+This package contains unit tests for the indoxhub client.
 """

@@ -3,10 +3,10 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "indoxrouter"
-version = "0.1.39"
+name = "indoxhub"
+version = "0.1.42"
 authors = [
-    {name = "indoxRouter Team", email = "ashkan.eskandari.dev@gmail.com"},
+    {name = "indoxHub Team", email = "ashkan.eskandari.dev@gmail.com"},
 ]
 description = "A unified client for various AI providers"
 readme = "README.md"
@@ -29,12 +29,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/indoxrouter/indoxrouter"
-Repository = "https://github.com/indoxrouter/indoxrouter"
-Issues = "https://github.com/indoxrouter/indoxrouter/issues"
+Homepage = "https://github.com/osllmai/indoxHub"
+Repository = "https://github.com/osllmai/indoxHub"
+Issues = "https://github.com/osllmai/indoxHub/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["indoxrouter*"]
+include = ["indoxhub*"]
 exclude = ["tests*"]
 

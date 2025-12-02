@@ -1,5 +1,5 @@
 """
-IndoxRouter Tests Package
+IndoxHub Tests Package
 
-This package contains unit and integration tests for the IndoxRouter client.
+This package contains unit and integration tests for the IndoxHub client.
 """

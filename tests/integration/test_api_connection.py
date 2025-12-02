@@ -2,8 +2,8 @@ import os
 import pytest
 from unittest.mock import patch
 
-from indoxRouter import Client
-from indoxRouter.exceptions import AuthenticationError
+from indoxhub import Client
+from indoxhub.exceptions import AuthenticationError
 
 
 @pytest.mark.integration

@@ -1,11 +1,11 @@
 """
-Test the image generation functionality of the IndoxRouter client.
+Test the image generation functionality of the indoxhub client.
 """
 
 import unittest
 from unittest.mock import patch, MagicMock
 import os
-from indoxrouter import Client
+from indoxhub import Client
 
 
 class TestImageGeneration(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestImageGeneration(unittest.TestCase):
         self.api_key = "test_api_key"
 
         # Create a patched client that doesn't make real API calls
-        with patch("indoxrouter.client.requests.Session") as mock_session:
+        with patch("indoxhub.client.requests.Session") as mock_session:
             # Mock successful authentication response
             mock_response = MagicMock()
             mock_response.status_code = 200

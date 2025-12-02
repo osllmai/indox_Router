@@ -1,20 +1,20 @@
 """
 AWS Bedrock Video Generation Examples
 
-This script demonstrates how to use IndoxRouter's Bedrock video generation
+This script demonstrates how to use indoxhub's Bedrock video generation
 with Amazon Nova Reel and Luma Ray2 models.
 
 Bedrock video generation is ASYNCHRONOUS - the request returns immediately
 with a job_id, and you poll for completion. The video is stored in S3.
 
 Requirements:
-    pip install indoxrouter
+    pip install indoxhub
 
 Set your API key:
     export INDOX_ROUTER_API_KEY="your-api-key-here"
 """
 
-from indoxrouter import Client
+from indoxhub import Client
 import os
 import time
 

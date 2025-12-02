@@ -1,16 +1,14 @@
 """
-Constants for the IndoxRouter client.
+Constants for the IndoxHub client.
 """
 
 # API settings
 DEFAULT_API_VERSION = "v1"
-# DEFAULT_BASE_URL = "https://api.indoxrouter.com"  # Production server URL with HTTPS
+DEFAULT_BASE_URL = "https://api.indoxhub.com"  # Production server URL with HTTPS
 # DEFAULT_BASE_URL = "http://localhost:9050"  # Local server
-DEFAULT_BASE_URL = "https://dev-api.indoxrouter.com"  # development server
-DEFAULT_TIMEOUT = (
-    1200  
-)
-USE_COOKIES = True  
+# DEFAULT_BASE_URL = "https://dev-api.indoxhub.com"  # development server
+DEFAULT_TIMEOUT = 1200
+USE_COOKIES = True
 # Default models
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 DEFAULT_EMBEDDING_MODEL = "openai/text-embedding-3-small"
@@ -36,9 +34,9 @@ MODEL_ENDPOINT = "models"
 USAGE_ENDPOINT = "user/usage"
 
 # Error messages
-ERROR_INVALID_API_KEY = "API key must be provided either as an argument or as the INDOXROUTER_API_KEY environment variable"
-ERROR_NETWORK = "Network error occurred while communicating with the IndoxRouter API"
-ERROR_RATE_LIMIT = "Rate limit exceeded for the IndoxRouter API"
+ERROR_INVALID_API_KEY = "API key must be provided either as an argument or as the INDOXHUB_API_KEY environment variable"
+ERROR_NETWORK = "Network error occurred while communicating with the INDOXHUB API"
+ERROR_RATE_LIMIT = "Rate limit exceeded for the INDOXHUB API"
 ERROR_PROVIDER_NOT_FOUND = "Provider not found"
 ERROR_MODEL_NOT_FOUND = "Model not found"
 ERROR_INVALID_PARAMETERS = "Invalid parameters provided"

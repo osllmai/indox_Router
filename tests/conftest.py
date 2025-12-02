@@ -1,12 +1,12 @@
 """
-Pytest configuration file for indoxRouter tests.
+Pytest configuration file for indoxhub tests.
 
 This file contains common fixtures and configuration for the pytest test suite.
 """
 
 import os
 import pytest
-from indoxRouter import Client
+from indoxhub import Client
 
 
 # Skip integration tests if the API key is not set

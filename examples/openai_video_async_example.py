@@ -1,20 +1,20 @@
 """
 OpenAI Async Video Generation Examples
 
-This script demonstrates how to use IndoxRouter's async video generation
+This script demonstrates how to use indoxhub's async video generation
 with OpenAI's Sora models.
 
 OpenAI video generation is ASYNCHRONOUS - the request returns immediately
 with a job_id, and you poll for completion.
 
 Requirements:
-    pip install indoxrouter
+    pip install indoxhub
 
 Set your API key:
     export INDOX_ROUTER_API_KEY="your-api-key-here"
 """
 
-from indoxrouter import Client
+from indoxhub import Client
 import os
 import time
 
@@ -291,7 +291,7 @@ def example_error_handling():
     print("Example 8: Error Handling")
     print("=" * 60)
 
-    from indoxrouter import InsufficientCreditsError, InvalidParametersError
+    from indoxhub import InsufficientCreditsError, InvalidParametersError
 
     client = Client(api_key=os.getenv("INDOX_ROUTER_API_KEY"))
 

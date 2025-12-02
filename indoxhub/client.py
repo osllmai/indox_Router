@@ -1,11 +1,11 @@
 """
-IndoxRouter Client Module
+IndoxHub Client Module
 
-This module provides a client for interacting with the IndoxRouter API, which serves as a unified
+This module provides a client for interacting with the IndoxHub API, which serves as a unified
 interface to multiple AI providers and models. The client handles authentication, rate limiting,
 error handling, and provides a standardized response format across different AI services.
 
-IMPORTANT: The IndoxRouter server now supports only cookie-based authentication. This client
+IMPORTANT: The IndoxHub server now supports only cookie-based authentication. This client
 automatically handles authentication by exchanging your API key for a JWT token through the login endpoint.
 
 The Client class offers methods for:
@@ -18,7 +18,7 @@ The Client class offers methods for:
 
 Usage example:
     ```python
-    from indoxRouter import Client
+    from IndoxHub import Client
 
     # Initialize client with API key
     client = Client(api_key="your_api_key")
@@ -49,7 +49,7 @@ Usage example:
     video_url = final_status["result"]["video_url"]
 
     # Generate text-to-speech audio
-    audio = client.text_to_speech("Hello, welcome to IndoxRouter!", model="openai/tts-1", voice="alloy")
+    audio = client.text_to_speech("Hello, welcome to IndoxHub!", model="openai/tts-1", voice="alloy")
 
     # Transcribe audio to text using speech-to-text
     transcription = client.speech_to_text("path/to/audio.mp3", model="openai/whisper-1")
@@ -72,7 +72,7 @@ The client can also be used as a context manager:
 BYOK (Bring Your Own Key) Support:
     The client supports BYOK, allowing you to use your own API keys for AI providers:
 
-    - No credit deduction from your IndoxRouter account
+    - No credit deduction from your IndoxHub account
     - No rate limiting from the platform
     - Direct provider access with your own API keys
     - Cost control - you pay providers directly at their rates
@@ -133,7 +133,7 @@ logger = logging.getLogger(__name__)
 
 class Client:
     """
-    Client for interacting with the IndoxRouter API.
+    Client for interacting with the IndoxHub API.
     """
 
     def __init__(
@@ -1824,4 +1824,4 @@ class Client:
         logger.debug(f"Base URL set to {base_url}")
 
 
-IndoxRouter = Client
+IndoxHub = Client

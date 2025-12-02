@@ -1,11 +1,11 @@
 """
-Video Generation Examples using IndoxRouter Client
+Video Generation Examples using indoxhub Client
 
-This script demonstrates how to use the IndoxRouter Python client to generate
+This script demonstrates how to use the indoxhub Python client to generate
 videos using Google's Veo models.
 
 Requirements:
-    pip install indoxrouter
+    pip install indoxhub
 
 Set your API key as an environment variable:
     export INDOX_ROUTER_API_KEY="your-api-key-here"
@@ -13,7 +13,7 @@ Set your API key as an environment variable:
 Or pass it directly to the Client constructor.
 """
 
-from indoxrouter import Client
+from indoxhub import Client
 import os
 
 
@@ -241,7 +241,7 @@ def example_error_handling():
     print("Example 10: Error Handling")
     print("=" * 60)
 
-    from indoxrouter import (
+    from indoxhub import (
         InsufficientCreditsError,
         InvalidParametersError,
         ModelNotAvailableError,
@@ -337,7 +337,7 @@ def print_model_comparison():
 def main():
     """Run all examples"""
     print("\n" + "=" * 60)
-    print("INDOXROUTER VIDEO GENERATION EXAMPLES")
+    print("indoxhub VIDEO GENERATION EXAMPLES")
     print("=" * 60)
 
     # Print model comparison

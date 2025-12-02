@@ -1,10 +1,10 @@
 """
-Example script demonstrating speech-to-text functionality in IndoxRouter.
+Example script demonstrating speech-to-text functionality in indoxhub.
 
-This script shows how to use the new speech-to-text capabilities added to the IndoxRouter client.
+This script shows how to use the new speech-to-text capabilities added to the indoxhub client.
 """
 
-from indoxrouter import Client
+from indoxhub import Client
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     client = Client(api_key="your_api_key_here")
 
     try:
-        print("=== IndoxRouter Speech-to-Text Examples ===\n")
+        print("=== indoxhub Speech-to-Text Examples ===\n")
 
         # Example 1: Basic transcription with file path
         print("1. Transcribing audio file:")
@@ -123,7 +123,7 @@ def main():
             if response["success"]:
                 print(f"   Transcription: {response['text']}")
                 print(
-                    "   Note: This used your own OpenAI API key (no IndoxRouter credits used)"
+                    "   Note: This used your own OpenAI API key (no indoxhub credits used)"
                 )
             else:
                 print(f"   Error: {response['message']}")

@@ -1,12 +1,12 @@
 """
-IndoxRouter: A unified client for various AI providers.
+IndoxHub: A unified client for various AI providers.
 
-This package provides a client for interacting with the IndoxRouter server,
+This package provides a client for interacting with the IndoxHub server,
 which serves as a unified interface to multiple AI providers and models.
 
 Example:
     ```python
-    from indoxrouter import Client
+    from IndoxHub import Client
 
     # Initialize client with API key
     client = Client(api_key="your_api_key")
@@ -33,9 +33,9 @@ For custom server URLs:
     ```
 """
 
-from .client import Client, IndoxRouter
+from .client import Client, IndoxHub
 from .exceptions import (
-    IndoxRouterError,
+    IndoxHubError,
     AuthenticationError,
     NetworkError,
     RateLimitError,
@@ -50,11 +50,11 @@ from .exceptions import (
     APIError,
 )
 
-__version__ = "0.1.39"
+__version__ = "0.1.42"
 __all__ = [
     "Client",
-    "IndoxRouter",
-    "IndoxRouterError",
+    "IndoxHub",
+    "IndoxHubError",
     "AuthenticationError",
     "NetworkError",
     "RateLimitError",
