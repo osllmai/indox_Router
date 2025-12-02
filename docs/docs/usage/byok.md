@@ -1,6 +1,6 @@
 # BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK (Bring Your Own Key), allowing you to use your own API keys for AI providers instead of using the platform's shared API keys. This feature provides several benefits and gives you full control over your AI provider usage.
+indoxhub supports BYOK (Bring Your Own Key), allowing you to use your own API keys for AI providers instead of using the platform's shared API keys. This feature provides several benefits and gives you full control over your AI provider usage.
 
 ## What is BYOK?
 
@@ -8,7 +8,7 @@ BYOK (Bring Your Own Key) allows you to:
 
 - **Use your own API keys** for AI providers (OpenAI, Anthropic, Google, etc.)
 - **Bypass platform rate limits** and use provider's native limits
-- **Avoid credit deduction** from your IndoxRouter account
+- **Avoid credit deduction** from your indoxhub account
 - **Pay providers directly** at their rates without platform markup
 - **Access full provider features** without platform restrictions
 
@@ -16,15 +16,15 @@ BYOK (Bring Your Own Key) allows you to:
 
 When you provide a `byok_api_key` parameter:
 
-1. **IndoxRouter authenticates** you with your platform API key
+1. **indoxhub authenticates** you with your platform API key
 2. **Your provider API key** is used for the actual AI request
-3. **No credits are deducted** from your IndoxRouter account
+3. **No credits are deducted** from your indoxhub account
 4. **No rate limiting** is applied by the platform
 5. **Direct provider connection** is established
 
 ## Supported Endpoints
 
-All AI endpoints in IndoxRouter support BYOK:
+All AI endpoints in indoxhub support BYOK:
 
 ### Chat Completions
 
@@ -153,7 +153,7 @@ response = client.chat(
 
 - **No platform markup** on API calls
 - **Direct provider billing** at their rates
-- **No credit consumption** from your IndoxRouter account
+- **No credit consumption** from your indoxhub account
 - **Predictable costs** based on provider pricing
 
 ### Performance & Limits
@@ -284,7 +284,7 @@ response = client.chat(
 
 ## Next Steps
 
-- **[Basic Usage](basic-usage.md)**: Learn the fundamentals of IndoxRouter
+- **[Basic Usage](basic-usage.md)**: Learn the fundamentals of indoxhub
 - **[Chat Completions](chat.md)**: Detailed chat completion examples
 - **[Image Generation](images.md)**: Create images with BYOK support
 - **[Embeddings](embeddings.md)**: Generate embeddings with your own keys
@@ -292,6 +292,6 @@ response = client.chat(
 
 ---
 
-_BYOK support is available for all IndoxRouter AI endpoints. Start using your own API keys today for better control, cost savings, and performance._
+_BYOK support is available for all indoxhub AI endpoints. Start using your own API keys today for better control, cost savings, and performance._
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

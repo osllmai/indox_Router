@@ -1,11 +1,11 @@
 # Exceptions
 
-IndoxRouter provides specific exception classes to help you handle different types of errors gracefully.
+indoxhub provides specific exception classes to help you handle different types of errors gracefully.
 
 ## Exception Hierarchy
 
 ```
-IndoxRouterError (base exception)
+indoxhubError (base exception)
 ├── AuthenticationError
 ├── RateLimitError
 ├── APIError
@@ -15,16 +15,16 @@ IndoxRouterError (base exception)
 
 ## Base Exception
 
-### IndoxRouterError
+### indoxhubError
 
-The base exception class for all IndoxRouter-related errors.
+The base exception class for all indoxhub-related errors.
 
 ```python
-from indoxrouter import IndoxRouterError
+from indoxhub import indoxhubError
 
 try:
     response = client.chat(messages=[...], model="invalid/model")
-except IndoxRouterError as e:
+except indoxhubError as e:
     print(f"An error occurred: {e}")
     print(f"Error type: {type(e).__name__}")
 ```
@@ -36,7 +36,7 @@ except IndoxRouterError as e:
 Raised when API key is invalid or missing.
 
 ```python
-from indoxrouter import Client, AuthenticationError
+from indoxhub import Client, AuthenticationError
 
 try:
     client = Client(api_key="invalid_key")
@@ -51,7 +51,7 @@ except AuthenticationError as e:
 Raised when you exceed the rate limits.
 
 ```python
-from indoxrouter import RateLimitError
+from indoxhub import RateLimitError
 import time
 
 try:
@@ -67,7 +67,7 @@ except RateLimitError as e:
 Raised for general API errors from the provider.
 
 ```python
-from indoxrouter import APIError
+from indoxhub import APIError
 
 try:
     response = client.chat(messages=[...])
@@ -82,7 +82,7 @@ except APIError as e:
 Raised for network-related issues.
 
 ```python
-from indoxrouter import NetworkError
+from indoxhub import NetworkError
 
 try:
     response = client.chat(messages=[...])
@@ -96,7 +96,7 @@ except NetworkError as e:
 Raised when request parameters are invalid.
 
 ```python
-from indoxrouter import ValidationError
+from indoxhub import ValidationError
 
 try:
     response = client.chat(
@@ -113,14 +113,14 @@ except ValidationError as e:
 ### Comprehensive Error Handling
 
 ```python
-from indoxrouter import (
+from indoxhub import (
     Client,
     AuthenticationError,
     RateLimitError,
     APIError,
     NetworkError,
     ValidationError,
-    IndoxRouterError
+    indoxhubError
 )
 import time
 
@@ -169,8 +169,8 @@ def robust_chat(client, messages, model, max_retries=3):
             else:
                 return None
 
-        except IndoxRouterError as e:
-            print(f"Unexpected IndoxRouter error: {e}")
+        except indoxhubError as e:
+            print(f"Unexpected indoxhub error: {e}")
             return None
 
     return None
@@ -193,7 +193,7 @@ else:
 
 ```python
 import logging
-from indoxrouter import Client, IndoxRouterError
+from indoxhub import Client, indoxhubError
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -205,8 +205,8 @@ def chat_with_logging(client, messages, model):
         logger.info(f"Successfully generated response using {model}")
         return response
 
-    except IndoxRouterError as e:
-        logger.error(f"IndoxRouter error: {type(e).__name__}: {e}")
+    except indoxhubError as e:
+        logger.error(f"indoxhub error: {type(e).__name__}: {e}")
         raise
 
     except Exception as e:
@@ -221,8 +221,8 @@ try:
         [{"role": "user", "content": "Hello!"}],
         "openai/gpt-4o-mini"
     )
-except IndoxRouterError:
-    print("Failed to generate response due to IndoxRouter error.")
+except indoxhubError:
+    print("Failed to generate response due to indoxhub error.")
 ```
 
 ## Error Response Format
@@ -239,4 +239,4 @@ except APIError as e:
     print(f"Request ID: {e.request_id}")  # For debugging with support
 ```
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

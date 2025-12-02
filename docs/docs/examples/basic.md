@@ -1,11 +1,11 @@
 # Basic Examples
 
-This page provides some basic examples of using the IndoxRouter Client for common tasks.
+This page provides some basic examples of using the indoxhub Client for common tasks.
 
 ## Chat Completion Example
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize the client
 with Client(api_key="your_api_key") as client:
@@ -26,7 +26,7 @@ with Client(api_key="your_api_key") as client:
 ## Text Completion Example
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize the client
 with Client(api_key="your_api_key") as client:
@@ -44,7 +44,7 @@ with Client(api_key="your_api_key") as client:
 ## Embedding Example
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize the client
 with Client(api_key="your_api_key") as client:
@@ -67,7 +67,7 @@ with Client(api_key="your_api_key") as client:
 ## Vision & Image Analysis Example
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 import base64
 
 # Initialize the client
@@ -106,7 +106,7 @@ with Client(api_key="your_api_key") as client:
 ## Image Generation Example
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize the client
 with Client(api_key="your_api_key") as client:
@@ -124,7 +124,7 @@ with Client(api_key="your_api_key") as client:
 ## Model Information Example
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 import json
 
 # Initialize the client
@@ -150,4 +150,4 @@ with Client(api_key="your_api_key") as client:
     print(f"Max tokens: {model_info.get('max_tokens', 'Unknown')}")
 ```
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

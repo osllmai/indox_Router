@@ -1,107 +1,107 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://indoxrouter.com/</loc>
+         <loc>https://indoxhub.com/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/api-reference/</loc>
+         <loc>https://indoxhub.com/api-reference/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/getting-started/</loc>
+         <loc>https://indoxhub.com/getting-started/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/api/client/</loc>
+         <loc>https://indoxhub.com/api/client/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/api/exceptions/</loc>
+         <loc>https://indoxhub.com/api/exceptions/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/api/responses/</loc>
+         <loc>https://indoxhub.com/api/responses/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/examples/advanced/</loc>
+         <loc>https://indoxhub.com/examples/advanced/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/examples/basic/</loc>
+         <loc>https://indoxhub.com/examples/basic/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/examples/openai-sdk/</loc>
+         <loc>https://indoxhub.com/examples/openai-sdk/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/basic-usage/</loc>
+         <loc>https://indoxhub.com/usage/basic-usage/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/byok/</loc>
+         <loc>https://indoxhub.com/usage/byok/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/chat/</loc>
+         <loc>https://indoxhub.com/usage/chat/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/completions/</loc>
+         <loc>https://indoxhub.com/usage/completions/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/embeddings/</loc>
+         <loc>https://indoxhub.com/usage/embeddings/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/images/</loc>
+         <loc>https://indoxhub.com/usage/images/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/rate-limits/</loc>
+         <loc>https://indoxhub.com/usage/rate-limits/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/responses/</loc>
+         <loc>https://indoxhub.com/usage/responses/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/stt/</loc>
+         <loc>https://indoxhub.com/usage/stt/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/tracking/</loc>
+         <loc>https://indoxhub.com/usage/tracking/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/tts/</loc>
+         <loc>https://indoxhub.com/usage/tts/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/video/</loc>
+         <loc>https://indoxhub.com/usage/video/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/usage/vision/</loc>
+         <loc>https://indoxhub.com/usage/vision/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/use-cases/chatbots/</loc>
+         <loc>https://indoxhub.com/use-cases/chatbots/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/use-cases/content-generation/</loc>
+         <loc>https://indoxhub.com/use-cases/content-generation/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/use-cases/document-processing/</loc>
+         <loc>https://indoxhub.com/use-cases/document-processing/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
     <url>
-         <loc>https://indoxrouter.com/use-cases/rag-systems/</loc>
+         <loc>https://indoxhub.com/use-cases/rag-systems/</loc>
          <lastmod>2025-11-13</lastmod>
     </url>
 </urlset>

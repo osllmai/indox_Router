@@ -1,6 +1,6 @@
-# Building RAG Systems with IndoxRouter
+# Building RAG Systems with indoxhub
 
-Retrieval-Augmented Generation (RAG) is a powerful approach that combines the benefits of retrieving relevant information from a knowledge base with the capabilities of large language models. This guide demonstrates how to build effective RAG systems using IndoxRouter.
+Retrieval-Augmented Generation (RAG) is a powerful approach that combines the benefits of retrieving relevant information from a knowledge base with the capabilities of large language models. This guide demonstrates how to build effective RAG systems using indoxhub.
 
 ## What is RAG?
 
@@ -16,12 +16,12 @@ This approach helps ground model responses in specific knowledge and reduces hal
 
 ## Basic RAG Implementation
 
-Here's a simple implementation of a RAG system using IndoxRouter:
+Here's a simple implementation of a RAG system using indoxhub:
 
 ```python
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize client
 client = Client(api_key="your_api_key")
@@ -84,7 +84,7 @@ For real-world applications, you'll need a more sophisticated approach:
 import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from indoxrouter import Client
+from indoxhub import Client
 
 class RAGSystem:
     def __init__(self, api_key, embed_model="openai/text-embedding-3-small", llm_model="openai/gpt-4o-mini"):
@@ -252,7 +252,7 @@ For production systems, consider using dedicated vector databases:
 ```python
 # Example with Pinecone
 import pinecone
-from indoxrouter import Client
+from indoxhub import Client
 
 class ProductionRAG:
     def __init__(self, api_key, pinecone_api_key, pinecone_env):
@@ -305,6 +305,6 @@ class ProductionRAG:
         return response["data"]
 ```
 
-This approach provides scalable, production-ready RAG systems with IndoxRouter.
+This approach provides scalable, production-ready RAG systems with indoxhub.
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

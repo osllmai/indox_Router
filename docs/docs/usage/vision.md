@@ -1,6 +1,6 @@
 # Vision & Multimodal Capabilities
 
-IndoxRouter supports vision-capable models that can understand and analyze images alongside text. This guide covers how to send images to AI models and work with multimodal content.
+indoxhub supports vision-capable models that can understand and analyze images alongside text. This guide covers how to send images to AI models and work with multimodal content.
 
 ## Supported Models
 
@@ -46,12 +46,12 @@ Many models across different providers support image inputs. Here are some popul
 
 ## Image Input Format
 
-IndoxRouter uses a standardized format for multimodal content. Images are sent as part of the message content array.
+indoxhub uses a standardized format for multimodal content. Images are sent as part of the message content array.
 
 ### Basic Image with Text
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 import base64
 
 # Initialize client
@@ -173,7 +173,7 @@ The following image formats are supported:
 
 ## Image Size Limits
 
-IndoxRouter enforces the following limits to ensure optimal performance:
+indoxhub enforces the following limits to ensure optimal performance:
 
 - **Maximum single image size**: 20MB (raw bytes)
 - **Maximum total images per request**: 100MB (all images combined)
@@ -647,4 +647,4 @@ Different providers have different limitations:
 - Check [Rate Limits](rate-limits.md) for usage constraints
 - See [Basic Examples](../examples/basic.md) for more code samples
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

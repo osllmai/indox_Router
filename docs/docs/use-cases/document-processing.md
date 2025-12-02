@@ -1,13 +1,13 @@
-# Document Processing with IndoxRouter
+# Document Processing with indoxhub
 
-IndoxRouter provides powerful capabilities for processing and analyzing documents using various language models. This guide covers common document processing tasks and patterns.
+indoxhub provides powerful capabilities for processing and analyzing documents using various language models. This guide covers common document processing tasks and patterns.
 
 ## Text Extraction and Summarization
 
 ### Document Summarization
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -237,7 +237,7 @@ def detect_changes(original_doc, revised_doc):
 
 ```python
 import asyncio
-from indoxrouter import AsyncClient
+from indoxhub import AsyncClient
 
 async def process_documents_batch(documents, processing_function):
     """Process multiple documents concurrently."""
@@ -464,6 +464,6 @@ email_data = {
 generated_email = generate_from_template(email_template, str(email_data))
 ```
 
-This comprehensive guide covers the main document processing capabilities available through IndoxRouter, enabling you to build sophisticated document analysis and processing systems.
+This comprehensive guide covers the main document processing capabilities available through indoxhub, enabling you to build sophisticated document analysis and processing systems.
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

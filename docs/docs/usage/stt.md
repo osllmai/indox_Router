@@ -1,13 +1,13 @@
 # Speech-to-Text
 
-IndoxRouter provides a unified interface for transcribing audio to text using speech-to-text models across various AI providers. This guide covers how to use the speech-to-text capabilities.
+indoxhub provides a unified interface for transcribing audio to text using speech-to-text models across various AI providers. This guide covers how to use the speech-to-text capabilities.
 
 ## Basic Usage
 
 The simplest way to transcribe audio to text is with the `speech_to_text()` method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
@@ -297,7 +297,7 @@ The speech-to-text response includes several fields:
 Handle common errors that may occur during transcription:
 
 ```python
-from indoxrouter.exceptions import (
+from indoxhub.exceptions import (
     ModelNotAvailableError,
     InsufficientCreditsError,
     ValidationError,
@@ -364,7 +364,7 @@ except Exception as e:
 Here's a comprehensive example that demonstrates various features:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 def transcribe_audio_file(file_path, language=None):
     client = Client(api_key="your_api_key")
@@ -411,4 +411,4 @@ def transcribe_audio_file(file_path, language=None):
 transcribed_text = transcribe_audio_file("meeting_recording.mp3", language="en")
 ```
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

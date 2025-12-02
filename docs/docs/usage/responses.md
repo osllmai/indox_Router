@@ -1,10 +1,10 @@
 # Response Format
 
-IndoxRouter provides detailed response information for every API call, including usage statistics, costs, and performance metrics. This helps you monitor and optimize your AI application usage.
+indoxhub provides detailed response information for every API call, including usage statistics, costs, and performance metrics. This helps you monitor and optimize your AI application usage.
 
 ## Standard Response Structure
 
-Every IndoxRouter response follows this consistent format:
+Every indoxhub response follows this consistent format:
 
 ```python
 {
@@ -240,7 +240,7 @@ response = client.completions(
     'finish_reason': 'STOP',
     'images': [
         {
-            'url': 'https://indoxrouter.s3.amazonaws.com/dev_user_4/image/d0847065-2f2b-4529-8484-0e98e19b7318_20251026_164858.png?...',
+            'url': 'https://indoxhub.s3.amazonaws.com/dev_user_4/image/d0847065-2f2b-4529-8484-0e98e19b7318_20251026_164858.png?...',
             'index': 0
         }
     ]
@@ -539,7 +539,7 @@ print(f"\n\nTotal cost: ${total_cost:.6f}")
 
 ```python
 def validate_response(response):
-    """Validate IndoxRouter response format."""
+    """Validate indoxhub response format."""
     required_fields = ['request_id', 'success', 'provider', 'model']
 
     for field in required_fields:
@@ -643,4 +643,4 @@ response = client.chat(messages=[...], model="openai/gpt-4o-mini")
 save_request_info(response, "User greeting response")
 ```
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

@@ -1,11 +1,11 @@
 # Basic Usage
 
-This page covers the fundamental patterns and concepts for using IndoxRouter effectively.
+This page covers the fundamental patterns and concepts for using indoxhub effectively.
 
 ## Client Initialization
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 # Initialize with API key
 client = Client(api_key="your_api_key")
@@ -13,7 +13,7 @@ client = Client(api_key="your_api_key")
 
 ## Model Specification
 
-IndoxRouter uses a consistent format for specifying models: `provider/model_name`. This allows you to easily switch between providers while keeping your code structure the same.
+indoxhub uses a consistent format for specifying models: `provider/model_name`. This allows you to easily switch between providers while keeping your code structure the same.
 
 Examples:
 
@@ -83,7 +83,7 @@ The client provides a set of specific exception classes for different error type
 Example error handling:
 
 ```python
-from indoxrouter import Client, ModelNotFoundError, ProviderError
+from indoxhub import Client, ModelNotFoundError, ProviderError
 
 try:
     client = Client(api_key="your_api_key")
@@ -103,7 +103,7 @@ If you're experiencing issues, you can enable debug logging:
 
 ```python
 import logging
-from indoxrouter import Client
+from indoxhub import Client
 
 # Enable debug logging
 logging.basicConfig(level=logging.DEBUG)
@@ -137,4 +137,4 @@ Now that you understand the basics, check out the detailed guides for each capab
 - [Image Generation](images.md)
 - [Video Generation](video.md)
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_

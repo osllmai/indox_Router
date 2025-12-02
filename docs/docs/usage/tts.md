@@ -1,19 +1,19 @@
 # Text-to-Speech
 
-IndoxRouter provides a unified interface for generating audio from text using text-to-speech models across various AI providers. This guide covers how to use the text-to-speech capabilities.
+indoxhub provides a unified interface for generating audio from text using text-to-speech models across various AI providers. This guide covers how to use the text-to-speech capabilities.
 
 ## Basic Usage
 
 The simplest way to generate audio from text is with the `text_to_speech()` method:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
 # Generate audio from text
 response = client.text_to_speech(
-    input="Hello, welcome to IndoxRouter!",
+    input="Hello, welcome to indoxhub!",
     model="openai/tts-1"
 )
 
@@ -46,7 +46,7 @@ tts1_hd_response = client.text_to_speech(
 
 ## BYOK (Bring Your Own Key) Support
 
-IndoxRouter supports BYOK for text-to-speech, allowing you to use your own API keys for AI providers:
+indoxhub supports BYOK for text-to-speech, allowing you to use your own API keys for AI providers:
 
 ```python
 # Use your own OpenAI API key for TTS
@@ -61,7 +61,7 @@ response = client.text_to_speech(
 
 ### BYOK Benefits for Text-to-Speech
 
-- **No Credit Deduction**: Your IndoxRouter credits remain unchanged
+- **No Credit Deduction**: Your indoxhub credits remain unchanged
 - **No Rate Limiting**: Bypass platform rate limits
 - **Direct Provider Access**: Connect directly to your provider accounts
 - **Cost Control**: Pay providers directly at their rates
@@ -189,13 +189,13 @@ response = client.text_to_speech(
 Here's a comprehensive example that demonstrates all the parameters:
 
 ```python
-from indoxrouter import Client
+from indoxhub import Client
 
 client = Client(api_key="your_api_key")
 
 def generate_speech_sample():
     response = client.text_to_speech(
-        input="Welcome to IndoxRouter, your unified AI API gateway. "
+        input="Welcome to indoxhub, your unified AI API gateway. "
                "We provide seamless access to multiple AI providers "
                "through a single, consistent interface.",
         model="openai/tts-1-hd",
@@ -273,7 +273,7 @@ The text-to-speech response includes several fields:
 Handle common errors that may occur during text-to-speech generation:
 
 ```python
-from indoxrouter.exceptions import (
+from indoxhub.exceptions import (
     ModelNotAvailableError,
     InsufficientCreditsError,
     ValidationError
@@ -351,7 +351,7 @@ OpenAI's TTS models support:
 
 ### Future Provider Support
 
-IndoxRouter is designed to support multiple TTS providers. As new providers are added, they may offer:
+indoxhub is designed to support multiple TTS providers. As new providers are added, they may offer:
 
 - Different voice options and characteristics
 - Unique audio processing capabilities
@@ -392,4 +392,4 @@ If you encounter issues:
 !!! tip "Rate Limits"
 Text-to-speech requests may have different rate limits than text generation. Monitor your usage and implement appropriate retry logic for production applications.
 
-_Last updated: Nov 08, 2025_
+_Last updated: Nov 16, 2025_
