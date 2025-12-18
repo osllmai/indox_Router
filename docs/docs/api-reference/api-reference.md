@@ -1,7 +1,7 @@
 # API Reference
 
 !!! info "API Version"
-    **Version:** 0.2.0
+**Version:** 0.2.0
 
 A unified API for various AI providers
 
@@ -57,7 +57,6 @@ The API provides the following user-facing endpoints:
 
 ## Analytics
 
-
 ### Get Usage Data
 
 <div class="endpoint-badge">
@@ -68,21 +67,20 @@ The API provides the following user-facing endpoints:
 Get detailed usage analytics with flexible grouping and filtering.
 
 Returns:
-    Usage analytics data based on the specified filters and grouping.
-
+Usage analytics data based on the specified filters and grouping.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `start_date` | query | any |  | Start date for filtering (YYYY-MM-DD) |
-| `end_date` | query | any |  | End date for filtering (YYYY-MM-DD) |
-| `group_by` | query | string |  | Field to group results by (date, model, provider, endpoint, session_id, client_ip) |
-| `provider` | query | any |  | Filter by provider |
-| `model` | query | any |  | Filter by model |
-| `session_id` | query | any |  | Filter by session ID |
-| `endpoint` | query | any |  | Filter by endpoint (chat, completion, embedding, image) |
-| `include_content` | query | boolean |  | Include request/response content in results (only for non-grouped queries) |
+| Name              | Location | Type    | Required | Description                                                                        |
+| ----------------- | -------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `start_date`      | query    | any     |          | Start date for filtering (YYYY-MM-DD)                                              |
+| `end_date`        | query    | any     |          | End date for filtering (YYYY-MM-DD)                                                |
+| `group_by`        | query    | string  |          | Field to group results by (date, model, provider, endpoint, session_id, client_ip) |
+| `provider`        | query    | any     |          | Filter by provider                                                                 |
+| `model`           | query    | any     |          | Filter by model                                                                    |
+| `session_id`      | query    | any     |          | Filter by session ID                                                               |
+| `endpoint`        | query    | any     |          | Filter by endpoint (chat, completion, embedding, image)                            |
+| `include_content` | query    | boolean |          | Include request/response content in results (only for non-grouped queries)         |
 
 **Responses:**
 
@@ -90,14 +88,11 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -111,16 +106,15 @@ Returns:
 Get session-based analytics showing conversation flows.
 
 Returns:
-    Session analytics data showing sequences of interactions.
-
+Session analytics data showing sequences of interactions.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `start_date` | query | any |  | Start date for filtering (YYYY-MM-DD) |
-| `end_date` | query | any |  | End date for filtering (YYYY-MM-DD) |
-| `session_id` | query | any |  | Filter by specific session ID |
+| Name         | Location | Type | Required | Description                           |
+| ------------ | -------- | ---- | -------- | ------------------------------------- |
+| `start_date` | query    | any  |          | Start date for filtering (YYYY-MM-DD) |
+| `end_date`   | query    | any  |          | End date for filtering (YYYY-MM-DD)   |
+| `session_id` | query    | any  |          | Filter by specific session ID         |
 
 **Responses:**
 
@@ -128,14 +122,11 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -149,16 +140,15 @@ Returns:
 Get model performance analytics comparing different models.
 
 Returns:
-    Model performance data grouped by model.
-
+Model performance data grouped by model.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `start_date` | query | any |  | Start date for filtering (YYYY-MM-DD) |
-| `end_date` | query | any |  | End date for filtering (YYYY-MM-DD) |
-| `provider` | query | any |  | Filter by provider |
+| Name         | Location | Type | Required | Description                           |
+| ------------ | -------- | ---- | -------- | ------------------------------------- |
+| `start_date` | query    | any  |          | Start date for filtering (YYYY-MM-DD) |
+| `end_date`   | query    | any  |          | End date for filtering (YYYY-MM-DD)   |
+| `provider`   | query    | any  |          | Filter by provider                    |
 
 **Code Examples:**
 
@@ -192,13 +182,11 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
-
 
 ??? warning "422 - Validation Error"
 
@@ -206,12 +194,9 @@ Returns:
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Audio
-
 
 ### Create Text To Speech
 
@@ -223,18 +208,17 @@ Returns:
 Generate audio from text using text-to-speech models.
 
 Args:
-    request: The FastAPI request object
-    audio_request: The text-to-speech generation request.
-    current_user: The current user.
+request: The FastAPI request object
+audio_request: The text-to-speech generation request.
+current_user: The current user.
 
 Returns:
-    The text-to-speech generation response.
-
+The text-to-speech generation response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
@@ -253,7 +237,6 @@ Returns:
   "byok_api_key": "..."
 }
 ```
-
 
 **Code Examples:**
 
@@ -299,7 +282,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -308,14 +290,11 @@ Returns:
 
     **Schema:** [AudioResponse](#schema-audioresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -329,26 +308,25 @@ Returns:
 Transcribe audio to text using speech-to-text models.
 
 Args:
-    request: The FastAPI request object
-    file: The audio file to transcribe
-    provider: The provider to use (optional, defaults to openai)
-    model: The model to use (optional, defaults to whisper-1)
-    language: The language code (e.g., 'en', 'es', 'fr')
-    prompt: Optional text to guide the model's style
-    response_format: The format of the response (json, text, srt, verbose_json, vtt)
-    temperature: Temperature for transcription (0.0 to 1.0)
-    timestamp_granularities: JSON string for timestamp granularities (whisper-1 only)
-    byok_api_key: API key from the user's API keys
-    current_user: The current user
+request: The FastAPI request object
+file: The audio file to transcribe
+provider: The provider to use (optional, defaults to openai)
+model: The model to use (optional, defaults to whisper-1)
+language: The language code (e.g., 'en', 'es', 'fr')
+prompt: Optional text to guide the model's style
+response_format: The format of the response (json, text, srt, verbose_json, vtt)
+temperature: Temperature for transcription (0.0 to 1.0)
+timestamp_granularities: JSON string for timestamp granularities (whisper-1 only)
+byok_api_key: API key from the user's API keys
+current_user: The current user
 
 Returns:
-    The speech-to-text transcription response.
-
+The speech-to-text transcription response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `multipart/form-data`
 
@@ -367,7 +345,6 @@ Returns:
   "byok_api_key": "string"
 }
 ```
-
 
 **Code Examples:**
 
@@ -409,7 +386,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -418,14 +394,11 @@ Returns:
 
     **Schema:** [AudioResponse](#schema-audioresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -439,24 +412,23 @@ Returns:
 Translate audio to English text using speech-to-text models.
 
 Args:
-    request: The FastAPI request object
-    file: The audio file to translate
-    provider: The provider to use (only openai supports translation)
-    model: The model to use (only whisper-1 supports translation)
-    prompt: Optional text to guide the model's style
-    response_format: The format of the response (json, text, srt, verbose_json, vtt)
-    temperature: Temperature for translation (0.0 to 1.0)
-    byok_api_key: API key from the user's API keys
-    current_user: The current user
+request: The FastAPI request object
+file: The audio file to translate
+provider: The provider to use (only openai supports translation)
+model: The model to use (only whisper-1 supports translation)
+prompt: Optional text to guide the model's style
+response_format: The format of the response (json, text, srt, verbose_json, vtt)
+temperature: Temperature for translation (0.0 to 1.0)
+byok_api_key: API key from the user's API keys
+current_user: The current user
 
 Returns:
-    The audio translation response.
-
+The audio translation response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `multipart/form-data`
 
@@ -473,7 +445,6 @@ Returns:
   "byok_api_key": "string"
 }
 ```
-
 
 **Code Examples:**
 
@@ -515,7 +486,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -524,19 +494,15 @@ Returns:
 
     **Schema:** [AudioResponse](#schema-audioresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Chat
-
 
 ### Create Chat Completion
 
@@ -548,18 +514,17 @@ Returns:
 Create a chat completion.
 
 Args:
-    request: The FastAPI request object
-    chat_request: The chat completion request.
-    current_user: The current user.
+request: The FastAPI request object
+chat_request: The chat completion request.
+current_user: The current user.
 
 Returns:
-    The chat completion response.
-
+The chat completion response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
@@ -581,7 +546,6 @@ Returns:
 }
 ```
 
-
 **Code Examples:**
 
 === "Python"
@@ -597,7 +561,10 @@ Returns:
         ],
         model="openai/gpt-4o-mini"
     )
-    print(response)
+    # Access response text from output array
+    print(response["output"][0]["content"][0]["text"])
+    # Access usage information
+    print(f"Tokens: {response['usage']['total_tokens']}")
     ```
 
 === "cURL"
@@ -626,7 +593,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -635,14 +601,11 @@ Returns:
 
     **Schema:** [ChatResponse](#schema-chatresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -656,18 +619,17 @@ Returns:
 Stop an active streaming response and log its usage.
 
 Args:
-    stream_id: ID of the stream to stop
-    current_user: The current authenticated user
+stream_id: ID of the stream to stop
+current_user: The current authenticated user
 
 Returns:
-    Success status
-
+Success status
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `stream_id` | path | string | ✓ |  |
+| Name        | Location | Type   | Required | Description |
+| ----------- | -------- | ------ | -------- | ----------- |
+| `stream_id` | path     | string | ✓        |             |
 
 **Responses:**
 
@@ -675,19 +637,15 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Completions
-
 
 ### Create Completion
 
@@ -699,18 +657,17 @@ Returns:
 Create a text completion.
 
 Args:
-    request: The FastAPI request object
-    completion_request: The completion request.
-    current_user: The current user.
+request: The FastAPI request object
+completion_request: The completion request.
+current_user: The current user.
 
 Returns:
-    The completion response.
-
+The completion response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
@@ -732,7 +689,6 @@ Returns:
 }
 ```
 
-
 **Code Examples:**
 
 === "Python"
@@ -744,9 +700,12 @@ Returns:
 
     response = client.completion(
         prompt="Write a story about",
-        model="openai/gpt-4o-mini"
+        model="openai/gpt-3.5-turbo-instruct"
     )
-    print(response)
+    # Access response text from output array
+    print(response["output"][0]["content"][0]["text"])
+    # Access usage information
+    print(f"Tokens: {response['usage']['total_tokens']}")
     ```
 
 === "cURL"
@@ -757,7 +716,7 @@ Returns:
       -H "Content-Type: application/json" \
       -d '{
         "prompt": "Write a story about",
-        "model": "openai/gpt-4o-mini"
+        "model": "openai/gpt-3.5-turbo-instruct"
       }'
     ```
 
@@ -770,11 +729,13 @@ Returns:
 
     const response = await client.completion(
       "Write a story about",
-      {model: "openai/gpt-4o-mini"}
+      {model: "openai/gpt-3.5-turbo-instruct"}
     );
-    console.log(response);
+    // Access response text from output array
+    console.log(response.output[0].content[0].text);
+    // Access usage information
+    console.log(`Tokens: ${response.usage.total_tokens}`);
     ```
-
 
 **Responses:**
 
@@ -784,14 +745,11 @@ Returns:
 
     **Schema:** [CompletionResponse](#schema-completionresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -805,18 +763,17 @@ Returns:
 Stop an active streaming response and log its usage.
 
 Args:
-    stream_id: ID of the stream to stop
-    current_user: The current authenticated user
+stream_id: ID of the stream to stop
+current_user: The current authenticated user
 
 Returns:
-    Success status
-
+Success status
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `stream_id` | path | string | ✓ |  |
+| Name        | Location | Type   | Required | Description |
+| ----------- | -------- | ------ | -------- | ----------- |
+| `stream_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -827,11 +784,9 @@ Returns:
 
     client = Client(api_key="your_api_key")
 
-    response = client.completion(
-        prompt="Write a story about",
-        model="openai/gpt-4o-mini"
-    )
-    print(response)
+    # Stop a streaming completion
+    result = client.stop_completion_stream(stream_id="your-stream-id")
+    print(result)
     ```
 
 === "cURL"
@@ -839,11 +794,7 @@ Returns:
     ```bash
     curl -X POST https://api.indoxhub.com/api/v1/completions/stop-stream/{stream_id} \
       -H "Authorization: Bearer YOUR_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "prompt": "Write a story about",
-        "model": "openai/gpt-4o-mini"
-      }'
+      -H "Content-Type: application/json"
     ```
 
 === "JavaScript"
@@ -853,13 +804,10 @@ Returns:
 
     const client = new Client("your_api_key");
 
-    const response = await client.completion(
-      "Write a story about",
-      {model: "openai/gpt-4o-mini"}
-    );
-    console.log(response);
+    // Stop a streaming completion
+    const result = await client.stopCompletionStream("your-stream-id");
+    console.log(result);
     ```
-
 
 **Responses:**
 
@@ -867,19 +815,15 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Embeddings
-
 
 ### Create Embedding
 
@@ -891,18 +835,17 @@ Returns:
 Create embeddings for text.
 
 Args:
-    request: The FastAPI request object
-    embedding_request: The embedding request.
-    current_user: The current user.
+request: The FastAPI request object
+embedding_request: The embedding request.
+current_user: The current user.
 
 Returns:
-    The embedding response.
-
+The embedding response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
@@ -917,7 +860,6 @@ Returns:
   "byok_api_key": "..."
 }
 ```
-
 
 **Code Examples:**
 
@@ -961,7 +903,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -970,19 +911,15 @@ Returns:
 
     **Schema:** [EmbeddingResponse](#schema-embeddingresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Images
-
 
 ### Create Image
 
@@ -994,18 +931,17 @@ Returns:
 Generate images from a prompt.
 
 Args:
-    request: The FastAPI request object
-    image_request: The image generation request.
-    current_user: The current user.
+request: The FastAPI request object
+image_request: The image generation request.
+current_user: The current user.
 
 Returns:
-    The image generation response.
-
+The image generation response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
@@ -1042,7 +978,6 @@ Returns:
   "byok_api_key": "..."
 }
 ```
-
 
 **Code Examples:**
 
@@ -1086,7 +1021,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -1095,19 +1029,15 @@ Returns:
 
     **Schema:** [ImageResponse](#schema-imageresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Models
-
 
 ### Get Providers
 
@@ -1119,8 +1049,7 @@ Returns:
 List all providers with their complete structure from MongoDB (with JSON fallback).
 
 Returns:
-    A list of provider data from MongoDB or JSON files as fallback.
-
+A list of provider data from MongoDB or JSON files as fallback.
 
 **Code Examples:**
 
@@ -1154,14 +1083,11 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
-
-
 
 ---
 
@@ -1177,19 +1103,18 @@ Get trending models based on usage over the specified time period.
 This endpoint does not require authentication and returns aggregate usage statistics.
 
 Args:
-    days: Number of days to look back
-    limit: Maximum number of models to return
+days: Number of days to look back
+limit: Maximum number of models to return
 
 Returns:
-    List of trending models with aggregate usage statistics
-
+List of trending models with aggregate usage statistics
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `days` | query | integer |  | Number of days to look back for trending data |
-| `limit` | query | integer |  | Number of trending models to return |
+| Name    | Location | Type    | Required | Description                                   |
+| ------- | -------- | ------- | -------- | --------------------------------------------- |
+| `days`  | query    | integer |          | Number of days to look back for trending data |
+| `limit` | query    | integer |          | Number of trending models to return           |
 
 **Code Examples:**
 
@@ -1223,21 +1148,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1251,17 +1172,16 @@ Returns:
 Get the complete structure for a specific provider from MongoDB (with JSON fallback).
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    The provider data from MongoDB or JSON files as fallback
-
+The provider data from MongoDB or JSON files as fallback
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1295,21 +1215,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1323,17 +1239,16 @@ Returns:
 Get text completion models for a provider.
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    List of text completion models exactly as stored in JSON
-
+List of text completion models exactly as stored in JSON
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1367,21 +1282,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1395,17 +1306,16 @@ Returns:
 Get embedding models for a provider.
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    List of embedding models exactly as stored in JSON
-
+List of embedding models exactly as stored in JSON
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1445,21 +1355,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1473,17 +1379,16 @@ Returns:
 Get image generation models for a provider.
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    List of image generation models exactly as stored in JSON
-
+List of image generation models exactly as stored in JSON
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1517,21 +1422,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1545,17 +1446,16 @@ Returns:
 Get text-to-speech models for a provider.
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    List of text-to-speech models exactly as stored in JSON
-
+List of text-to-speech models exactly as stored in JSON
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1589,21 +1489,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1617,17 +1513,16 @@ Returns:
 Get speech-to-text models for a provider.
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    List of speech-to-text models exactly as stored in JSON
-
+List of speech-to-text models exactly as stored in JSON
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1661,21 +1556,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1689,17 +1580,16 @@ Returns:
 Get video generation models for a provider.
 
 Args:
-    provider_id: The provider ID
+provider_id: The provider ID
 
 Returns:
-    List of video generation models exactly as stored in JSON
-
+List of video generation models exactly as stored in JSON
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1733,21 +1623,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1761,19 +1647,18 @@ Returns:
 Get information about a specific model from MongoDB (with JSON fallback).
 
 Args:
-    provider_id: The provider ID
-    model_id: The model ID or modelName
+provider_id: The provider ID
+model_id: The model ID or modelName
 
 Returns:
-    The model data from MongoDB or JSON files as fallback
-
+The model data from MongoDB or JSON files as fallback
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `provider_id` | path | string | ✓ |  |
-| `model_id` | path | string | ✓ |  |
+| Name          | Location | Type   | Required | Description |
+| ------------- | -------- | ------ | -------- | ----------- |
+| `provider_id` | path     | string | ✓        |             |
+| `model_id`    | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -1807,13 +1692,11 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
-
 
 ??? warning "422 - Validation Error"
 
@@ -1821,12 +1704,9 @@ Returns:
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## User
-
 
 ### Health Check
 
@@ -1837,14 +1717,11 @@ Returns:
 
 Health check endpoint for the user router.
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
-
-
 
 ---
 
@@ -1858,11 +1735,10 @@ Health check endpoint for the user router.
 Get details of the currently authenticated user.
 
 Args:
-    current_user: The current authenticated user.
+current_user: The current authenticated user.
 
 Returns:
-    Current user details.
-
+Current user details.
 
 **Responses:**
 
@@ -1872,14 +1748,11 @@ Returns:
 
     **Schema:** [UserResponse](#schema-userresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1893,20 +1766,19 @@ Returns:
 List all transactions for the authenticated user.
 
 Args:
-    current_user: The current authenticated user.
-    limit: Maximum number of transactions to return.
-    offset: Offset for pagination.
+current_user: The current authenticated user.
+limit: Maximum number of transactions to return.
+offset: Offset for pagination.
 
 Returns:
-    List of transactions.
-
+List of transactions.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `limit` | query | integer |  |  |
-| `offset` | query | integer |  |  |
+| Name     | Location | Type    | Required | Description |
+| -------- | -------- | ------- | -------- | ----------- |
+| `limit`  | query    | integer |          |             |
+| `offset` | query    | integer |          |             |
 
 **Responses:**
 
@@ -1916,14 +1788,11 @@ Returns:
 
     **Schema:** [TransactionList](#schema-transactionlist)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1940,30 +1809,28 @@ This is the ONLY endpoint that returns the full API key.
 After creation, the key will be masked in all other responses.
 
 Args:
-    request: The request object for debugging
-    api_key_data: The API key creation data.
-    current_user: The current authenticated user.
+request: The request object for debugging
+api_key_data: The API key creation data.
+current_user: The current authenticated user.
 
 Returns:
-    The newly created API key with full key visible (only time it's shown).
-
+The newly created API key with full key visible (only time it's shown).
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
-**Schema:** [app__models__schemas__ApiKeyCreate](#schema-app__models__schemas__apikeycreate)
+**Schema:** [app**models**schemas\_\_ApiKeyCreate](#schema-app__models__schemas__apikeycreate)
 
 ```json
 {
   "name": "API Key",
-  "expiration_time": "..."  // Expiration time in days from now. If not provided (None), the API key will never expire.
+  "expiration_time": "..." // Expiration time in days from now. If not provided (None), the API key will never expire.
 }
 ```
-
 
 **Responses:**
 
@@ -1973,14 +1840,11 @@ Returns:
 
     **Schema:** [ApiKeyCreatedResponse](#schema-apikeycreatedresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -1994,11 +1858,10 @@ Returns:
 List all API keys for the authenticated user.
 
 Args:
-    current_user: The current authenticated user.
+current_user: The current authenticated user.
 
 Returns:
-    List of API keys.
-
+List of API keys.
 
 **Responses:**
 
@@ -2008,14 +1871,11 @@ Returns:
 
     **Schema:** [ApiKeyList](#schema-apikeylist)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2029,18 +1889,17 @@ Returns:
 Permanently delete an API key.
 
 Args:
-    api_key_id: The API key ID to delete.
-    current_user: The current authenticated user.
+api_key_id: The API key ID to delete.
+current_user: The current authenticated user.
 
 Returns:
-    Success indicator.
-
+Success indicator.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `api_key_id` | path | integer | ✓ |  |
+| Name         | Location | Type    | Required | Description |
+| ------------ | -------- | ------- | -------- | ----------- |
+| `api_key_id` | path     | integer | ✓        |             |
 
 **Responses:**
 
@@ -2048,14 +1907,11 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2069,20 +1925,19 @@ Returns:
 Get usage statistics for the authenticated user.
 
 Args:
-    current_user: The current authenticated user.
-    start_date: Optional start date for filtering.
-    end_date: Optional end date for filtering.
+current_user: The current authenticated user.
+start_date: Optional start date for filtering.
+end_date: Optional end date for filtering.
 
 Returns:
-    Usage statistics.
-
+Usage statistics.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `start_date` | query | any |  |  |
-| `end_date` | query | any |  |  |
+| Name         | Location | Type | Required | Description |
+| ------------ | -------- | ---- | -------- | ----------- |
+| `start_date` | query    | any  |          |             |
+| `end_date`   | query    | any  |          |             |
 
 **Code Examples:**
 
@@ -2116,7 +1971,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -2125,14 +1979,11 @@ Returns:
 
     **Schema:** [UsageResponse](#schema-usageresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2146,18 +1997,17 @@ Returns:
 Revoke an API key without deleting it.
 
 Args:
-    api_key_id: The API key ID to revoke.
-    current_user: The current authenticated user.
+api_key_id: The API key ID to revoke.
+current_user: The current authenticated user.
 
 Returns:
-    Success indicator.
-
+Success indicator.
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `api_key_id` | path | integer | ✓ |  |
+| Name         | Location | Type    | Required | Description |
+| ------------ | -------- | ------- | -------- | ----------- |
+| `api_key_id` | path     | integer | ✓        |             |
 
 **Responses:**
 
@@ -2165,14 +2015,11 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2186,18 +2033,17 @@ Returns:
 Enable a previously revoked API key.
 
 Args:
-    api_key_id: The ID of the API key to enable
-    current_user: The current authenticated user
+api_key_id: The ID of the API key to enable
+current_user: The current authenticated user
 
 Returns:
-    Success status
-
+Success status
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `api_key_id` | path | integer | ✓ |  |
+| Name         | Location | Type    | Required | Description |
+| ------------ | -------- | ------- | -------- | ----------- |
+| `api_key_id` | path     | integer | ✓        |             |
 
 **Responses:**
 
@@ -2205,14 +2051,11 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2228,12 +2071,11 @@ Delete the authenticated user's account permanently.
 This action is irreversible and will delete all user data.
 
 Args:
-    current_user: The current authenticated user
-    response: Response object to clear cookies
+current_user: The current authenticated user
+response: Response object to clear cookies
 
 Returns:
-    Success status
-
+Success status
 
 **Responses:**
 
@@ -2241,19 +2083,15 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Videos
-
 
 ### Create Video
 
@@ -2265,18 +2103,17 @@ Returns:
 Generate videos from a prompt.
 
 Args:
-    request: The FastAPI request object
-    video_request: The video generation request.
-    current_user: The current user.
+request: The FastAPI request object
+video_request: The video generation request.
+current_user: The current user.
 
 Returns:
-    The video generation response.
-
+The video generation response.
 
 **Request Body:**
 
 !!! info "Required"
-    This request requires a body.
+This request requires a body.
 
 **Content-Type:** `application/json`
 
@@ -2305,7 +2142,6 @@ Returns:
   "byok_api_key": "..."
 }
 ```
-
 
 **Code Examples:**
 
@@ -2351,7 +2187,6 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
@@ -2360,14 +2195,11 @@ Returns:
 
     **Schema:** [VideoResponse](#schema-videoresponse)
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2381,18 +2213,17 @@ Returns:
 Get the status of a video generation job.
 
 Args:
-    job_id: The job ID to check
-    current_user: The current user
+job_id: The job ID to check
+current_user: The current user
 
 Returns:
-    Job status information
-
+Job status information
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `job_id` | path | string | ✓ |  |
+| Name     | Location | Type   | Required | Description |
+| -------- | -------- | ------ | -------- | ----------- |
+| `job_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -2426,21 +2257,17 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2454,20 +2281,19 @@ Returns:
 Get all video generation jobs for the current user.
 
 Args:
-    limit: Maximum number of jobs to return
-    skip: Number of jobs to skip (for pagination)
-    current_user: The current user
+limit: Maximum number of jobs to return
+skip: Number of jobs to skip (for pagination)
+current_user: The current user
 
 Returns:
-    List of job information
-
+List of job information
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `limit` | query | integer |  |  |
-| `skip` | query | integer |  |  |
+| Name    | Location | Type    | Required | Description |
+| ------- | -------- | ------- | -------- | ----------- |
+| `limit` | query    | integer |          |             |
+| `skip`  | query    | integer |          |             |
 
 **Responses:**
 
@@ -2475,14 +2301,11 @@ Returns:
 
     **Content-Type:** `application/json`
 
-
 ??? warning "422 - Validation Error"
 
     **Content-Type:** `application/json`
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
-
-
 
 ---
 
@@ -2496,18 +2319,17 @@ Returns:
 Cancel a pending video generation job.
 
 Args:
-    job_id: The job ID to cancel
-    current_user: The current user
+job_id: The job ID to cancel
+current_user: The current user
 
 Returns:
-    Cancellation status
-
+Cancellation status
 
 **Parameters:**
 
-| Name | Location | Type | Required | Description |
-|------|----------|------|----------|-------------|
-| `job_id` | path | string | ✓ |  |
+| Name     | Location | Type   | Required | Description |
+| -------- | -------- | ------ | -------- | ----------- |
+| `job_id` | path     | string | ✓        |             |
 
 **Code Examples:**
 
@@ -2546,13 +2368,11 @@ Returns:
     console.log(response);
     ```
 
-
 **Responses:**
 
 ??? success "200 - Successful Response"
 
     **Content-Type:** `application/json`
-
 
 ??? warning "422 - Validation Error"
 
@@ -2560,14 +2380,11 @@ Returns:
 
     **Schema:** [HTTPValidationError](#schema-httpvalidationerror)
 
-
-
 ---
 
 ## Data Schemas
 
 This section describes the data models used in the API.
-
 
 ### ApiKeyCreatedResponse {: #schema-apikeycreatedresponse }
 
@@ -2575,16 +2392,15 @@ API key response model for creation (with full key shown once).
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | integer | ✓ |  |
-| `api_key` | string | ✓ |  |
-| `name` | string | ✓ |  |
-| `is_active` | boolean | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `expires_at` | any | ✓ |  |
-| `last_used_at` | any |  |  |
-
+| Property       | Type    | Required | Description |
+| -------------- | ------- | -------- | ----------- |
+| `id`           | integer | ✓        |             |
+| `api_key`      | string  | ✓        |             |
+| `name`         | string  | ✓        |             |
+| `is_active`    | boolean | ✓        |             |
+| `created_at`   | string  | ✓        |             |
+| `expires_at`   | any     | ✓        |             |
+| `last_used_at` | any     |          |             |
 
 ### ApiKeyList {: #schema-apikeylist }
 
@@ -2592,10 +2408,9 @@ API key list response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `keys` | array[[ApiKeyResponse](#schema-apikeyresponse)] | ✓ |  |
-
+| Property | Type                                            | Required | Description |
+| -------- | ----------------------------------------------- | -------- | ----------- |
+| `keys`   | array[[ApiKeyResponse](#schema-apikeyresponse)] | ✓        |             |
 
 ### ApiKeyResponse {: #schema-apikeyresponse }
 
@@ -2603,16 +2418,15 @@ API key response model for listing (with masked key).
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | integer | ✓ |  |
-| `api_key` | string | ✓ |  |
-| `name` | string | ✓ |  |
-| `is_active` | boolean | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `expires_at` | any | ✓ |  |
-| `last_used_at` | any |  |  |
-
+| Property       | Type    | Required | Description |
+| -------------- | ------- | -------- | ----------- |
+| `id`           | integer | ✓        |             |
+| `api_key`      | string  | ✓        |             |
+| `name`         | string  | ✓        |             |
+| `is_active`    | boolean | ✓        |             |
+| `created_at`   | string  | ✓        |             |
+| `expires_at`   | any     | ✓        |             |
+| `last_used_at` | any     |          |             |
 
 ### AudioRequest {: #schema-audiorequest }
 
@@ -2620,18 +2434,17 @@ Text-to-speech generation request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `input` | string | ✓ |  |
-| `provider` | any |  |  |
-| `model` | any |  |  |
-| `voice` | any |  |  |
-| `instructions` | any |  |  |
-| `response_format` | any |  |  |
-| `speed` | any |  |  |
-| `additional_params` | any |  |  |
-| `byok_api_key` | any |  |  |
-
+| Property            | Type   | Required | Description |
+| ------------------- | ------ | -------- | ----------- |
+| `input`             | string | ✓        |             |
+| `provider`          | any    |          |             |
+| `model`             | any    |          |             |
+| `voice`             | any    |          |             |
+| `instructions`      | any    |          |             |
+| `response_format`   | any    |          |             |
+| `speed`             | any    |          |             |
+| `additional_params` | any    |          |             |
+| `byok_api_key`      | any    |          |             |
 
 ### AudioResponse {: #schema-audioresponse }
 
@@ -2639,51 +2452,48 @@ Audio generation response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `request_id` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `duration_ms` | any |  |  |
-| `provider` | string | ✓ |  |
-| `model` | string | ✓ |  |
-| `success` | boolean |  |  |
-| `message` | string |  |  |
-| `usage` | any |  |  |
-| `raw_response` | any |  |  |
-| `data` | object |  |  |
-
+| Property       | Type    | Required | Description |
+| -------------- | ------- | -------- | ----------- |
+| `request_id`   | string  | ✓        |             |
+| `created_at`   | string  | ✓        |             |
+| `duration_ms`  | any     |          |             |
+| `provider`     | string  | ✓        |             |
+| `model`        | string  | ✓        |             |
+| `success`      | boolean |          |             |
+| `message`      | string  |          |             |
+| `usage`        | any     |          |             |
+| `raw_response` | any     |          |             |
+| `data`         | object  |          |             |
 
 ### Body_create_transcription_audio_stt_transcriptions_post {: #schema-body_create_transcription_audio_stt_transcriptions_post }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `file` | string | ✓ |  |
-| `provider` | string |  |  |
-| `model` | string |  |  |
-| `language` | string |  |  |
-| `prompt` | string |  |  |
-| `response_format` | string |  |  |
-| `temperature` | number |  |  |
-| `timestamp_granularities` | string |  |  |
-| `byok_api_key` | string |  |  |
-
+| Property                  | Type   | Required | Description |
+| ------------------------- | ------ | -------- | ----------- |
+| `file`                    | string | ✓        |             |
+| `provider`                | string |          |             |
+| `model`                   | string |          |             |
+| `language`                | string |          |             |
+| `prompt`                  | string |          |             |
+| `response_format`         | string |          |             |
+| `temperature`             | number |          |             |
+| `timestamp_granularities` | string |          |             |
+| `byok_api_key`            | string |          |             |
 
 ### Body_create_translation_audio_stt_translations_post {: #schema-body_create_translation_audio_stt_translations_post }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `file` | string | ✓ |  |
-| `provider` | string |  |  |
-| `model` | string |  |  |
-| `prompt` | string |  |  |
-| `response_format` | string |  |  |
-| `temperature` | number |  |  |
-| `byok_api_key` | string |  |  |
-
+| Property          | Type   | Required | Description |
+| ----------------- | ------ | -------- | ----------- |
+| `file`            | string | ✓        |             |
+| `provider`        | string |          |             |
+| `model`           | string |          |             |
+| `prompt`          | string |          |             |
+| `response_format` | string |          |             |
+| `temperature`     | number |          |             |
+| `byok_api_key`    | string |          |             |
 
 ### ChatMessage {: #schema-chatmessage }
 
@@ -2691,11 +2501,10 @@ Chat message model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `role` | string | ✓ |  |
-| `content` | any | ✓ |  |
-
+| Property  | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| `role`    | string | ✓        |             |
+| `content` | any    | ✓        |             |
 
 ### ChatRequest {: #schema-chatrequest }
 
@@ -2703,20 +2512,19 @@ Chat completion request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `messages` | array[[ChatMessage](#schema-chatmessage)] | ✓ | List of messages cannot be empty |
-| `provider` | any |  |  |
-| `model` | any |  |  |
-| `temperature` | any |  |  |
-| `max_tokens` | any |  |  |
-| `top_p` | any |  |  |
-| `frequency_penalty` | any |  |  |
-| `presence_penalty` | any |  |  |
-| `stream` | any |  |  |
-| `additional_params` | any |  |  |
-| `byok_api_key` | any |  |  |
-
+| Property            | Type                                      | Required | Description                      |
+| ------------------- | ----------------------------------------- | -------- | -------------------------------- |
+| `messages`          | array[[ChatMessage](#schema-chatmessage)] | ✓        | List of messages cannot be empty |
+| `provider`          | any                                       |          |                                  |
+| `model`             | any                                       |          |                                  |
+| `temperature`       | any                                       |          |                                  |
+| `max_tokens`        | any                                       |          |                                  |
+| `top_p`             | any                                       |          |                                  |
+| `frequency_penalty` | any                                       |          |                                  |
+| `presence_penalty`  | any                                       |          |                                  |
+| `stream`            | any                                       |          |                                  |
+| `additional_params` | any                                       |          |                                  |
+| `byok_api_key`      | any                                       |          |                                  |
 
 ### ChatResponse {: #schema-chatresponse }
 
@@ -2724,21 +2532,20 @@ Chat completion response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `request_id` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `duration_ms` | any |  |  |
-| `provider` | string | ✓ |  |
-| `model` | string | ✓ |  |
-| `success` | boolean |  |  |
-| `message` | string |  |  |
-| `usage` | any |  |  |
-| `raw_response` | any |  |  |
-| `data` | any |  |  |
-| `finish_reason` | any |  |  |
-| `images` | any |  |  |
-
+| Property        | Type    | Required | Description |
+| --------------- | ------- | -------- | ----------- |
+| `request_id`    | string  | ✓        |             |
+| `created_at`    | string  | ✓        |             |
+| `duration_ms`   | any     |          |             |
+| `provider`      | string  | ✓        |             |
+| `model`         | string  | ✓        |             |
+| `success`       | boolean |          |             |
+| `message`       | string  |          |             |
+| `usage`         | any     |          |             |
+| `raw_response`  | any     |          |             |
+| `data`          | any     |          |             |
+| `finish_reason` | any     |          |             |
+| `images`        | any     |          |             |
 
 ### CompletionRequest {: #schema-completionrequest }
 
@@ -2746,20 +2553,19 @@ Text completion request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `prompt` | string | ✓ |  |
-| `provider` | any |  |  |
-| `model` | any |  |  |
-| `temperature` | any |  |  |
-| `max_tokens` | any |  |  |
-| `top_p` | any |  |  |
-| `frequency_penalty` | any |  |  |
-| `presence_penalty` | any |  |  |
-| `stream` | any |  |  |
-| `additional_params` | any |  |  |
-| `byok_api_key` | any |  |  |
-
+| Property            | Type   | Required | Description |
+| ------------------- | ------ | -------- | ----------- |
+| `prompt`            | string | ✓        |             |
+| `provider`          | any    |          |             |
+| `model`             | any    |          |             |
+| `temperature`       | any    |          |             |
+| `max_tokens`        | any    |          |             |
+| `top_p`             | any    |          |             |
+| `frequency_penalty` | any    |          |             |
+| `presence_penalty`  | any    |          |             |
+| `stream`            | any    |          |             |
+| `additional_params` | any    |          |             |
+| `byok_api_key`      | any    |          |             |
 
 ### CompletionResponse {: #schema-completionresponse }
 
@@ -2767,32 +2573,30 @@ Text completion response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `request_id` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `duration_ms` | any |  |  |
-| `provider` | string | ✓ |  |
-| `model` | string | ✓ |  |
-| `success` | boolean |  |  |
-| `message` | string |  |  |
-| `usage` | any |  |  |
-| `raw_response` | any |  |  |
-| `data` | string |  |  |
-| `finish_reason` | any |  |  |
-
+| Property        | Type    | Required | Description |
+| --------------- | ------- | -------- | ----------- |
+| `request_id`    | string  | ✓        |             |
+| `created_at`    | string  | ✓        |             |
+| `duration_ms`   | any     |          |             |
+| `provider`      | string  | ✓        |             |
+| `model`         | string  | ✓        |             |
+| `success`       | boolean |          |             |
+| `message`       | string  |          |             |
+| `usage`         | any     |          |             |
+| `raw_response`  | any     |          |             |
+| `data`          | string  |          |             |
+| `finish_reason` | any     |          |             |
 
 ### DailyUsage {: #schema-dailyusage }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `date` | string | ✓ |  |
-| `requests` | integer | ✓ |  |
-| `cost` | number | ✓ |  |
-| `tokens` | [TokenUsage](#schema-tokenusage) | ✓ |  |
-
+| Property   | Type                             | Required | Description |
+| ---------- | -------------------------------- | -------- | ----------- |
+| `date`     | string                           | ✓        |             |
+| `requests` | integer                          | ✓        |             |
+| `cost`     | number                           | ✓        |             |
+| `tokens`   | [TokenUsage](#schema-tokenusage) | ✓        |             |
 
 ### EmbeddingRequest {: #schema-embeddingrequest }
 
@@ -2800,14 +2604,13 @@ Embedding request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `text` | any | ✓ |  |
-| `provider` | any |  |  |
-| `model` | any |  |  |
-| `additional_params` | any |  |  |
-| `byok_api_key` | any |  |  |
-
+| Property            | Type | Required | Description |
+| ------------------- | ---- | -------- | ----------- |
+| `text`              | any  | ✓        |             |
+| `provider`          | any  |          |             |
+| `model`             | any  |          |             |
+| `additional_params` | any  |          |             |
+| `byok_api_key`      | any  |          |             |
 
 ### EmbeddingResponse {: #schema-embeddingresponse }
 
@@ -2815,29 +2618,27 @@ Embedding response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `request_id` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `duration_ms` | any |  |  |
-| `provider` | string | ✓ |  |
-| `model` | string | ✓ |  |
-| `success` | boolean |  |  |
-| `message` | string |  |  |
-| `usage` | any |  |  |
-| `raw_response` | any |  |  |
-| `data` | array[array[number]] |  |  |
-| `dimensions` | integer |  |  |
-
+| Property       | Type                 | Required | Description |
+| -------------- | -------------------- | -------- | ----------- |
+| `request_id`   | string               | ✓        |             |
+| `created_at`   | string               | ✓        |             |
+| `duration_ms`  | any                  |          |             |
+| `provider`     | string               | ✓        |             |
+| `model`        | string               | ✓        |             |
+| `success`      | boolean              |          |             |
+| `message`      | string               |          |             |
+| `usage`        | any                  |          |             |
+| `raw_response` | any                  |          |             |
+| `data`         | array[array[number]] |          |             |
+| `dimensions`   | integer              |          |             |
 
 ### HTTPValidationError {: #schema-httpvalidationerror }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `detail` | array[[ValidationError](#schema-validationerror)] |  |  |
-
+| Property | Type                                              | Required | Description |
+| -------- | ------------------------------------------------- | -------- | ----------- |
+| `detail` | array[[ValidationError](#schema-validationerror)] |          |             |
 
 ### ImageRequest {: #schema-imagerequest }
 
@@ -2845,36 +2646,35 @@ Image generation request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `prompt` | string | ✓ |  |
-| `provider` | any |  |  |
-| `model` | any |  |  |
-| `size` | any |  |  |
-| `n` | any |  |  |
-| `quality` | any |  |  |
-| `style` | any |  |  |
-| `response_format` | any |  |  |
-| `user` | any |  |  |
-| `background` | any |  |  |
-| `moderation` | any |  |  |
-| `output_compression` | any |  |  |
-| `output_format` | any |  |  |
-| `negative_prompt` | any |  |  |
-| `guidance_scale` | any |  |  |
-| `seed` | any |  |  |
-| `safety_filter_level` | any |  |  |
-| `person_generation` | any |  |  |
-| `include_safety_attributes` | any |  |  |
-| `include_rai_reason` | any |  |  |
-| `language` | any |  |  |
-| `output_mime_type` | any |  |  |
-| `add_watermark` | any |  |  |
-| `enhance_prompt` | any |  |  |
-| `aspect_ratio` | any |  |  |
-| `additional_params` | any |  |  |
-| `byok_api_key` | any |  |  |
-
+| Property                    | Type   | Required | Description |
+| --------------------------- | ------ | -------- | ----------- |
+| `prompt`                    | string | ✓        |             |
+| `provider`                  | any    |          |             |
+| `model`                     | any    |          |             |
+| `size`                      | any    |          |             |
+| `n`                         | any    |          |             |
+| `quality`                   | any    |          |             |
+| `style`                     | any    |          |             |
+| `response_format`           | any    |          |             |
+| `user`                      | any    |          |             |
+| `background`                | any    |          |             |
+| `moderation`                | any    |          |             |
+| `output_compression`        | any    |          |             |
+| `output_format`             | any    |          |             |
+| `negative_prompt`           | any    |          |             |
+| `guidance_scale`            | any    |          |             |
+| `seed`                      | any    |          |             |
+| `safety_filter_level`       | any    |          |             |
+| `person_generation`         | any    |          |             |
+| `include_safety_attributes` | any    |          |             |
+| `include_rai_reason`        | any    |          |             |
+| `language`                  | any    |          |             |
+| `output_mime_type`          | any    |          |             |
+| `add_watermark`             | any    |          |             |
+| `enhance_prompt`            | any    |          |             |
+| `aspect_ratio`              | any    |          |             |
+| `additional_params`         | any    |          |             |
+| `byok_api_key`              | any    |          |             |
 
 ### ImageResponse {: #schema-imageresponse }
 
@@ -2882,30 +2682,28 @@ Image generation response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `request_id` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `duration_ms` | any |  |  |
-| `provider` | string | ✓ |  |
-| `model` | string | ✓ |  |
-| `success` | boolean |  |  |
-| `message` | string |  |  |
-| `usage` | any |  |  |
-| `raw_response` | any |  |  |
-| `data` | array[object] |  |  |
-
+| Property       | Type          | Required | Description |
+| -------------- | ------------- | -------- | ----------- |
+| `request_id`   | string        | ✓        |             |
+| `created_at`   | string        | ✓        |             |
+| `duration_ms`  | any           |          |             |
+| `provider`     | string        | ✓        |             |
+| `model`        | string        | ✓        |             |
+| `success`      | boolean       |          |             |
+| `message`      | string        |          |             |
+| `usage`        | any           |          |             |
+| `raw_response` | any           |          |             |
+| `data`         | array[object] |          |             |
 
 ### TokenUsage {: #schema-tokenusage }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `input` | integer | ✓ |  |
-| `output` | integer | ✓ |  |
-| `total` | integer | ✓ |  |
-
+| Property | Type    | Required | Description |
+| -------- | ------- | -------- | ----------- |
+| `input`  | integer | ✓        |             |
+| `output` | integer | ✓        |             |
+| `total`  | integer | ✓        |             |
 
 ### TransactionItem {: #schema-transactionitem }
 
@@ -2913,18 +2711,17 @@ Transaction item model for listing transactions.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | integer | ✓ |  |
-| `transaction_id` | string | ✓ |  |
-| `amount` | number | ✓ |  |
-| `currency` | string | ✓ |  |
-| `transaction_type` | string | ✓ |  |
-| `status` | string | ✓ |  |
-| `payment_method` | string | ✓ |  |
-| `description` | any | ✓ |  |
-| `created_at` | string | ✓ |  |
-
+| Property           | Type    | Required | Description |
+| ------------------ | ------- | -------- | ----------- |
+| `id`               | integer | ✓        |             |
+| `transaction_id`   | string  | ✓        |             |
+| `amount`           | number  | ✓        |             |
+| `currency`         | string  | ✓        |             |
+| `transaction_type` | string  | ✓        |             |
+| `status`           | string  | ✓        |             |
+| `payment_method`   | string  | ✓        |             |
+| `description`      | any     | ✓        |             |
+| `created_at`       | string  | ✓        |             |
 
 ### TransactionList {: #schema-transactionlist }
 
@@ -2932,11 +2729,10 @@ Transaction list response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `transactions` | array[[TransactionItem](#schema-transactionitem)] | ✓ |  |
-| `total_count` | integer | ✓ |  |
-
+| Property       | Type                                              | Required | Description |
+| -------------- | ------------------------------------------------- | -------- | ----------- |
+| `transactions` | array[[TransactionItem](#schema-transactionitem)] | ✓        |             |
+| `total_count`  | integer                                           | ✓        |             |
 
 ### Usage {: #schema-usage }
 
@@ -2944,48 +2740,45 @@ Usage information model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `tokens_prompt` | integer |  |  |
-| `tokens_completion` | integer |  |  |
-| `tokens_total` | integer |  |  |
-| `cost` | number |  |  |
-| `latency` | number |  |  |
-| `timestamp` | string |  |  |
-| `cache_read_tokens` | integer |  |  |
-| `cache_write_tokens` | integer |  |  |
-| `reasoning_tokens` | integer |  |  |
-| `web_search_count` | integer |  |  |
-| `request_count` | integer |  |  |
-| `cost_breakdown` | any |  |  |
-
+| Property             | Type    | Required | Description |
+| -------------------- | ------- | -------- | ----------- |
+| `tokens_prompt`      | integer |          |             |
+| `tokens_completion`  | integer |          |             |
+| `tokens_total`       | integer |          |             |
+| `cost`               | number  |          |             |
+| `latency`            | number  |          |             |
+| `timestamp`          | string  |          |             |
+| `cache_read_tokens`  | integer |          |             |
+| `cache_write_tokens` | integer |          |             |
+| `reasoning_tokens`   | integer |          |             |
+| `web_search_count`   | integer |          |             |
+| `request_count`      | integer |          |             |
+| `cost_breakdown`     | any     |          |             |
 
 ### UsageResponse {: #schema-usageresponse }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `total_requests` | integer | ✓ |  |
-| `total_cost` | number | ✓ |  |
-| `remaining_credits` | number | ✓ |  |
-| `total_tokens` | [TokenUsage](#schema-tokenusage) |  |  |
-| `endpoints` | object | ✓ |  |
-| `providers` | object | ✓ |  |
-| `models` | object | ✓ |  |
-| `daily_usage` | array[[DailyUsage](#schema-dailyusage)] | ✓ |  |
-
+| Property            | Type                                    | Required | Description |
+| ------------------- | --------------------------------------- | -------- | ----------- |
+| `total_requests`    | integer                                 | ✓        |             |
+| `total_cost`        | number                                  | ✓        |             |
+| `remaining_credits` | number                                  | ✓        |             |
+| `total_tokens`      | [TokenUsage](#schema-tokenusage)        |          |             |
+| `endpoints`         | object                                  | ✓        |             |
+| `providers`         | object                                  | ✓        |             |
+| `models`            | object                                  | ✓        |             |
+| `daily_usage`       | array[[DailyUsage](#schema-dailyusage)] | ✓        |             |
 
 ### UsageStats {: #schema-usagestats }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `requests` | integer | ✓ |  |
-| `cost` | number | ✓ |  |
-| `tokens` | [TokenUsage](#schema-tokenusage) | ✓ |  |
-
+| Property   | Type                             | Required | Description |
+| ---------- | -------------------------------- | -------- | ----------- |
+| `requests` | integer                          | ✓        |             |
+| `cost`     | number                           | ✓        |             |
+| `tokens`   | [TokenUsage](#schema-tokenusage) | ✓        |             |
 
 ### UserResponse {: #schema-userresponse }
 
@@ -2993,34 +2786,32 @@ User response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | integer | ✓ |  |
-| `username` | string | ✓ |  |
-| `email` | string | ✓ |  |
-| `first_name` | any |  |  |
-| `last_name` | any |  |  |
-| `is_active` | boolean | ✓ |  |
-| `credits` | number | ✓ |  |
-| `app_credit` | integer | ✓ |  |
-| `account_tier` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `metadata` | any |  |  |
-| `has_model_restrictions` | any |  |  |
-| `has_password` | any |  |  |
-| `avatar_url` | any |  |  |
-
+| Property                 | Type    | Required | Description |
+| ------------------------ | ------- | -------- | ----------- |
+| `id`                     | integer | ✓        |             |
+| `username`               | string  | ✓        |             |
+| `email`                  | string  | ✓        |             |
+| `first_name`             | any     |          |             |
+| `last_name`              | any     |          |             |
+| `is_active`              | boolean | ✓        |             |
+| `credits`                | number  | ✓        |             |
+| `app_credit`             | integer | ✓        |             |
+| `account_tier`           | string  | ✓        |             |
+| `created_at`             | string  | ✓        |             |
+| `metadata`               | any     |          |             |
+| `has_model_restrictions` | any     |          |             |
+| `has_password`           | any     |          |             |
+| `avatar_url`             | any     |          |             |
 
 ### ValidationError {: #schema-validationerror }
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `loc` | array[any] | ✓ |  |
-| `msg` | string | ✓ |  |
-| `type` | string | ✓ |  |
-
+| Property | Type       | Required | Description |
+| -------- | ---------- | -------- | ----------- |
+| `loc`    | array[any] | ✓        |             |
+| `msg`    | string     | ✓        |             |
+| `type`   | string     | ✓        |             |
 
 ### VideoRequest {: #schema-videorequest }
 
@@ -3028,28 +2819,27 @@ Video generation request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `prompt` | string | ✓ |  |
-| `provider` | any |  |  |
-| `model` | any |  |  |
-| `aspect_ratio` | any |  |  |
-| `resolution` | any |  |  |
-| `duration` | any |  |  |
-| `n` | any |  |  |
-| `size` | any |  |  |
-| `input_image` | any |  |  |
-| `reference_image` | any |  |  |
-| `reference_images` | any |  |  |
-| `generate_audio` | any |  |  |
-| `negative_prompt` | any |  |  |
-| `person_generation` | any |  |  |
-| `last_frame` | any |  |  |
-| `video` | any |  |  |
-| `response_format` | any |  |  |
-| `additional_params` | any |  |  |
-| `byok_api_key` | any |  |  |
-
+| Property            | Type   | Required | Description |
+| ------------------- | ------ | -------- | ----------- |
+| `prompt`            | string | ✓        |             |
+| `provider`          | any    |          |             |
+| `model`             | any    |          |             |
+| `aspect_ratio`      | any    |          |             |
+| `resolution`        | any    |          |             |
+| `duration`          | any    |          |             |
+| `n`                 | any    |          |             |
+| `size`              | any    |          |             |
+| `input_image`       | any    |          |             |
+| `reference_image`   | any    |          |             |
+| `reference_images`  | any    |          |             |
+| `generate_audio`    | any    |          |             |
+| `negative_prompt`   | any    |          |             |
+| `person_generation` | any    |          |             |
+| `last_frame`        | any    |          |             |
+| `video`             | any    |          |             |
+| `response_format`   | any    |          |             |
+| `additional_params` | any    |          |             |
+| `byok_api_key`      | any    |          |             |
 
 ### VideoResponse {: #schema-videoresponse }
 
@@ -3057,29 +2847,28 @@ Video generation response model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `request_id` | string | ✓ |  |
-| `created_at` | string | ✓ |  |
-| `duration_ms` | any |  |  |
-| `provider` | string | ✓ |  |
-| `model` | string | ✓ |  |
-| `success` | boolean |  |  |
-| `message` | string |  |  |
-| `usage` | any |  |  |
-| `raw_response` | any |  |  |
-| `data` | any |  |  |
+| Property       | Type    | Required | Description |
+| -------------- | ------- | -------- | ----------- |
+| `request_id`   | string  | ✓        |             |
+| `created_at`   | string  | ✓        |             |
+| `duration_ms`  | any     |          |             |
+| `provider`     | string  | ✓        |             |
+| `model`        | string  | ✓        |             |
+| `success`      | boolean |          |             |
+| `message`      | string  |          |             |
+| `usage`        | any     |          |             |
+| `raw_response` | any     |          |             |
+| `data`         | any     |          |             |
 
-
-### app__models__schemas__ApiKeyCreate {: #schema-app__models__schemas__apikeycreate }
+### app**models**schemas**ApiKeyCreate {: #schema-app**models**schemas**apikeycreate }
 
 API key creation request model.
 
 **Properties:**
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `name` | string |  |  |
-| `expiration_time` | any |  | Expiration time in days from now. If not provided (None), the API key will never expire. |
+| Property          | Type   | Required | Description                                                                              |
+| ----------------- | ------ | -------- | ---------------------------------------------------------------------------------------- |
+| `name`            | string |          |                                                                                          |
+| `expiration_time` | any    |          | Expiration time in days from now. If not provided (None), the API key will never expire. |
 
 _Last updated: Nov 16, 2025_

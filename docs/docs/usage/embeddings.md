@@ -225,7 +225,7 @@ response = client.chat(
 )
 
 print("\nGenerated Answer:")
-print(response["choices"][0]["message"]["content"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ## Advanced Usage

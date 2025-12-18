@@ -34,9 +34,12 @@ response = client.chat(
     model="deepseek/deepseek-chat"
 )
 
-print(response['data'])
-print(f"Cost: ${response['usage']['cost']}")
-print(f"Tokens used: {response['usage']['tokens_total']}")
+# Access response text from output array
+print(response['output'][0]['content'][0]['text'])
+print(f"Tokens used: {response['usage']['total_tokens']}")
+
+# Note: Cost information is not included in individual response usage objects.
+# Use get_usage() to get cost statistics.
 ```
 
 ## BYOK (Bring Your Own Key) Support
@@ -94,29 +97,45 @@ All AI endpoints support BYOK:
 
 ### Response Format
 
-Every response includes detailed usage information:
+!!! note "Response Format Differences"
+**Chat and Completions endpoints** use an OpenAI-compatible format with an `output` array. All other endpoints (embeddings, images, audio, etc.) use a standard format with a `data` field.
+
+Chat and completion responses follow an OpenAI-compatible format:
 
 ```python
 {
-    'request_id': 'c08cc108-6b0d-48bd-a660-546143f1b9fa',
-    'created_at': '2025-05-19T06:07:38.077269',
-    'duration_ms': 9664.651870727539,
-    'provider': 'deepseek',
+    'id': 'c08cc108-6b0d-48bd-a660-546143f1b9fa',
+    'object': 'response',
+    'created_at': 1718456006,
     'model': 'deepseek-chat',
-    'success': True,
-    'message': '',
+    'provider': 'deepseek',
+    'duration_ms': 9664.65,
+    'output': [
+        {
+            'type': 'message',
+            'status': 'completed',
+            'role': 'assistant',
+            'content': [
+                {
+                    'type': 'output_text',
+                    'text': 'Your AI response text here...',
+                    'annotations': []
+                }
+            ]
+        }
+    ],
     'usage': {
-        'tokens_prompt': 15,
-        'tokens_completion': 107,
-        'tokens_total': 122,
-        'cost': 0.000229,
-        'latency': 9.487398862838745,
-        'timestamp': '2025-05-19T06:07:38.065330'
+        'input_tokens': 15,
+        'input_tokens_details': {'cached_tokens': 0},
+        'output_tokens': 107,
+        'output_tokens_details': {'reasoning_tokens': 0},
+        'total_tokens': 122
     },
-    'data': 'Your AI response text here...',
-    'finish_reason': None
+    'status': 'completed'
 }
 ```
+
+To access the response text: `response['output'][0]['content'][0]['text']`
 
 ### Usage Tracking
 
@@ -229,7 +248,8 @@ response = client.chat(
     model="openai/gpt-4o"
 )
 
-print(response['data'])
+# Access response text from output array
+print(response['output'][0]['content'][0]['text'])
 ```
 
 ### Image Generation

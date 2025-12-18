@@ -1,0 +1,412 @@
+/* indoxhub Documentation - Minimal & Beautiful Styling */
+
+:root {
+  /* Custom color palette - Minimal & Professional */
+  --indox-primary: #4f46e5;
+  --indox-primary-light: #6366f1;
+  --indox-primary-dark: #3730a3;
+  --indox-accent: #7c3aed;
+  --indox-surface: #f8fafc;
+  --indox-border: #e2e8f0;
+  --indox-text-muted: #64748b;
+  --indox-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --indox-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --indox-radius: 8px;
+  --indox-radius-lg: 12px;
+
+  /* Override material design colors */
+  --md-primary-fg-color: var(--indox-primary);
+  --md-primary-fg-color--light: var(--indox-primary-light);
+  --md-primary-fg-color--dark: var(--indox-primary-dark);
+  --md-accent-fg-color: var(--indox-accent);
+}
+
+/* Dark theme adjustments */
+[data-md-color-scheme="slate"] {
+  --indox-surface: #1e293b;
+  --indox-border: #334155;
+  --indox-text-muted: #94a3b8;
+  --indox-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --indox-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+    0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
+/* Header with clean logo styling */
+.md-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--indox-border);
+  box-shadow: var(--indox-shadow);
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: var(--indox-border);
+}
+
+/* Fix navbar text visibility in light mode */
+[data-md-color-scheme="default"] .md-header-nav__button,
+[data-md-color-scheme="default"] .md-header__topic,
+[data-md-color-scheme="default"] .md-header__title,
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: #334155 !important;
+}
+
+[data-md-color-scheme="default"] .md-header-nav__button:hover {
+  color: var(--indox-primary) !important;
+}
+
+/* Ensure search icon and nav buttons are visible in light mode */
+[data-md-color-scheme="default"] .md-header__button.md-icon {
+  color: #334155 !important;
+}
+
+[data-md-color-scheme="default"] .md-header__button.md-icon:hover {
+  color: var(--indox-primary) !important;
+}
+
+/* Logo styling - clean and minimal */
+.md-header__button.md-logo {
+  margin: 0.2rem;
+}
+
+.md-header__button.md-logo img {
+  height: 2rem;
+  width: auto;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+
+.md-header__button.md-logo:hover img {
+  transform: scale(1.05);
+}
+
+/* Clean typography */
+.md-header__title {
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-left: 0.5rem;
+}
+
+/* Header title colors for different themes */
+[data-md-color-scheme="default"] .md-header__title {
+  color: #334155 !important;
+}
+
+[data-md-color-scheme="slate"] .md-header__title {
+  color: var(--indox-primary) !important;
+}
+
+/* Navigation tabs - minimal styling */
+.md-tabs {
+  background: var(--indox-surface);
+  border-bottom: 1px solid var(--indox-border);
+  box-shadow: none;
+}
+
+.md-tabs__item {
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.md-tabs__link {
+  color: var(--indox-text-muted);
+}
+
+.md-tabs__link--active,
+.md-tabs__link:hover {
+  color: var(--indox-primary);
+}
+
+/* Ensure tab text is visible in light mode */
+[data-md-color-scheme="default"] .md-tabs__link {
+  color: #64748b !important;
+}
+
+[data-md-color-scheme="default"] .md-tabs__link--active,
+[data-md-color-scheme="default"] .md-tabs__link:hover {
+  color: var(--indox-primary) !important;
+}
+
+/* Clean navigation */
+.md-nav__item--active > .md-nav__link {
+  color: var(--indox-primary);
+  font-weight: 600;
+}
+
+.md-nav__link:hover {
+  color: var(--indox-primary-light);
+}
+
+/* Typography improvements */
+.md-typeset h1 {
+  color: var(--indox-primary-dark);
+  font-weight: 700;
+  border-bottom: 2px solid var(--indox-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.md-typeset h2 {
+  color: var(--indox-primary);
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.md-typeset h3 {
+  color: var(--indox-accent);
+  font-weight: 600;
+  margin-top: 2rem;
+}
+
+/* Clean code blocks */
+.md-typeset .highlight {
+  border-radius: var(--indox-radius);
+  border: 1px solid var(--indox-border);
+  box-shadow: var(--indox-shadow);
+  overflow: hidden;
+}
+
+.md-typeset .highlight pre {
+  margin: 0;
+}
+
+/* Copy button styling */
+.md-clipboard {
+  color: var(--indox-text-muted);
+  transition: color 0.2s ease;
+}
+
+.md-clipboard:hover {
+  color: var(--indox-primary);
+}
+
+/* Admonitions - clean and minimal */
+.md-typeset .admonition {
+  border-radius: var(--indox-radius);
+  border: 1px solid var(--indox-border);
+  box-shadow: var(--indox-shadow);
+  border-left: 4px solid var(--indox-primary);
+}
+
+.md-typeset .admonition-title {
+  font-weight: 600;
+  background: var(--indox-surface);
+}
+
+/* Tables - clean styling */
+.md-typeset table:not([class]) {
+  border-radius: var(--indox-radius);
+  overflow: hidden;
+  border: 1px solid var(--indox-border);
+  box-shadow: var(--indox-shadow);
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--indox-primary);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+
+.md-typeset table:not([class]) td {
+  padding: 0.75rem 1rem;
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) {
+  background: var(--indox-surface);
+}
+
+/* Links - subtle styling */
+.md-typeset a {
+  color: var(--indox-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.md-typeset a:hover {
+  color: var(--indox-primary-dark);
+}
+
+/* Search box */
+.md-search__form {
+  border-radius: var(--indox-radius-lg);
+  box-shadow: var(--indox-shadow);
+  border: 1px solid var(--indox-border);
+}
+
+.md-search__input {
+  border-radius: var(--indox-radius-lg);
+}
+
+/* Footer - minimal */
+.md-footer {
+  background: var(--indox-surface);
+  border-top: 1px solid var(--indox-border);
+}
+
+.md-footer-meta {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-md-color-scheme="slate"] .md-footer-meta {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Hero section for home page */
+.hero-section {
+  background: linear-gradient(
+    135deg,
+    var(--indox-primary) 0%,
+    var(--indox-accent) 100%
+  );
+  color: white;
+  padding: 4rem 2rem;
+  border-radius: var(--indox-radius-lg);
+  margin: 2rem 0;
+  text-align: center;
+  box-shadow: var(--indox-shadow-lg);
+}
+
+.hero-section h1 {
+  color: white !important;
+  border: none !important;
+  margin-bottom: 1rem;
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.hero-section p {
+  font-size: 1.25rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+  line-height: 1.6;
+  color: white !important;
+}
+
+/* Feature cards - minimal and clean */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 3rem 0;
+}
+
+.feature-card {
+  background: var(--indox-surface);
+  border: 1px solid var(--indox-border);
+  border-radius: var(--indox-radius-lg);
+  padding: 2rem;
+  box-shadow: var(--indox-shadow);
+  transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--indox-shadow-lg);
+}
+
+.feature-card h3 {
+  color: var(--indox-primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.feature-card p {
+  color: var(--indox-text-muted);
+  line-height: 1.6;
+}
+
+/* CTA button - Enhanced with better visibility */
+.cta-button {
+  display: inline-block;
+  background: var(--indox-primary) !important;
+  color: #ffffff !important;
+  padding: 0.75rem 2rem;
+  border-radius: var(--indox-radius);
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  box-shadow: var(--indox-shadow);
+  border: 2px solid var(--indox-primary);
+}
+
+.cta-button:hover {
+  background: var(--indox-primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--indox-shadow-lg);
+  color: #ffffff !important;
+  text-decoration: none !important;
+  border-color: var(--indox-primary-dark);
+}
+
+.cta-button:focus {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+.cta-button:visited {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+/* Ensure CTA button text stays white in all states */
+.hero-section .cta-button,
+.hero-section a.cta-button,
+a.cta-button {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+.hero-section .cta-button:hover,
+.hero-section a.cta-button:hover,
+a.cta-button:hover {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 76.1875em) {
+  .hero-section {
+    padding: 3rem 1rem;
+  }
+
+  .hero-section h1 {
+    font-size: 2.5rem;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Content spacing */
+.md-content {
+  max-width: none;
+}
+
+.md-content__inner {
+  margin: 0 0.8rem;
+  padding-top: 1rem;
+}
+
+/* Subtle animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.md-typeset .admonition,
+.feature-card,
+.md-typeset .highlight {
+  animation: fadeIn 0.3s ease-out;
+}

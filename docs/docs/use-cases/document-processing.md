@@ -26,7 +26,7 @@ def summarize_document(text, max_length=200):
         max_tokens=max_length * 2  # Rough estimate for token count
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 document = """
@@ -55,7 +55,7 @@ def extractive_summary(text, num_sentences=3):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 def abstractive_summary(text, style="professional"):
     """Generate a new summary in the specified style."""
@@ -71,7 +71,7 @@ def abstractive_summary(text, style="professional"):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ## Document Classification
@@ -95,7 +95,7 @@ def classify_document(text, categories):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 categories = ["Technology", "Finance", "Healthcare", "Education", "Sports"]
@@ -120,7 +120,7 @@ def analyze_sentiment(text):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ## Information Extraction
@@ -147,7 +147,7 @@ def extract_entities(text, entity_types=None):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 entities = extract_entities(
@@ -176,7 +176,7 @@ def extract_key_info(text, fields):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example for invoice processing
 invoice_fields = ["invoice_number", "date", "total_amount", "vendor_name", "items"]
@@ -205,7 +205,7 @@ def compare_documents(doc1, doc2):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ### Change Detection
@@ -228,7 +228,7 @@ def detect_changes(original_doc, revised_doc):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ## Batch Document Processing
@@ -266,7 +266,7 @@ async def summarize_async(client, text):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Usage
 documents = ["doc1 text...", "doc2 text...", "doc3 text..."]
@@ -292,7 +292,7 @@ def assess_readability(text):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ### Content Quality Check
@@ -317,7 +317,7 @@ def check_content_quality(text, criteria=None):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 quality_criteria = ["accuracy", "completeness", "clarity", "organization"]
@@ -351,7 +351,7 @@ def process_legal_document(text, task="summarize"):
         model="openai/gpt-4o"  # Use more capable model for legal analysis
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ### Scientific Paper Processing
@@ -380,7 +380,7 @@ def process_research_paper(text, section="abstract"):
         model="openai/gpt-4o"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ## Document Generation and Enhancement
@@ -411,7 +411,7 @@ def enhance_document(text, enhancement_type="improve_clarity"):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 ```
 
 ### Template-Based Generation
@@ -434,7 +434,7 @@ def generate_from_template(template, data):
         model="openai/gpt-4o-mini"
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 email_template = """

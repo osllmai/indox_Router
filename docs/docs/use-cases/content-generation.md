@@ -20,7 +20,7 @@ response = client.chat(
     model="openai/gpt-4o"
 )
 
-blog_post = response["data"]
+blog_post = response["output"][0]["content"][0]["text"]
 print(blog_post)
 ```
 
@@ -42,7 +42,7 @@ story_response = client.chat(
     temperature=0.8  # Higher temperature for more creativity
 )
 
-story = story_response["data"]
+story = story_response["output"][0]["content"][0]["text"]
 ```
 
 ## SEO Content Creation
@@ -68,7 +68,7 @@ seo_response = client.chat(
     temperature=0.7
 )
 
-seo_article = seo_response["data"]
+seo_article = seo_response["output"][0]["content"][0]["text"]
 ```
 
 ## Product Descriptions
@@ -99,7 +99,7 @@ def generate_product_description(product_name, features, target_audience, word_c
         temperature=0.7
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 product_description = generate_product_description(
@@ -154,7 +154,7 @@ def generate_email_campaign(campaign_type, product_info, audience, call_to_actio
         temperature=0.7
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 welcome_email = generate_email_campaign(
@@ -209,7 +209,7 @@ def generate_social_media_post(platform, topic, tone, hashtags=None, include_emo
         temperature=0.7
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 linkedin_post = generate_social_media_post(
@@ -250,7 +250,7 @@ def repurpose_content(original_content, original_format, target_format, target_l
         temperature=0.7
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 blog_post = """
@@ -301,7 +301,7 @@ def generate_data_report(data_summary, key_findings, audience, report_type="exec
         temperature=0.3  # Lower temperature for more factual content
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 executive_summary = generate_data_report(
@@ -361,7 +361,7 @@ def translate_and_localize(content, source_language, target_language, target_reg
         temperature=0.4
     )
 
-    return response["data"]
+    return response["output"][0]["content"][0]["text"]
 
 # Example usage
 english_content = """

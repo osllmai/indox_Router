@@ -43,7 +43,7 @@ def simple_chatbot():
                 )
 
                 # Extract and print the assistant's response
-                assistant_response = response["data"]
+                assistant_response = response["output"][0]["content"][0]["text"]
                 print(f"Assistant: {assistant_response}")
 
                 # Add assistant response to conversation history
@@ -143,7 +143,7 @@ def multi_provider_chatbot():
                 )
 
                 # Extract and print the assistant's response
-                assistant_response = response["data"]
+                assistant_response = response["output"][0]["content"][0]["text"]
                 print(f"Assistant: {assistant_response}")
 
                 # Add assistant response to conversation history
@@ -226,16 +226,26 @@ if user_input and api_key:
             # Initialize client
             with Client(api_key=api_key) as client:
                 # Stream the response
+                import json
                 for chunk in client.chat(
                     messages=st.session_state.messages,
                     model=st.session_state.current_model,
                     temperature=temperature,
                     stream=True
                 ):
-                    if isinstance(chunk, dict) and "data" in chunk:
-                        content = chunk["data"]
-                        full_response += content
-                        message_placeholder.write(full_response + "▌")
+                    # Parse streaming events
+                    if chunk.startswith("data: "):
+                        data = chunk[6:]
+                        if data.strip() == "[DONE]":
+                            break
+                        try:
+                            event = json.loads(data)
+                            if event.get("type") == "response.content_part.delta":
+                                delta = event.get("delta", "")
+                                full_response += delta
+                                message_placeholder.write(full_response + "▌")
+                        except json.JSONDecodeError:
+                            pass
 
                 message_placeholder.write(full_response)
 

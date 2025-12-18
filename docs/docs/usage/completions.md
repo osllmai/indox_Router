@@ -17,7 +17,8 @@ response = client.completions(
     temperature=0.7
 )
 
-print("Response:", response["data"])
+# Access the response text from the output array
+print("Response:", response["output"][0]["content"][0]["text"])
 ```
 
 ## Parameters
@@ -91,6 +92,63 @@ response = client.completions(
     max_tokens=150,
     temperature=0.2
 )
+```
+
+## Response Format
+
+The response from the completions method follows an OpenAI-compatible format:
+
+```python
+{
+    'id': '0fecd9af-0ba8-47a4-852f-029b3a5bfa18',
+    'object': 'response',
+    'created_at': 1718456091,
+    'model': 'gpt-3.5-turbo-instruct',
+    'provider': 'openai',
+    'duration_ms': 6939.46,
+    'output': [
+        {
+            'type': 'message',
+            'status': 'completed',
+            'role': 'assistant',
+            'content': [
+                {
+                    'type': 'output_text',
+                    'text': 'Once upon a time, in a small village...',
+                    'annotations': []
+                }
+            ]
+        }
+    ],
+    'usage': {
+        'input_tokens': 11,
+        'input_tokens_details': {'cached_tokens': 0},
+        'output_tokens': 530,
+        'output_tokens_details': {'reasoning_tokens': 0},
+        'total_tokens': 541
+    },
+    'status': 'completed'
+}
+```
+
+### Accessing Response Content
+
+To get the text content from the response:
+
+```python
+response = client.completions(
+    prompt="Tell me a story",
+    model="openai/gpt-3.5-turbo-instruct",
+    max_tokens=500
+)
+
+# Get the text content
+text = response["output"][0]["content"][0]["text"]
+print(text)
+
+# Get usage information
+usage = response["usage"]
+print(f"Total tokens: {usage['total_tokens']}")
 ```
 
 _Last updated: Nov 16, 2025_

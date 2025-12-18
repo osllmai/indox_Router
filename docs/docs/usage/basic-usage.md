@@ -34,38 +34,45 @@ Additional parameters specific to each provider can be passed as keyword argumen
 
 ## Response Structure
 
-Responses from the API closely follow the OpenAI API response format, with some additions for consistency across providers:
+!!! note "Response Format Differences"
+**Chat and Completions endpoints** use an OpenAI-compatible format with an `output` array. All other endpoints (embeddings, images, audio, etc.) use a standard format with a `data` field.
+
+Chat and completion responses follow an OpenAI-compatible format:
 
 ```python
-{'request_id': 'b881942c-e21d-4f9d-ad82-47344945c642',
- 'created_at': '2025-06-15T09:53:26.130868',
- 'duration_ms': 1737.612247467041,
- 'provider': 'openai',
- 'model': 'gpt-4o-mini',
- 'success': True,
- 'message': '',
- 'usage': {'tokens_prompt': 24,
-  'tokens_completion': 7,
-  'tokens_total': 31,
-  'cost': 7.8e-06,
-  'latency': 1.629077672958374,
-  'timestamp': '2025-06-15T09:53:26.114626',
-  'cache_read_tokens': 0,
-  'cache_write_tokens': 0,
-  'reasoning_tokens': 0,
-  'web_search_count': 0,
-  'request_count': 1,
-  'cost_breakdown': {'input_tokens': 3.6e-06,
-   'output_tokens': 4.2e-06,
-   'cache_read': 0.0,
-   'cache_write': 0.0,
-   'reasoning': 0.0,
-   'web_search': 0.0,
-   'request': 0.0}},
- 'raw_response': None,
- 'data': 'The capital of France is Paris.',
- 'finish_reason': None}
+{
+    'id': 'b881942c-e21d-4f9d-ad82-47344945c642',
+    'object': 'response',
+    'created_at': 1718456006,
+    'model': 'gpt-4o-mini',
+    'provider': 'openai',
+    'duration_ms': 1737.61,
+    'output': [
+        {
+            'type': 'message',
+            'status': 'completed',
+            'role': 'assistant',
+            'content': [
+                {
+                    'type': 'output_text',
+                    'text': 'The capital of France is Paris.',
+                    'annotations': []
+                }
+            ]
+        }
+    ],
+    'usage': {
+        'input_tokens': 24,
+        'input_tokens_details': {'cached_tokens': 0},
+        'output_tokens': 7,
+        'output_tokens_details': {'reasoning_tokens': 0},
+        'total_tokens': 31
+    },
+    'status': 'completed'
+}
 ```
+
+To access the response text: `response['output'][0]['content'][0]['text']`
 
 ## Error Handling
 

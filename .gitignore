@@ -211,3 +211,4 @@ temp/
 *.f4v
 *.swf
 examples/
+test_openai_compatibilty.ipynb

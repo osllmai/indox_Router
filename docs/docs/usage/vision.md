@@ -84,7 +84,7 @@ response = client.chat(
     model="openai/gpt-4o"
 )
 
-print(response["data"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ### Image from URL
@@ -157,7 +157,7 @@ response = client.chat(
     model="google/gemini-2.5-pro-preview"
 )
 
-print(response["data"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ## Supported Image Formats
@@ -281,7 +281,7 @@ messages = [
 ]
 
 response = client.chat(messages=messages, model="anthropic/claude-opus-4.1")
-assistant_message = response["choices"][0]["message"]["content"]
+assistant_message = response["output"][0]["content"][0]["text"]
 print(f"Assistant: {assistant_message}")
 
 # Add assistant response to conversation
@@ -297,7 +297,7 @@ messages.append({
 })
 
 response = client.chat(messages=messages, model="anthropic/claude-opus-4.1")
-print(f"Assistant: {response['choices'][0]['message']['content']}")
+print(f"Assistant: {response['output'][0]['content'][0]['text']}")
 ```
 
 !!! tip "Image Memory"
@@ -335,7 +335,7 @@ response = client.chat(
     model="openai/gpt-4o"
 )
 
-print(response["data"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ### 2. Image Description for Accessibility
@@ -372,7 +372,7 @@ response = client.chat(
     model="google/gemini-2.0-flash"
 )
 
-print(response["data"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ### 3. Chart and Graph Analysis
@@ -405,7 +405,7 @@ response = client.chat(
     model="anthropic/claude-sonnet-4.5"
 )
 
-print(response["data"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ### 4. Code Screenshot Analysis
@@ -438,7 +438,7 @@ response = client.chat(
     model="openai/gpt-4o"
 )
 
-print(response["data"])
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ## Error Handling
@@ -557,7 +557,7 @@ try:
         messages=[...],
         model="openai/gpt-4o"
     )
-    print(response["data"])
+    print(response["output"][0]["content"][0]["text"])
 except Exception as e:
     print(f"Failed to analyze image: {e}")
     # Implement fallback or retry logic

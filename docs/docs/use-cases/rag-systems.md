@@ -73,7 +73,7 @@ response = client.chat(
 
 # Print the answer
 print(f"Question: {query}")
-print(f"Answer: {response['data']")
+print(f"Answer: {response['output'][0]['content'][0]['text']}")
 ```
 
 ## Advanced RAG Implementation
@@ -175,7 +175,7 @@ class RAGSystem:
             model=self.llm_model
         )
 
-        answer = response["data"]
+        answer = response["output"][0]["content"][0]["text"]
 
         # Return answer along with supporting evidence
         return {

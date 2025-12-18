@@ -75,8 +75,8 @@ response = client.chat(
     model="openai/gpt-4o-mini"
 )
 
-# Print the response
-print(response["data"])
+# Print the response (access text from output array)
+print(response["output"][0]["content"][0]["text"])
 ```
 
 ## Error Handling

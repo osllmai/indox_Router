@@ -184,7 +184,7 @@ response = robust_chat(
 )
 
 if response:
-    print(response['choices'][0]['message']['content'])
+    print(response['output'][0]['content'][0]['text'])
 else:
     print("Failed to get response after all attempts.")
 ```

@@ -1741,12 +1741,15 @@ class Client:
         """
         Handle a streaming response.
 
+        Supports both the new OpenAI Responses API format and legacy format for backward compatibility.
+
         Args:
             response: Streaming response
 
         Returns:
             Generator yielding response chunks
         """
+        accumulated_text = ""
         try:
             for line in response.iter_lines():
                 if line:
@@ -1776,14 +1779,91 @@ class Client:
                                 else:
                                     raise APIError(f"Streaming error: {error_info}")
 
+                            # Handle new OpenAI Responses API format
+                            event_type = chunk.get("type", "")
+
+                            # Handle response.created event
+                            if event_type == "response.created":
+                                yield chunk
+                                continue
+
+                            # Handle response.output_item.added event
+                            if event_type == "response.output_item.added":
+                                yield chunk
+                                continue
+
+                            # Handle response.content_part.added event
+                            if event_type == "response.content_part.added":
+                                yield chunk
+                                continue
+
+                            # Handle reasoning started event
+                            if event_type == "response.reasoning.started":
+                                yield chunk
+                                continue
+
+                            # Handle reasoning delta events (comes first, before text)
+                            if event_type == "response.reasoning.delta":
+                                reasoning_delta = chunk.get("delta", "")
+                                # Yield with backward-compatible data field
+                                yield {
+                                    **chunk,
+                                    "data": reasoning_delta,  # For backward compatibility
+                                    "reasoning": True,  # Flag to identify reasoning chunks
+                                }
+                                continue
+
+                            # Handle response.content_part.delta event (text streaming)
+                            if event_type == "response.content_part.delta":
+                                delta_text = chunk.get("delta", "")
+                                accumulated_text += delta_text
+                                # Yield with backward-compatible data field
+                                yield {
+                                    **chunk,
+                                    "data": delta_text,  # For backward compatibility
+                                }
+                                continue
+
+                            # Handle response.output_item.done event
+                            if event_type == "response.output_item.done":
+                                # Extract full text from the item
+                                item = chunk.get("item", {})
+                                content = item.get("content", [])
+                                if content and len(content) > 0:
+                                    text_content = content[0].get("text", "")
+                                    accumulated_text = text_content
+
+                                # Build response with backward-compatible fields
+                                response_chunk = {
+                                    **chunk,
+                                    "data": accumulated_text,  # For backward compatibility
+                                }
+
+                                # Add reasoning if available
+                                if "reasoning" in item:
+                                    response_chunk["reasoning"] = item["reasoning"]
+
+                                yield response_chunk
+                                continue
+
+                            # Handle response.done event
+                            if event_type == "response.done":
+                                yield chunk
+                                continue
+
+                            # Handle image generation call events
+                            if event_type.startswith("response.image_generation_call."):
+                                yield chunk
+                                continue
+
+                            # Handle legacy format (backward compatibility)
                             # Handle image chunks
                             if "images" in chunk:
                                 # This is an image chunk - yield it as-is for the user to handle
                                 yield chunk
                                 continue
 
-                            # For chat responses, return the processed chunk
-                            # with data field for backward compatibility
+                            # For legacy chat responses with choices
                             if "choices" in chunk:
                                 # For delta responses (streaming)
                                 choice = chunk["choices"][0]

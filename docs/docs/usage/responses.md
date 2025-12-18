@@ -4,7 +4,10 @@ indoxhub provides detailed response information for every API call, including us
 
 ## Standard Response Structure
 
-Every indoxhub response follows this consistent format:
+!!! note "Response Format Differences"
+**Chat and Completions endpoints** use an OpenAI-compatible format with an `output` array. All other endpoints (embeddings, images, audio, etc.) use the standard format below with a `data` field.
+
+Most indoxhub endpoints follow this consistent format:
 
 ```python
 {
@@ -43,6 +46,8 @@ Every indoxhub response follows this consistent format:
     'images': None
 }
 ```
+
+**Chat and Completions endpoints** use an OpenAI-compatible format. See the [Chat Completion Response](#chat-completion-response) and [Text Completion Response](#text-completion-response) sections below for details.
 
 ## Response Fields
 
@@ -110,40 +115,36 @@ response = client.chat(
     model="openai/gpt-4o-mini"
 )
 
-# Response structure:
+# Response structure (OpenAI-compatible format):
 {
-    'request_id': 'b881942c-e21d-4f9d-ad82-47344945c642',
-    'created_at': '2025-06-15T09:53:26.130868',
-    'duration_ms': 1737.612247467041,
-    'provider': 'openai',
+    'id': 'b881942c-e21d-4f9d-ad82-47344945c642',
+    'object': 'response',
+    'created_at': 1718456006,
     'model': 'gpt-4o-mini',
-    'success': True,
-    'message': '',
-    'usage': {
-        'tokens_prompt': 24,
-        'tokens_completion': 7,
-        'tokens_total': 31,
-        'cost': 7.8e-06,
-        'latency': 1.629077672958374,
-        'timestamp': '2025-06-15T09:53:26.114626',
-        'cache_read_tokens': 0,
-        'cache_write_tokens': 0,
-        'reasoning_tokens': 0,
-        'web_search_count': 0,
-        'request_count': 1,
-        'cost_breakdown': {
-            'input_tokens': 3.6e-06,
-            'output_tokens': 4.2e-06,
-            'cache_read': 0.0,
-            'cache_write': 0.0,
-            'reasoning': 0.0,
-            'web_search': 0.0,
-            'request': 0.0
+    'provider': 'openai',
+    'duration_ms': 1737.61,
+    'output': [
+        {
+            'type': 'message',
+            'status': 'completed',
+            'role': 'assistant',
+            'content': [
+                {
+                    'type': 'output_text',
+                    'text': 'The capital of France is Paris.',
+                    'annotations': []
+                }
+            ]
         }
+    ],
+    'usage': {
+        'input_tokens': 24,
+        'input_tokens_details': {'cached_tokens': 0},
+        'output_tokens': 7,
+        'output_tokens_details': {'reasoning_tokens': 0},
+        'total_tokens': 31
     },
-    'raw_response': None,
-    'data': 'The capital of France is Paris.',
-    'finish_reason': None
+    'status': 'completed'
 }
 ```
 
@@ -152,45 +153,40 @@ response = client.chat(
 ```python
 response = client.completions(
     prompt="Tell me a story",
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-3.5-turbo-instruct",
     max_tokens=500
 )
 
-# Response structure:
+# Response structure (OpenAI-compatible format):
 {
-    'request_id': '0fecd9af-0ba8-47a4-852f-029b3a5bfa18',
-    'created_at': '2025-06-15T09:54:51.393591',
-    'duration_ms': 6939.460754394531,
+    'id': '0fecd9af-0ba8-47a4-852f-029b3a5bfa18',
+    'object': 'response',
+    'created_at': 1718456091,
+    'model': 'gpt-3.5-turbo-instruct',
     'provider': 'openai',
-    'model': 'gpt-4o-mini',
-    'success': True,
-    'message': '',
-    'usage': {
-        'tokens_prompt': 11,
-        'tokens_completion': 530,
-        'tokens_total': 541,
-        'cost': 0.00031965,
-        'latency': 6.794795513153076,
-        'timestamp': '2025-06-15T09:54:51.362423',
-        'cache_read_tokens': 0,
-        'cache_write_tokens': 0,
-        'reasoning_tokens': 0,
-        'web_search_count': 0,
-        'request_count': 1,
-        'cost_breakdown': {
-            'input_tokens': 1.6499999999999999e-06,
-            'output_tokens': 0.000318,
-            'cache_read': 0.0,
-            'cache_write': 0.0,
-            'reasoning': 0.0,
-            'web_search': 0.0,
-            'request': 0.0
+    'duration_ms': 6939.46,
+    'output': [
+        {
+            'type': 'message',
+            'status': 'completed',
+            'role': 'assistant',
+            'content': [
+                {
+                    'type': 'output_text',
+                    'text': 'Once upon a time, in a small village nestled between rolling hills and a sparkling river, there lived a young girl named Elara. She was known throughout the village for her kindness and her love for nature...',
+                    'annotations': []
+                }
+            ]
         }
+    ],
+    'usage': {
+        'input_tokens': 11,
+        'input_tokens_details': {'cached_tokens': 0},
+        'output_tokens': 530,
+        'output_tokens_details': {'reasoning_tokens': 0},
+        'total_tokens': 541
     },
-    'raw_response': None,
-    'data': 'Once upon a time, in a small village nestled between rolling hills and a sparkling river, there lived a young girl named Elara. She was known throughout the village for her kindness and her love for nature...',
-    'finish_reason': None,
-    'images': None
+    'status': 'completed'
 }
 ```
 
@@ -325,34 +321,48 @@ response = client.images(
 
 ### Accessing Response Data
 
+For chat and completion responses (OpenAI-compatible format):
+
 ```python
 response = client.chat(
     messages=[{"role": "user", "content": "Hello"}],
     model="openai/gpt-4o-mini"
 )
 
-# Get the AI response text
-content = response['data']
+# Get the AI response text from the output array
+content = response['output'][0]['content'][0]['text']
 print(content)
 
 # Get usage information
 usage = response['usage']
-print(f"Tokens used: {usage['tokens_total']}")
-print(f"Cost: ${usage['cost']:.6f}")
-print(f"Latency: {usage['latency']:.2f}s")
+print(f"Input tokens: {usage['input_tokens']}")
+print(f"Output tokens: {usage['output_tokens']}")
+print(f"Total tokens: {usage['total_tokens']}")
 
-# Get detailed cost breakdown
-if usage['cost_breakdown']:
-    breakdown = usage['cost_breakdown']
-    print(f"Input token cost: ${breakdown['input_tokens']:.6f}")
-    print(f"Output token cost: ${breakdown['output_tokens']:.6f}")
-    print(f"Cache read cost: ${breakdown['cache_read']:.6f}")
+# Get cached tokens if available
+if 'input_tokens_details' in usage:
+    cached = usage['input_tokens_details'].get('cached_tokens', 0)
+    print(f"Cached tokens: {cached}")
+
+# Get reasoning tokens if available
+if 'output_tokens_details' in usage:
+    reasoning = usage['output_tokens_details'].get('reasoning_tokens', 0)
+    if reasoning > 0:
+        print(f"Reasoning tokens: {reasoning}")
+
+# Check for reasoning content in the message (for reasoning-capable models)
+if 'reasoning' in response['output'][0]:
+    reasoning_text = response['output'][0]['reasoning']
+    print(f"Reasoning: {reasoning_text}")
 
 # Get metadata
 print(f"Provider: {response['provider']}")
 print(f"Model: {response['model']}")
-print(f"Request ID: {response['request_id']}")
+print(f"Request ID: {response['id']}")
+print(f"Status: {response['status']}")
 ```
+
+For other endpoints (embeddings, images, etc.), the response format remains unchanged with `response['data']`:
 
 ### Handling Image Responses
 
@@ -413,30 +423,43 @@ if response['images'] and len(response['images']) > 0:
 else:
     print("No images were generated in this response")
 
-# The text content is still available in response['data']
-print(f"Text response: {response['data']}")
+# The text content is available in response['output'][0]['content'][0]['text']
+print(f"Text response: {response['output'][0]['content'][0]['text']}")
 ```
 
 ### Cost Tracking
 
 ```python
-def track_costs(response):
-    """Extract and log cost information from response."""
+def track_usage(response):
+    """Extract and log usage information from response."""
     usage = response['usage']
 
-    print(f"Request Cost Breakdown:")
+    print(f"Request Usage Breakdown:")
     print(f"  Model: {response['provider']}/{response['model']}")
-    print(f"  Prompt tokens: {usage['tokens_prompt']}")
-    print(f"  Completion tokens: {usage['tokens_completion']}")
-    print(f"  Total tokens: {usage['tokens_total']}")
-    print(f"  Cost: ${usage['cost']:.6f}")
-    print(f"  Latency: {usage['latency']:.2f}s")
+    print(f"  Input tokens: {usage['input_tokens']}")
+    print(f"  Output tokens: {usage['output_tokens']}")
+    print(f"  Total tokens: {usage['total_tokens']}")
 
-    return usage['cost']
+    # Check for cached tokens
+    if 'input_tokens_details' in usage:
+        cached = usage['input_tokens_details'].get('cached_tokens', 0)
+        if cached > 0:
+            print(f"  Cached tokens: {cached}")
+
+    # Check for reasoning tokens
+    if 'output_tokens_details' in usage:
+        reasoning = usage['output_tokens_details'].get('reasoning_tokens', 0)
+        if reasoning > 0:
+            print(f"  Reasoning tokens: {reasoning}")
+
+    # Note: Cost information is not included in individual response usage objects.
+    # Use client.get_usage() to get cost statistics.
+
+    return usage['total_tokens']
 
 # Use with any request
 response = client.chat(messages=[...], model="openai/gpt-4o")
-cost = track_costs(response)
+total_tokens = track_usage(response)
 ```
 
 ### Performance Monitoring
@@ -493,11 +516,13 @@ try:
         model="invalid/model"
     )
 
-    if response['success']:
-        print(response['data'])
-    else:
+    # For chat/completion responses (OpenAI-compatible format)
+    if response.get('status') == 'completed':
+        print(response['output'][0]['content'][0]['text'])
+    elif response.get('error'):
         print(f"Error: {response['error']}")
-        print(f"Message: {response['message']}")
+    else:
+        print(f"Error: {response.get('error', 'Unknown error')}")
 
         # Get suggested alternatives
         if 'details' in response and 'available_models' in response['details']:
@@ -509,9 +534,11 @@ except Exception as e:
 
 ## Streaming Responses
 
-For streaming requests, responses come in chunks:
+For streaming requests, responses use an event-based format compatible with OpenAI's streaming API:
 
 ```python
+import json
+
 response_stream = client.chat(
     messages=[{"role": "user", "content": "Tell me a story"}],
     model="openai/gpt-4o-mini",
@@ -519,21 +546,61 @@ response_stream = client.chat(
 )
 
 full_response = ""
-total_cost = 0
+total_tokens = 0
 
 for chunk in response_stream:
-    if chunk['success']:
-        # Accumulate the response
-        full_response += chunk['data']
+    # Parse the chunk (it's a JSON string in SSE format)
+    if chunk.startswith("data: "):
+        data = chunk[6:]  # Remove "data: " prefix
+        if data.strip() == "[DONE]":
+            break
 
-        # Track costs (final chunk has complete usage info)
-        if 'usage' in chunk:
-            total_cost = chunk['usage']['cost']
+        try:
+            event = json.loads(data)
+            event_type = event.get("type")
 
-        print(chunk['data'], end='', flush=True)
+            # Handle response creation
+            if event_type == "response.created":
+                print("Response started...")
 
-print(f"\n\nTotal cost: ${total_cost:.6f}")
+            # Handle content deltas (text chunks)
+            elif event_type == "response.content_part.delta":
+                delta = event.get("delta", "")
+                full_response += delta
+                print(delta, end='', flush=True)
+
+            # Handle reasoning deltas (for reasoning-capable models)
+            elif event_type == "response.reasoning.delta":
+                delta = event.get("delta", "")
+                # Optionally display reasoning as it streams
+                pass
+
+            # Handle final response with usage
+            elif event_type == "response.done":
+                usage = event.get("response", {}).get("usage", {})
+                total_tokens = usage.get("total_tokens", 0)
+                print(f"\n\nTotal tokens: {total_tokens}")
+
+        except json.JSONDecodeError:
+            pass
+
+print(f"\n\nFull response: {full_response}")
 ```
+
+### Streaming Event Types
+
+The streaming API emits the following event types:
+
+- `response.created` - Response creation event
+- `response.reasoning.started` - Reasoning phase started (for reasoning-capable models)
+- `response.reasoning.delta` - Reasoning content delta
+- `response.output_item.added` - New output item added
+- `response.content_part.added` - New content part added
+- `response.content_part.delta` - Content text delta (main streaming content)
+- `response.output_item.done` - Output item completed
+- `response.image_generation_call.*` - Image generation events (if images are generated)
+- `response.done` - Final event with usage statistics
+- `[DONE]` - End of stream marker
 
 ## Response Validation
 
@@ -546,14 +613,15 @@ def validate_response(response):
         if field not in response:
             raise ValueError(f"Missing required field: {field}")
 
-    if response['success']:
-        if 'data' not in response:
-            raise ValueError("Success response missing 'data' field")
+    # For chat/completion responses (OpenAI-compatible format)
+    if response.get('object') == 'response':
+        if 'output' not in response:
+            raise ValueError("Response missing 'output' field")
         if 'usage' not in response:
-            raise ValueError("Success response missing 'usage' field")
-    else:
-        if 'error' not in response:
-            raise ValueError("Error response missing 'error' field")
+            raise ValueError("Response missing 'usage' field")
+    # For other endpoints, check for 'data' field
+    elif 'data' not in response and 'error' not in response:
+        raise ValueError("Response missing 'data' or 'error' field")
 
     return True
 
@@ -570,32 +638,49 @@ if validate_response(response):
 ```python
 response = client.chat(messages=[...], model="openai/gpt-4o-mini")
 
-if response['success']:
-    content = response['data']
-    cost = response['usage']['cost']
+# For chat/completion responses (OpenAI-compatible format)
+if response['status'] == 'completed':
+    content = response['output'][0]['content'][0]['text']
+    usage = response['usage']
+    # Note: Cost information is not in the response usage object.
+    # Use client.get_usage() to get cost statistics.
     # Process successful response
-else:
+elif response.get('error'):
     error = response['error']
-    message = response['message']
     # Handle error
 ```
 
-### 2. Monitor Costs
+### 2. Monitor Usage and Costs
 
 ```python
-# Set up cost alerts
-def check_cost_threshold(response, max_cost=0.01):
-    """Alert if single request exceeds cost threshold."""
-    cost = response['usage']['cost']
-    if cost > max_cost:
-        print(f"⚠️  High cost request: ${cost:.4f}")
+# Monitor token usage from responses
+def check_token_usage(response, max_tokens=10000):
+    """Alert if single request exceeds token threshold."""
+    usage = response['usage']
+    total_tokens = usage['total_tokens']
+    if total_tokens > max_tokens:
+        print(f"⚠️  High token usage: {total_tokens} tokens")
         print(f"   Model: {response['provider']}/{response['model']}")
-        print(f"   Tokens: {response['usage']['tokens_total']}")
+        print(f"   Input tokens: {usage['input_tokens']}")
+        print(f"   Output tokens: {usage['output_tokens']}")
 
-    return cost
+    return total_tokens
 
 response = client.chat(messages=[...], model="openai/gpt-4o")
-check_cost_threshold(response)
+check_token_usage(response)
+
+# For cost monitoring, use get_usage()
+def check_cost_threshold(client, max_cost=50.0):
+    """Alert if total usage cost exceeds threshold."""
+    usage = client.get_usage()
+    total_cost = usage['total_cost']
+    if total_cost > max_cost:
+        print(f"⚠️  High total cost: ${total_cost:.2f}")
+        print(f"   Remaining credits: ${usage['remaining_credits']:.2f}")
+
+    return total_cost
+
+check_cost_threshold(client)
 ```
 
 ### 3. Track Performance
@@ -605,13 +690,16 @@ check_cost_threshold(response)
 def log_performance(response):
     """Log performance metrics for monitoring."""
     metrics = {
-        'request_id': response['request_id'],
+        'request_id': response['id'],
         'model': f"{response['provider']}/{response['model']}",
         'duration_ms': response['duration_ms'],
-        'latency_ms': response['usage']['latency'] * 1000,
-        'tokens': response['usage']['tokens_total'],
-        'cost': response['usage']['cost']
+        'tokens': response['usage']['total_tokens'],
+        'input_tokens': response['usage']['input_tokens'],
+        'output_tokens': response['usage']['output_tokens']
     }
+
+    # Note: Cost information is not in the response usage object.
+    # Use client.get_usage() to get cost statistics.
 
     # Log to your monitoring system
     print(f"METRICS: {metrics}")
@@ -626,13 +714,16 @@ def log_performance(response):
 def save_request_info(response, query_description):
     """Save request information for debugging."""
     info = {
-        'timestamp': response['created_at'],
-        'request_id': response['request_id'],
+        'timestamp': response.get('created_at'),
+        'request_id': response.get('id'),
         'description': query_description,
         'model': f"{response['provider']}/{response['model']}",
-        'success': response['success'],
-        'cost': response.get('usage', {}).get('cost', 0)
+        'status': response.get('status'),
+        'tokens': response.get('usage', {}).get('total_tokens', 0)
     }
+
+    # Note: Cost information is not in the response.
+    # Use client.get_usage() to get cost statistics.
 
     # Save to logs or database
     print(f"REQUEST_LOG: {info}")
