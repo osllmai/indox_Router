@@ -593,13 +593,165 @@ This request requires a body.
     console.log(response);
     ```
 
+**Streaming Responses**
+
+When `stream: true` is set in the request, the endpoint returns a Server-Sent Events (SSE) stream instead of a JSON response. The stream contains event-based data compatible with OpenAI's streaming API format.
+
+**Stream Format:**
+
+Each event is sent as a Server-Sent Event with the format:
+```
+data: <json_event>\n\n
+```
+
+The stream ends with:
+```
+data: [DONE]\n\n
+```
+
+**Streaming Event Types:**
+
+The following event types are emitted during streaming:
+
+1. **`response.created`** - Response initialization
+2. **`response.reasoning.started`** - Reasoning phase started (for reasoning-capable models)
+3. **`response.reasoning.delta`** - Reasoning content chunks
+4. **`response.output_item.added`** - Message output item added
+5. **`response.content_part.added`** - Content part added
+6. **`response.content_part.delta`** - Text content chunks (main streaming content)
+7. **`response.output_item.done`** - Output item completed
+8. **`response.image_generation_call.*`** - Image generation events (if images are generated)
+9. **`response.done`** - Final event with usage statistics
+10. **`[DONE]`** - End of stream marker (plain text, not JSON)
+
+For detailed event structures and examples, see the [Streaming Responses](../usage/responses.md#streaming-responses) section in the usage guide.
+
+**Streaming Code Example:**
+
+=== "Python"
+
+    ```python
+    import json
+    from indoxhub import Client
+
+    client = Client(api_key="your_api_key")
+
+    # Enable streaming
+    for chunk in client.chat(
+        messages=[{"role": "user", "content": "Tell me a story"}],
+        model="openai/gpt-4o-mini",
+        stream=True
+    ):
+        if chunk.startswith("data: "):
+            data = chunk[6:]  # Remove "data: " prefix
+            if data.strip() == "[DONE]":
+                break
+            
+            try:
+                event = json.loads(data)
+                event_type = event.get("type")
+                
+                # Handle content deltas
+                if event_type == "response.content_part.delta":
+                    delta = event.get("delta", "")
+                    print(delta, end="", flush=True)
+                
+                # Handle final usage
+                elif event_type == "response.done":
+                    usage = event.get("response", {}).get("usage", {})
+                    print(f"\n\nTotal tokens: {usage.get('total_tokens', 0)}")
+            except json.JSONDecodeError:
+                pass
+    ```
+
+=== "cURL"
+
+    ```bash
+    curl -X POST https://api.indoxhub.com/api/v1/chat/completions \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -H "Accept: text/event-stream" \
+      -d '{
+        "messages": [{"role": "user", "content": "Tell me a story"}],
+        "model": "openai/gpt-4o-mini",
+        "stream": true
+      }'
+    ```
+
+=== "JavaScript"
+
+    ```javascript
+    import { Client } from "@indoxhub/client";
+
+    const client = new Client("your_api_key");
+
+    const stream = await client.chat(
+      [{role: "user", content: "Tell me a story"}],
+      {model: "openai/gpt-4o-mini", stream: true}
+    );
+
+    for await (const chunk of stream) {
+      if (chunk.startsWith("data: ")) {
+        const data = chunk.slice(6);
+        if (data.trim() === "[DONE]") break;
+        
+        try {
+          const event = JSON.parse(data);
+          if (event.type === "response.content_part.delta") {
+            process.stdout.write(event.delta);
+          } else if (event.type === "response.done") {
+            console.log(`\n\nTotal tokens: ${event.response.usage.total_tokens}`);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    ```
+
 **Responses:**
 
-??? success "200 - Successful Response"
+??? success "200 - Successful Response (Non-Streaming)"
 
     **Content-Type:** `application/json`
 
     **Schema:** [ChatResponse](#schema-chatresponse)
+
+    When `stream: false` or not specified, returns a JSON response with OpenAI-compatible format:
+    ```json
+    {
+      "id": "request-id",
+      "object": "response",
+      "created_at": 1718456006,
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "duration_ms": 1737.61,
+      "output": [{
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [{
+          "type": "output_text",
+          "text": "Response text here...",
+          "annotations": []
+        }]
+      }],
+      "usage": {
+        "input_tokens": 24,
+        "input_tokens_details": {"cached_tokens": 0},
+        "output_tokens": 7,
+        "output_tokens_details": {"reasoning_tokens": 0},
+        "total_tokens": 31
+      },
+      "status": "completed"
+    }
+    ```
+
+??? success "200 - Successful Response (Streaming)"
+
+    **Content-Type:** `text/event-stream`
+
+    When `stream: true`, returns a Server-Sent Events stream. See [Streaming Responses](../usage/responses.md#streaming-responses) section in the usage guide for detailed event format documentation.
 
 ??? warning "422 - Validation Error"
 

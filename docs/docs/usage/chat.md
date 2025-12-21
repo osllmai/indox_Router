@@ -160,7 +160,9 @@ response = client.chat(
 
 ## Streaming Responses
 
-For long responses, you might want to stream the response to get it piece by piece. Streaming uses an event-based format compatible with OpenAI's streaming API:
+For long responses, you might want to stream the response to get it piece by piece. Streaming uses an event-based format compatible with OpenAI's new streaming API with Server-Sent Events (SSE).
+
+### Basic Streaming Example
 
 ```python
 import json
@@ -178,31 +180,445 @@ for chunk in client.chat(
         data = chunk[6:]  # Remove "data: " prefix
         if data.strip() == "[DONE]":
             break
-        
+
         try:
             event = json.loads(data)
             event_type = event.get("type")
-            
+
             # Handle content deltas
             if event_type == "response.content_part.delta":
                 delta = event.get("delta", "")
                 print(delta, end="", flush=True)
-            
-            # Handle reasoning deltas (for reasoning-capable models)
-            elif event_type == "response.reasoning.delta":
-                delta = event.get("delta", "")
-                # Optionally display reasoning as it streams
-                pass
-            
+
             # Handle final response with usage
             elif event_type == "response.done":
                 usage = event.get("response", {}).get("usage", {})
                 print(f"\n\nTotal tokens: {usage.get('total_tokens', 0)}")
-        
+
         except json.JSONDecodeError:
             pass
 
 print("\nStreaming complete!")
+```
+
+### Complete Streaming Example with All Event Types
+
+Here's a comprehensive example that handles all streaming event types:
+
+```python
+import json
+
+def handle_streaming_response(client, messages, model):
+    """Handle streaming response with all event types."""
+    full_text = ""
+    reasoning_text = ""
+    usage_info = None
+
+    for chunk in client.chat(messages=messages, model=model, stream=True):
+        if chunk.startswith("data: "):
+            data = chunk[6:]  # Remove "data: " prefix
+            if data.strip() == "[DONE]":
+                break
+
+            try:
+                event = json.loads(data)
+                event_type = event.get("type")
+
+                # Response creation
+                if event_type == "response.created":
+                    response_id = event.get("response", {}).get("id")
+                    print(f"Response started: {response_id}")
+
+                # Reasoning events (for reasoning-capable models like o1, o3)
+                elif event_type == "response.reasoning.started":
+                    print("\n[Reasoning phase started]")
+                    reasoning_text = ""
+
+                elif event_type == "response.reasoning.delta":
+                    delta = event.get("delta", "")
+                    reasoning_text += delta
+                    # Optionally display reasoning as it streams
+                    # print(delta, end="", flush=True)
+
+                # Output item events
+                elif event_type == "response.output_item.added":
+                    output_index = event.get("output_index", 0)
+                    item = event.get("item", {})
+                    print(f"\n[Output item {output_index} added: {item.get('type')}]")
+
+                # Content part events
+                elif event_type == "response.content_part.added":
+                    output_index = event.get("output_index", 0)
+                    content_index = event.get("content_index", 0)
+                    part = event.get("part", {})
+                    print(f"[Content part {content_index} added: {part.get('type')}]")
+
+                elif event_type == "response.content_part.delta":
+                    delta = event.get("delta", "")
+                    full_text += delta
+                    print(delta, end="", flush=True)
+
+                elif event_type == "response.output_item.done":
+                    output_index = event.get("output_index", 0)
+                    item = event.get("item", {})
+                    if "reasoning" in item:
+                        reasoning_text = item["reasoning"]
+                    print(f"\n[Output item {output_index} completed]")
+
+                # Image generation events
+                elif event_type == "response.image_generation_call.in_progress":
+                    output_index = event.get("output_index", 0)
+                    call_id = event.get("image_generation_call", {}).get("id")
+                    print(f"\n[Image generation {output_index} started: {call_id}]")
+
+                elif event_type == "response.image_generation_call.generating":
+                    output_index = event.get("output_index", 0)
+                    print(f"[Image generation {output_index} in progress...]")
+
+                elif event_type == "response.image_generation_call.partial_image":
+                    output_index = event.get("output_index", 0)
+                    # Partial base64 image data available
+                    print(f"[Image {output_index} partial data received]")
+
+                elif event_type == "response.image_generation_call.completed":
+                    output_index = event.get("output_index", 0)
+                    image_call = event.get("image_generation_call", {})
+                    if "url" in image_call:
+                        print(f"\n[Image {output_index} completed: {image_call['url']}]")
+                    elif "data" in event:
+                        print(f"\n[Image {output_index} completed: base64 data received]")
+
+                # Final response with usage
+                elif event_type == "response.done":
+                    response_data = event.get("response", {})
+                    usage_info = response_data.get("usage", {})
+                    print(f"\n\n[Response completed]")
+                    print(f"Total tokens: {usage_info.get('total_tokens', 0)}")
+                    print(f"Input tokens: {usage_info.get('input_tokens', 0)}")
+                    print(f"Output tokens: {usage_info.get('output_tokens', 0)}")
+                    if usage_info.get("input_tokens_details", {}).get("cached_tokens", 0) > 0:
+                        print(f"Cached tokens: {usage_info['input_tokens_details']['cached_tokens']}")
+                    if usage_info.get("output_tokens_details", {}).get("reasoning_tokens", 0) > 0:
+                        print(f"Reasoning tokens: {usage_info['output_tokens_details']['reasoning_tokens']}")
+
+            except json.JSONDecodeError:
+                pass
+
+    return {
+        "text": full_text,
+        "reasoning": reasoning_text,
+        "usage": usage_info
+    }
+
+# Use the handler
+result = handle_streaming_response(
+    client=client,
+    messages=[{"role": "user", "content": "Tell me a story about a robot."}],
+    model="openai/gpt-4o-mini"
+)
+
+print(f"\n\nFull response: {result['text']}")
+if result['reasoning']:
+    print(f"\nReasoning: {result['reasoning']}")
+```
+
+### Streaming Event Types
+
+The streaming API emits the following event types in order:
+
+1. **`response.created`** - Response creation event (sent first)
+
+   ```json
+   {
+     "type": "response.created",
+     "response": {
+       "id": "request-id",
+       "object": "response",
+       "status": "in_progress",
+       "model": "model-name"
+     }
+   }
+   ```
+
+2. **`response.reasoning.started`** - Reasoning phase started (for reasoning-capable models)
+
+   ```json
+   {
+     "type": "response.reasoning.started",
+     "response_id": "request-id"
+   }
+   ```
+
+3. **`response.reasoning.delta`** - Reasoning content deltas (streamed chunks)
+
+   ```json
+   {
+     "type": "response.reasoning.delta",
+     "response_id": "request-id",
+     "delta": "reasoning text chunk"
+   }
+   ```
+
+4. **`response.output_item.added`** - Message output item added
+
+   ```json
+   {
+     "type": "response.output_item.added",
+     "response_id": "request-id",
+     "output_index": 0,
+     "item": {
+       "type": "message",
+       "role": "assistant",
+       "status": "in_progress",
+       "content": []
+     }
+   }
+   ```
+
+5. **`response.content_part.added`** - Content part added
+
+   ```json
+   {
+     "type": "response.content_part.added",
+     "response_id": "request-id",
+     "output_index": 0,
+     "content_index": 0,
+     "part": {
+       "type": "output_text",
+       "text": ""
+     }
+   }
+   ```
+
+6. **`response.content_part.delta`** - Text content deltas (main streaming content)
+
+   ```json
+   {
+     "type": "response.content_part.delta",
+     "response_id": "request-id",
+     "output_index": 0,
+     "content_index": 0,
+     "delta": "text chunk"
+   }
+   ```
+
+7. **`response.output_item.done`** - Output item completed
+
+   ```json
+   {
+     "type": "response.output_item.done",
+     "response_id": "request-id",
+     "output_index": 0,
+     "item": {
+       "type": "message",
+       "role": "assistant",
+       "status": "completed",
+       "content": [
+         {
+           "type": "output_text",
+           "text": "full text",
+           "annotations": []
+         }
+       ],
+       "reasoning": "optional reasoning content"
+     }
+   }
+   ```
+
+8. **`response.image_generation_call.*`** - Image generation events (if images are generated)
+
+   **`response.image_generation_call.in_progress`** - Image generation started:
+
+   ```json
+   {
+     "type": "response.image_generation_call.in_progress",
+     "response_id": "request-id",
+     "output_index": 1,
+     "image_generation_call": {
+       "id": "img_call_abc123...",
+       "type": "image_generation_call",
+       "status": "in_progress"
+     }
+   }
+   ```
+
+   **`response.image_generation_call.generating`** - Image generation in progress:
+
+   ```json
+   {
+     "type": "response.image_generation_call.generating",
+     "response_id": "request-id",
+     "output_index": 1
+   }
+   ```
+
+   **`response.image_generation_call.partial_image`** - Partial image data (base64):
+
+   ```json
+   {
+     "type": "response.image_generation_call.partial_image",
+     "response_id": "request-id",
+     "output_index": 1,
+     "partial_image_b64": "iVBORw0KGgoAAAANSUhEUgAA..."
+   }
+   ```
+
+   **`response.image_generation_call.completed`** - Image generation completed (with URL):
+
+   ```json
+   {
+     "type": "response.image_generation_call.completed",
+     "response_id": "request-id",
+     "output_index": 1,
+     "image_generation_call": {
+       "id": "img_call_abc123...",
+       "type": "image_generation_call",
+       "status": "completed",
+       "url": "https://example.com/image.png"
+     }
+   }
+   ```
+
+   **`response.image_generation_call.completed`** - Image generation completed (with base64 data):
+
+   ```json
+   {
+     "type": "response.image_generation_call.completed",
+     "response_id": "request-id",
+     "output_index": 1,
+     "image_generation_call": {
+       "id": "img_call_abc123...",
+       "type": "image_generation_call",
+       "status": "completed"
+     },
+     "data": "iVBORw0KGgoAAAANSUhEUgAA..."
+   }
+   ```
+
+9. **`response.done`** - Final event with usage statistics
+
+   ```json
+   {
+     "type": "response.done",
+     "response": {
+       "id": "request-id",
+       "object": "response",
+       "status": "completed",
+       "usage": {
+         "input_tokens": 100,
+         "input_tokens_details": { "cached_tokens": 0 },
+         "output_tokens": 50,
+         "output_tokens_details": { "reasoning_tokens": 0 },
+         "total_tokens": 150
+       }
+     }
+   }
+   ```
+
+10. **`[DONE]`** - End of stream marker (plain text, not JSON)
+
+### Handling Reasoning Events
+
+For reasoning-capable models (like OpenAI's o1, o3), you can capture and display reasoning:
+
+```python
+import json
+
+reasoning_chunks = []
+text_chunks = []
+
+for chunk in client.chat(
+    messages=[{"role": "user", "content": "Solve this complex problem step by step."}],
+    model="openai/o1-preview",
+    stream=True
+):
+    if chunk.startswith("data: "):
+        data = chunk[6:]
+        if data.strip() == "[DONE]":
+            break
+
+        try:
+            event = json.loads(data)
+            event_type = event.get("type")
+
+            if event_type == "response.reasoning.started":
+                print("\n[Model is thinking...]")
+                reasoning_chunks = []
+
+            elif event_type == "response.reasoning.delta":
+                delta = event.get("delta", "")
+                reasoning_chunks.append(delta)
+                # Show reasoning as it streams
+                print(delta, end="", flush=True)
+
+            elif event_type == "response.content_part.delta":
+                delta = event.get("delta", "")
+                text_chunks.append(delta)
+                print(delta, end="", flush=True)
+
+        except json.JSONDecodeError:
+            pass
+
+full_reasoning = "".join(reasoning_chunks)
+full_text = "".join(text_chunks)
+```
+
+### Handling Image Generation Events
+
+For models that generate images (like some Gemini models), handle image events:
+
+```python
+import json
+import base64
+
+images = []
+
+for chunk in client.chat(
+    messages=[{"role": "user", "content": "Describe and draw a cat"}],
+    model="google/gemini-2.5-flash-image",
+    stream=True
+):
+    if chunk.startswith("data: "):
+        data = chunk[6:]
+        if data.strip() == "[DONE]":
+            break
+
+        try:
+            event = json.loads(data)
+            event_type = event.get("type")
+
+            if event_type == "response.image_generation_call.in_progress":
+                print("\n[Image generation started]")
+
+            elif event_type == "response.image_generation_call.completed":
+                image_call = event.get("image_generation_call", {})
+                if "url" in image_call:
+                    images.append({"url": image_call["url"]})
+                    print(f"\n[Image generated: {image_call['url']}]")
+                elif "data" in event:
+                    # Base64 image data
+                    images.append({"data": event["data"]})
+                    print("\n[Image generated: base64 data]")
+
+            elif event_type == "response.content_part.delta":
+                delta = event.get("delta", "")
+                print(delta, end="", flush=True)
+
+        except json.JSONDecodeError:
+            pass
+
+# Save images
+for i, img in enumerate(images):
+    if "url" in img:
+        # Download from URL
+        import requests
+        response = requests.get(img["url"])
+        with open(f"image_{i}.png", "wb") as f:
+            f.write(response.content)
+    elif "data" in img:
+        # Save base64 data
+        with open(f"image_{i}.png", "wb") as f:
+            f.write(base64.b64decode(img["data"]))
 ```
 
 ## Managing Conversations
